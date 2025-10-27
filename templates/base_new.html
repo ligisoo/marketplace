@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ligisoo - Football Tips Marketplace{% endblock %}</title>
+    
+    <!-- Google Fonts - PT Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Ligisooke color system
+                        background: 'hsl(227, 27%, 14%)', // Dark Blue/Indigo
+                        foreground: 'hsl(0, 0%, 98%)',
+                        card: 'hsl(227, 27%, 18%)',
+                        'card-foreground': 'hsl(0, 0%, 98%)',
+                        border: 'hsl(227, 27%, 22%)',
+                        primary: 'hsl(120, 50%, 60%)', // Bright Green
+                        'primary-foreground': 'hsl(227, 27%, 14%)',
+                        secondary: 'hsl(227, 27%, 20%)',
+                        'secondary-foreground': 'hsl(0, 0%, 98%)',
+                        accent: 'hsl(39, 86%, 62%)', // Gold/Yellow
+                        'accent-foreground': 'hsl(227, 27%, 14%)',
+                        muted: 'hsl(227, 27%, 25%)',
+                        'muted-foreground': 'hsl(0, 0%, 65%)'
+                    },
+                    fontFamily: {
+                        body: ['"PT Sans"', 'sans-serif'],
+                        headline: ['"PT Sans"', 'serif'],
+                        sans: ['"PT Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    
+    <!-- Custom styles -->
+    <style>
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+        }
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 2px solid #374151;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Fade-in animation for HTMX swapped content */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Modern tip card styling */
+        .tip-card {
+            background: hsl(227, 27%, 18%);
+            border: 1px solid hsl(227, 27%, 22%);
+            transition: all 0.3s ease;
+        }
+        
+        .tip-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border-color: hsl(120, 50%, 60%);
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-background text-foreground min-h-screen font-sans">
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="container mx-auto px-4 flex h-16 items-center justify-between max-w-[1008px]">
+            <!-- Logo -->
+            <a href="{% url 'home' %}" class="flex items-center space-x-2" aria-label="Ligisoo Home">
+                <span class="font-headline font-bold text-xl text-primary">Ligisoo</span>
+                <span class="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Tips</span>
+            </a>
+            
+            <!-- Desktop Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="{% url 'home' %}" 
+                   class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'home' %}text-primary{% else %}text-muted-foreground{% endif %}">
+                    Home
+                </a>
+                <a href="{% url 'tips:marketplace' %}" 
+                   class="text-sm font-medium transition-colors hover:text-primary {% if 'tips' in request.resolver_match.url_name %}text-primary{% else %}text-muted-foreground{% endif %}">
+                    Marketplace
+                </a>
+                {% if user.is_authenticated and user.userprofile.user_type == 'tipster' %}
+                <a href="{% url 'tips:my_tips' %}" 
+                   class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'my_tips' %}text-primary{% else %}text-muted-foreground{% endif %}">
+                    My Tips
+                </a>
+                {% endif %}
+                <a href="#" 
+                   class="text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
+                    Leaderboard
+                </a>
+            </nav>
+
+            <!-- User Authentication & Mobile Menu -->
+            <div class="flex items-center space-x-4">
+                {% if user.is_authenticated %}
+                    <!-- User Avatar Dropdown -->
+                    <div x-data="{ open: false }" class="relative hidden md:block">
+                        <button @click="open = !open" 
+                                class="relative h-8 w-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors">
+                            <span class="text-sm font-medium">{{ user.userprofile.display_name|first|upper }}</span>
+                        </button>
+                        <div x-show="open" @click.away="open = false" 
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-56 bg-card border border-border rounded-md shadow-lg py-1">
+                            <!-- User Info Header -->
+                            <div class="px-4 py-3 border-b border-border">
+                                <div class="flex flex-col space-y-1">
+                                    <p class="text-sm font-medium leading-none">{{ user.userprofile.display_name }}</p>
+                                    <p class="text-xs leading-none text-muted-foreground">{{ user.phone_number }}</p>
+                                    <div class="flex items-center mt-2">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if user.userprofile.user_type == 'tipster' %}bg-green-900/20 text-green-400 border border-green-700{% else %}bg-blue-900/20 text-blue-400 border border-blue-700{% endif %}">
+                                            {{ user.userprofile.get_user_type_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Menu Items -->
+                            <div class="py-1">
+                                <a href="{% url 'users:profile' %}" class="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Profile
+                                </a>
+                                <a href="#" class="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Wallet (KES {{ user.userprofile.wallet_balance|floatformat:0 }})
+                                </a>
+                                {% if user.userprofile.user_type == 'tipster' %}
+                                <a href="{% url 'tips:create_tip' %}" class="flex items-center px-4 py-2 text-sm text-primary hover:bg-muted">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Create New Tip
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div class="border-t border-border py-1">
+                                <a href="{% url 'users:logout' %}" class="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                    </svg>
+                                    Log out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Login/Register Buttons -->
+                    <div class="hidden md:flex space-x-2">
+                        <a href="{% url 'users:login' %}" 
+                           class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-muted-foreground bg-transparent hover:bg-accent hover:text-accent-foreground transition-colors">
+                            Login
+                        </a>
+                        <a href="{% url 'users:register' %}" 
+                           class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                            Register
+                        </a>
+                    </div>
+                {% endif %}
+
+                <!-- Mobile Menu Button -->
+                <button x-data @click="$dispatch('toggle-mobile-menu')" 
+                        class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                        aria-label="Open navigation menu">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div x-data="{ open: false }" 
+             @toggle-mobile-menu.window="open = !open"
+             x-show="open" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="md:hidden border-t border-border bg-background">
+            <nav class="grid gap-4 text-lg font-medium mt-8 px-6 pb-6">
+                <!-- Mobile Navigation Links -->
+                <a href="{% url 'home' %}" 
+                   class="text-lg font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'home' %}text-primary{% else %}text-muted-foreground{% endif %}"
+                   @click="$dispatch('toggle-mobile-menu')">
+                    Home
+                </a>
+                <a href="{% url 'tips:marketplace' %}" 
+                   class="text-lg font-medium transition-colors hover:text-primary {% if 'tips' in request.resolver_match.url_name %}text-primary{% else %}text-muted-foreground{% endif %}"
+                   @click="$dispatch('toggle-mobile-menu')">
+                    Marketplace
+                </a>
+                
+                {% if user.is_authenticated %}
+                    {% if user.userprofile.user_type == 'tipster' %}
+                    <a href="{% url 'tips:my_tips' %}" 
+                       class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        My Tips
+                    </a>
+                    <a href="{% url 'tips:create_tip' %}" 
+                       class="text-lg font-medium transition-colors hover:text-primary text-primary"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        Create Tip
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'users:profile' %}" 
+                       class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        My Profile
+                    </a>
+                    <a href="{% url 'users:logout' %}" 
+                       class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        Log out
+                    </a>
+                {% else %}
+                    <a href="{% url 'users:login' %}" 
+                       class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        Login
+                    </a>
+                    <a href="{% url 'users:register' %}" 
+                       class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        Register
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    {% if messages %}
+        <div class="max-w-[1008px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded-md border {% if message.tags == 'error' %}bg-red-900/20 border-red-700 text-red-200{% elif message.tags == 'success' %}bg-green-900/20 border-green-700 text-green-200{% elif message.tags == 'warning' %}bg-yellow-900/20 border-yellow-700 text-yellow-200{% else %}bg-blue-900/20 border-blue-700 text-blue-200{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-card border-t border-border mt-12">
+        <div class="max-w-[1008px] mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Ligisoo Tips</h3>
+                    <p class="text-muted-foreground text-sm">
+                        Premium football tips marketplace connecting expert tipsters with smart bettors.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Links</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="{% url 'tips:marketplace' %}" class="text-muted-foreground hover:text-accent">Marketplace</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-accent">Leaderboard</a></li>
+                        <li><a href="{% url 'home' %}" class="text-muted-foreground hover:text-accent">About</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Support</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-muted-foreground hover:text-accent">Help Center</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-accent">Privacy Policy</a></li>
+                        <li><a href="#" class="text-muted-foreground hover:text-accent">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-border mt-8 pt-8 text-center text-muted-foreground text-sm">
+                <p>&copy; {% now "Y" %} Ligisoo. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- HTMX Config -->
+    <script>
+        // Configure HTMX
+        htmx.config.globalViewTransitions = true;
+        htmx.config.defaultSwapStyle = 'innerHTML';
+        htmx.config.defaultSwapDelay = 100;
+        
+        // Add fade-in class to swapped content
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            event.detail.target.classList.add('fade-in');
+        });
+        
+        // Show loading state
+        document.body.addEventListener('htmx:beforeRequest', function(event) {
+            event.detail.elt.classList.add('htmx-request');
+        });
+        
+        document.body.addEventListener('htmx:afterRequest', function(event) {
+            event.detail.elt.classList.remove('htmx-request');
+        });
+
+        // Utility function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            const typeClasses = {
+                'success': 'bg-green-600 text-white',
+                'error': 'bg-red-600 text-white',
+                'warning': 'bg-yellow-600 text-white',
+                'info': 'bg-blue-600 text-white'
+            };
+            
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg ${typeClasses[type] || typeClasses.info}`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // Make functions globally available
+        window.getCookie = getCookie;
+        window.showToast = showToast;
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

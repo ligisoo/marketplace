@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block title %}Tip Details - Ligisoo{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'tips:marketplace' %}" class="text-primary hover:opacity-80 transition-opacity">
+            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Marketplace
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2">
+            <!-- Tip Header -->
+            <div class="bg-card border border-border rounded-lg p-6 mb-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        {% if has_purchased or user == tip.tipster %}
+                            <h1 class="text-2xl font-bold text-foreground">{{ tip.bet_code }}</h1>
+                        {% else %}
+                            <h1 class="text-2xl font-bold text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h1>
+                            <p class="text-xs text-yellow-600 mb-1">🔒 Full bet code visible after purchase</p>
+                        {% endif %}
+                        <p class="text-muted-foreground">{{ tip.get_bookmaker_display }} Betslip</p>
+                    </div>
+                    <div class="text-right">
+                        {% if tip.status == 'active' %}
+                            <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Active</span>
+                        {% elif tip.status == 'pending_approval' %}
+                            <span class="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs">Pending Approval</span>
+                        {% elif tip.status == 'archived' %}
+                            <span class="bg-secondary text-secondary-foreground px-2 py-1 rounded-full text-xs">Archived</span>
+                        {% else %}
+                            <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs">{{ tip.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="text-center">
+                        <p class="text-sm text-muted-foreground">Total Odds</p>
+                        <p class="text-xl font-bold text-green-400">{{ tip.odds }}x</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-muted-foreground">Price</p>
+                        <p class="text-xl font-bold text-primary">KES {{ tip.price }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-muted-foreground">Purchases</p>
+                        <p class="text-xl font-bold text-foreground">{{ tip.purchase_count }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-muted-foreground">Time Left</p>
+                        {% if tip.is_active %}
+                            <p class="text-xl font-bold text-red-600">
+                                {% if tip.time_until_expiry.days > 0 %}
+                                    {{ tip.time_until_expiry.days }}d
+                                {% else %}
+                                    Soon
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p class="text-xl font-bold text-muted-foreground">Expired</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Betslip Screenshot -->
+                {% if tip.screenshot %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-foreground mb-3">Betslip Screenshot</h3>
+                        {% if has_purchased or user == tip.tipster %}
+                            <div class="border border-border rounded-lg overflow-hidden">
+                                <img src="{{ tip.screenshot.url }}" alt="Betslip screenshot" 
+                                     class="w-full h-auto max-h-96 object-contain bg-gray-50">
+                            </div>
+                        {% else %}
+                            <div class="border border-border rounded-lg overflow-hidden relative">
+                                <img src="{{ tip.screenshot.url }}" alt="Betslip preview" 
+                                     class="w-full h-auto max-h-96 object-contain bg-gray-50 filter blur-sm">
+                                <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <div class="text-center text-white">
+                                        <svg class="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        <p class="font-medium">Purchase to view clear betslip</p>
+                                        <p class="text-sm opacity-80">Screenshot unlocked after payment</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Matches Detail -->
+            <div class="bg-card rounded-lg border border-border p-6">
+                <h3 class="text-lg font-medium text-foreground mb-4">Matches & Markets</h3>
+                
+                {% if has_purchased or user == tip.tipster %}
+                    <!-- Full details for purchasers and tipster -->
+                    <div class="space-y-4">
+                        {% for match in matches %}
+                            <div class="border border-border rounded-lg p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <h4 class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</h4>
+                                        <p class="text-sm text-muted-foreground">{{ match.league }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-medium text-green-600">{{ match.odds }}x</p>
+                                        <p class="text-sm text-muted-foreground">{{ match.match_date|date:"M j, H:i" }}</p>
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 rounded p-2">
+                                    <p class="text-sm"><strong>Market:</strong> {{ match.market }}</p>
+                                    <p class="text-sm"><strong>Selection:</strong> {{ match.selection }}</p>
+                                </div>
+                                {% if match.is_resulted %}
+                                    <div class="mt-2">
+                                        {% if match.is_won %}
+                                            <span class="badge badge-success">Won</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Lost</span>
+                                        {% endif %}
+                                        {% if match.actual_result %}
+                                            <span class="text-xs text-muted-foreground ml-2">{{ match.actual_result }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Preview for non-purchasers -->
+                    <div class="space-y-4">
+                        {% for match in tip.get_preview_matches %}
+                            <div class="border border-border rounded-lg p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</h4>
+                                        <p class="text-sm text-muted-foreground">{{ match.league }}</p>
+                                    </div>
+                                    <p class="text-sm text-muted-foreground">{{ match.market }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        {% if tip.preview_data.total_matches > 2 %}
+                            <div class="text-center p-4 bg-gray-50 rounded-lg">
+                                <p class="text-muted-foreground">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }}</p>
+                                <p class="text-sm text-muted-foreground mt-1">Purchase to see full details</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Purchase/Action Card -->
+            <div class="bg-card rounded-lg border border-border p-6 mb-6 sticky top-4">
+                {% if user == tip.tipster %}
+                    <!-- Tipster's own tip -->
+                    <div class="text-center">
+                        <h3 class="text-lg font-medium text-foreground mb-4">Your Tip</h3>
+                        <p class="text-muted-foreground mb-4">This is your tip. You can view all details and track performance.</p>
+                        <a href="{% url 'tips:my_tips' %}" class="w-full btn btn-secondary">
+                            View All My Tips
+                        </a>
+                    </div>
+                {% elif has_purchased %}
+                    <!-- Already purchased -->
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-green-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Purchased</h3>
+                        <p class="text-muted-foreground mb-4">You have full access to this tip's details and bet code.</p>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <p class="text-sm font-medium text-green-800">Bet Code</p>
+                            <p class="text-lg font-bold text-green-900 font-mono">{{ tip.bet_code }}</p>
+                        </div>
+                    </div>
+                {% elif can_purchase %}
+                    <!-- Can purchase -->
+                    <div class="text-center">
+                        <h3 class="text-lg font-medium text-foreground mb-4">Purchase This Tip</h3>
+                        <div class="mb-4">
+                            <p class="text-3xl font-bold text-primary">KES {{ tip.price }}</p>
+                            <p class="text-sm text-muted-foreground">One-time payment</p>
+                        </div>
+                        
+                        {% if user.is_authenticated %}
+                            {% if user.phone_number %}
+                                <button onclick="purchaseTipWithMpesa({{ tip.id }})" class="w-full btn btn-primary" id="purchase-btn">
+                                    Pay with M-Pesa
+                                </button>
+                                <p class="text-xs text-muted-foreground mt-2">
+                                    Pay to: {{ user.phone_number }}
+                                </p>
+                            {% else %}
+                                <div class="text-center">
+                                    <p class="text-red-600 mb-4">Phone number required for M-Pesa payment</p>
+                                    <a href="{% url 'users:profile' %}" class="w-full btn btn-secondary">Update Profile</a>
+                                    <p class="text-xs text-muted-foreground mt-2">
+                                        Please add your phone number to make payments
+                                    </p>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'users:login' %}?next={{ request.path }}" class="w-full btn btn-primary">
+                                Login to Purchase
+                            </a>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- Cannot purchase -->
+                    <div class="text-center">
+                        <h3 class="text-lg font-medium text-foreground mb-4">Tip Unavailable</h3>
+                        <p class="text-muted-foreground mb-4">
+                            {% if not tip.is_active %}
+                                This tip has expired or is no longer active.
+                            {% else %}
+                                This tip cannot be purchased at the moment.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tipster Info -->
+            <div class="bg-card rounded-lg border border-border p-6">
+                <h3 class="text-lg font-medium text-foreground mb-4">Tipster</h3>
+                <div class="flex items-center mb-4">
+                    {% if tip.tipster.userprofile.profile_picture %}
+                        <img src="{{ tip.tipster.userprofile.profile_picture.url }}" alt="{{ tip.tipster.userprofile.display_name }}" 
+                             class="w-12 h-12 rounded-full object-cover mr-3">
+                    {% else %}
+                        <div class="w-12 h-12 bg-muted rounded-full flex items-center justify-center mr-3">
+                            <span class="text-muted-foreground font-bold">{{ tip.tipster.phone_number.0|upper }}</span>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <p class="font-medium text-foreground">{{ tip.tipster.userprofile.display_name }}</p>
+                        {% if tip.tipster.userprofile.is_verified %}
+                            <span class="badge badge-success text-xs">Verified</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if tip.tipster.userprofile.bio %}
+                    <p class="text-sm text-muted-foreground mb-4">{{ tip.tipster.userprofile.bio|truncatewords:20 }}</p>
+                {% endif %}
+                
+                <a href="{% url 'tips:tipster_profile' tip.tipster.id %}" class="w-full btn btn-secondary text-center block">
+                    View Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if can_purchase and user.is_authenticated and user.phone_number %}
+<script>
+let paymentCheckInterval;
+
+function purchaseTipWithMpesa(tipId) {
+    const btn = document.getElementById('purchase-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Initiating payment...';
+    
+    fetch('/payments/api/initiate-tip-payment/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            tip_id: tipId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.checkout_request_id) {
+            showToast(data.message, 'success');
+            btn.innerHTML = '<span class="spinner"></span> Check your phone...';
+            
+            // Start polling for payment status
+            pollPaymentStatus(data.checkout_request_id, tipId);
+        } else {
+            showToast(data.error || 'Payment initiation failed', 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Pay with M-Pesa';
+        }
+    })
+    .catch(error => {
+        showToast('An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Pay with M-Pesa';
+    });
+}
+
+function pollPaymentStatus(checkoutRequestId, tipId) {
+    let attempts = 0;
+    const maxAttempts = 60; // Poll for 5 minutes (60 * 5 seconds)
+    
+    paymentCheckInterval = setInterval(() => {
+        attempts++;
+        
+        fetch(`/payments/api/status/${checkoutRequestId}/`, {
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                clearInterval(paymentCheckInterval);
+                showToast('Payment successful! Tip purchased.', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else if (data.status === 'failed') {
+                clearInterval(paymentCheckInterval);
+                showToast('Payment failed. Please try again.', 'error');
+                const btn = document.getElementById('purchase-btn');
+                btn.disabled = false;
+                btn.innerHTML = 'Pay with M-Pesa';
+            } else if (attempts >= maxAttempts) {
+                clearInterval(paymentCheckInterval);
+                showToast('Payment status check timeout. Please refresh page to check status.', 'warning');
+                const btn = document.getElementById('purchase-btn');
+                btn.disabled = false;
+                btn.innerHTML = 'Pay with M-Pesa';
+            }
+        })
+        .catch(error => {
+            if (attempts >= maxAttempts) {
+                clearInterval(paymentCheckInterval);
+                showToast('Payment status check failed. Please refresh page.', 'error');
+                const btn = document.getElementById('purchase-btn');
+                btn.disabled = false;
+                btn.innerHTML = 'Pay with M-Pesa';
+            }
+        });
+    }, 5000); // Check every 5 seconds
+}
+</script>
+{% endif %}
+{% endblock %}

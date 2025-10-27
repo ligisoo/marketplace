@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ligisoo - Football Tips Marketplace{% endblock %}</title>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    
+    <!-- Tailwind CSS CDN for development -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PT Sans font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    
+    <style>
+        :root {
+            --background: hsl(227, 27%, 14%);
+            --card: hsl(227, 27%, 18%);
+            --primary: hsl(120, 50%, 60%); /* Bright Green */
+            --primary-foreground: hsl(227, 27%, 14%);
+            --secondary: hsl(227, 27%, 20%);
+            --secondary-foreground: hsl(0, 0%, 98%);
+            --muted: hsl(227, 27%, 25%);
+            --muted-foreground: hsl(0, 0%, 65%);
+            --accent: hsl(39, 86%, 62%); /* Gold/Yellow */
+            --accent-foreground: hsl(227, 27%, 14%);
+            --destructive: hsl(0, 62%, 30%);
+            --border: hsl(227, 27%, 22%);
+            --input: hsl(227, 27%, 22%);
+            --ring: hsl(224, 71%, 4%);
+            --foreground: hsl(0, 0%, 98%);
+        }
+        
+        body {
+            font-family: 'PT Sans', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+        }
+        
+        .text-primary { color: var(--primary); }
+        .bg-primary { background-color: var(--primary); }
+        .bg-card { background-color: var(--card); }
+        .bg-secondary { background-color: var(--secondary); }
+        .text-muted-foreground { color: var(--muted-foreground); }
+        .border-border { border-color: var(--border); }
+        .hover\:bg-accent:hover { background-color: var(--accent); }
+        .hover\:text-accent-foreground:hover { color: var(--accent-foreground); }
+        .text-accent { color: var(--accent); }
+        .bg-accent { background-color: var(--accent); }
+        
+        /* Better dropdown styling */
+        [x-show] {
+            background-color: var(--card) !important;
+            border: 1px solid var(--border) !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        /* Enhanced text legibility */
+        body {
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            line-height: 1.4;
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col" style="background-color: var(--background); color: var(--foreground);">
+    <!-- Navigation -->
+    <nav class="border-b" style="background-color: var(--card); border-color: var(--border);" x-data="{ open: false, userDropdown: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-primary">Ligisoo</a>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'tips:marketplace' %}" class="text-foreground hover:text-primary transition-colors">Marketplace</a>
+                        {% if user.userprofile.user_type == 'tipster' %}
+                            <a href="{% url 'tips:my_tips' %}" class="text-foreground hover:text-primary transition-colors">My Tips</a>
+                            <a href="{% url 'tips:create_tip' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Post Tip</a>
+                        {% endif %}
+                        
+                        <!-- User dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="flex items-center text-foreground hover:text-primary">
+                                {{ user.userprofile.display_name }}
+                                <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                            <div x-show="open" @click.away="open = false" 
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 rounded-md border border-border z-50"
+                                 style="background-color: var(--card); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);">
+                                <div class="py-1">
+                                    <a href="{% url 'users:profile' %}" class="block px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">Profile</a>
+                                    <a href="#" class="block px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+                                        <span class="text-accent font-semibold">KES {{ user.userprofile.wallet_balance }}</span>
+                                        <span class="text-muted-foreground text-xs block">Wallet Balance</span>
+                                    </a>
+                                    <div class="border-t border-border my-1"></div>
+                                    <a href="{% url 'users:logout' %}" class="block px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors">Logout</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="text-foreground hover:text-primary transition-colors">Login</a>
+                        <a href="{% url 'users:register' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Register</a>
+                    {% endif %}
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button @click="open = !open" class="text-foreground hover:text-primary">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path x-show="!open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div x-show="open" class="md:hidden border-t border-border" style="background-color: var(--card);">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'tips:marketplace' %}" class="block px-3 py-2 text-foreground hover:text-primary">Marketplace</a>
+                    {% if user.userprofile.user_type == 'tipster' %}
+                        <a href="{% url 'tips:my_tips' %}" class="block px-3 py-2 text-foreground hover:text-primary">My Tips</a>
+                        <a href="{% url 'tips:create_tip' %}" class="block px-3 py-2 text-foreground hover:text-primary">Post Tip</a>
+                    {% endif %}
+                    <a href="{% url 'users:profile' %}" class="block px-3 py-2 text-foreground hover:text-primary">Profile</a>
+                    <a href="#" class="block px-3 py-2 text-foreground hover:text-primary">Wallet (KES {{ user.userprofile.wallet_balance }})</a>
+                    <a href="{% url 'users:logout' %}" class="block px-3 py-2 text-foreground hover:text-primary">Logout</a>
+                {% else %}
+                    <a href="{% url 'users:login' %}" class="block px-3 py-2 text-foreground hover:text-primary">Login</a>
+                    <a href="{% url 'users:register' %}" class="block px-3 py-2 text-foreground hover:text-primary">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {% for message in messages %}
+                <div class="p-4 mb-4 rounded-md border
+                    {% if message.tags == 'success' %}border-green-500 bg-green-500/10 text-green-400
+                    {% elif message.tags == 'error' %}border-red-500 bg-red-500/10 text-red-400
+                    {% elif message.tags == 'warning' %}border-yellow-500 bg-yellow-500/10 text-yellow-400
+                    {% else %}border-blue-500 bg-blue-500/10 text-blue-400{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main content -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t mt-auto" style="background-color: var(--card); border-color: var(--border);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4 text-foreground">Ligisoo</h3>
+                    <p class="text-muted-foreground">Football tips marketplace connecting expert tipsters with smart bettors.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4 text-foreground">Quick Links</h3>
+                    <ul class="space-y-2 text-muted-foreground">
+                        <li><a href="/" class="hover:text-primary transition-colors">Home</a></li>
+                        <li><a href="{% url 'tips:marketplace' %}" class="hover:text-primary transition-colors">Marketplace</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Leaderboard</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4 text-foreground">Support</h3>
+                    <ul class="space-y-2 text-muted-foreground">
+                        <li><a href="#" class="hover:text-primary transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
+                <p>&copy; 2024 Ligisoo. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="{% static 'js/custom.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

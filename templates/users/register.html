@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Ligisoo{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Create Account</h2>
+    
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number *</label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.phone_number.errors }}</div>
+            {% endif %}
+            <p class="text-sm text-gray-500 mt-1">Format: 0712345678</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.username.errors }}</div>
+            {% endif %}
+            <p class="text-sm text-gray-500 mt-1">Optional - will use phone number if not provided</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.user_type.id_for_label }}" class="form-label">Account Type *</label>
+            {{ form.user_type }}
+            {% if form.user_type.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.user_type.errors }}</div>
+            {% endif %}
+            <div class="text-sm text-gray-500 mt-1">
+                <p><strong>Buyer:</strong> Purchase tips from tipsters</p>
+                <p><strong>Tipster:</strong> Sell your betting tips</p>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}" class="form-label">Password *</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.password1.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password *</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+                <div class="text-red-600 text-sm mt-1">{{ form.password2.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="w-full btn btn-primary">
+            Create Account
+        </button>
+        
+        <div class="text-center mt-4">
+            <p class="text-sm text-gray-600">
+                Already have an account? 
+                <a href="{% url 'users:login' %}" class="text-blue-600 hover:text-blue-800">Sign in</a>
+            </p>
+        </div>
+    </form>
+</div>
+{% endblock %}

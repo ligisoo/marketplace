@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Marketplace - Ligisoo{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-foreground mb-2">Football Tips Marketplace</h1>
+    <p class="text-muted-foreground">Browse expert tips from verified tipsters</p>
+</div>
+
+<!-- Search and Filters -->
+<div class="bg-card rounded-lg border border-border p-6 mb-6">
+    <form method="get" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                {{ form.search.label_tag }}
+                {{ form.search }}
+            </div>
+            <div>
+                {{ form.bookmaker.label_tag }}
+                {{ form.bookmaker }}
+            </div>
+            <div>
+                {{ form.min_odds.label_tag }}
+                {{ form.min_odds }}
+            </div>
+            <div>
+                {{ form.max_odds.label_tag }}
+                {{ form.max_odds }}
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                {{ form.min_price.label_tag }}
+                {{ form.min_price }}
+            </div>
+            <div>
+                {{ form.max_price.label_tag }}
+                {{ form.max_price }}
+            </div>
+            <div>
+                {{ form.sort_by.label_tag }}
+                {{ form.sort_by }}
+            </div>
+        </div>
+        
+        <div class="flex space-x-2">
+            <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Apply Filters</button>
+            <a href="{% url 'tips:marketplace' %}" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Clear Filters</a>
+        </div>
+    </form>
+</div>
+
+<!-- Tips Grid -->
+{% if tips %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for tip in tips %}
+            <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
+                        <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 🔒 Full code after purchase</p>
+                    </div>
+                    <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
+                </div>
+                
+                <div class="space-y-3">
+                    <!-- Preview Matches -->
+                    {% for match in tip.get_preview_matches %}
+                        <div class="mb-3 p-2 bg-secondary rounded">
+                            <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                            <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
+                        </div>
+                    {% endfor %}
+                    
+                    {% if tip.preview_data.total_matches > 2 %}
+                        <p class="text-xs text-muted-foreground">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-4 flex justify-between items-center">
+                        <div>
+                            <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
+                            <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-muted-foreground">by {{ tip.tipster.userprofile.display_name }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {% if tip.time_until_expiry.days > 0 %}
+                                    {{ tip.time_until_expiry.days }}d left
+                                {% elif tip.time_until_expiry.seconds > 3600 %}
+                                    {{ tip.time_until_expiry.seconds|floatformat:0|slice:":1" }}h left
+                                {% else %}
+                                    {{ tip.time_until_expiry.seconds|floatformat:0|slice:":2" }}m left
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-border">
+                    <a href="{% url 'tips:detail' tip.id %}" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-center block">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <div class="mt-8 flex justify-center">
+            <nav class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                       class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                       class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">Previous</a>
+                {% endif %}
+                
+                <span class="px-3 py-2 text-sm bg-primary text-primary-foreground rounded">
+                    {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                       class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" 
+                       class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">Last</a>
+                {% endif %}
+            </nav>
+        </div>
+    {% endif %}
+{% else %}
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-foreground">No tips available</h3>
+        <p class="mt-1 text-muted-foreground">Check back later for new betting tips from expert tipsters.</p>
+        {% if user.is_authenticated and user.userprofile.user_type == 'tipster' %}
+            <div class="mt-4">
+                <a href="{% url 'tips:create_tip' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Post Your First Tip</a>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
