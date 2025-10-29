@@ -20,7 +20,7 @@ class TipSubmissionForm(forms.ModelForm):
             'price': forms.NumberInput(attrs={
                 'class': 'form-input',
                 'placeholder': 'Tip price in KES',
-                'min': '10',
+                'min': '1',
                 'step': '1'
             }),
             'screenshot': forms.FileInput(attrs={
@@ -32,10 +32,10 @@ class TipSubmissionForm(forms.ModelForm):
     
     def clean_price(self):
         price = self.cleaned_data.get('price')
-        if price and price < 10:
-            raise ValidationError("Minimum tip price is KES 10")
-        if price and price > 10000:
-            raise ValidationError("Maximum tip price is KES 10,000")
+        if price and price < 1:
+            raise ValidationError("Minimum tip price is KES 1")
+        if price and price > 1000:
+            raise ValidationError("Maximum tip price is KES 1,000")
         return price
     
     def clean_screenshot(self):
