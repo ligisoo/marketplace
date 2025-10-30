@@ -21,13 +21,13 @@ class User(AbstractUser):
 
 class UserProfile(models.Model):
     """Extended user profile information"""
-    USER_TYPE_CHOICES = [
-        ('buyer', 'Buyer'),
-        ('tipster', 'Tipster'),
-    ]
-    
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='buyer')
+
+    # User roles - users can have multiple roles
+    is_buyer = models.BooleanField(default=True, help_text="Can purchase tips from tipsters")
+    is_tipster = models.BooleanField(default=False, help_text="Can share tips and earn revenue")
+
     bio = models.TextField(max_length=500, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -41,7 +41,13 @@ class UserProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.user.phone_number} - {self.get_user_type_display()}"
+        roles = []
+        if self.is_buyer:
+            roles.append("Buyer")
+        if self.is_tipster:
+            roles.append("Tipster")
+        role_str = ", ".join(roles) if roles else "No roles"
+        return f"{self.user.phone_number} - {role_str}"
     
     @property
     def display_name(self):
@@ -49,6 +55,16 @@ class UserProfile(models.Model):
         if self.user.username:
             return self.user.username
         return self.user.phone_number
+
+    @property
+    def user_roles(self):
+        """Return list of user's active roles"""
+        roles = []
+        if self.is_buyer:
+            roles.append('buyer')
+        if self.is_tipster:
+            roles.append('tipster')
+        return roles
 
 
 @receiver(post_save, sender=User)

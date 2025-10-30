@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from .models import Tip, TipMatch
 from .ocr import BetslipOCR
@@ -90,9 +91,12 @@ class TipVerificationForm(forms.Form):
         if self.ocr_data:
             self.fields['bet_code'].initial = self.ocr_data.get('bet_code', '')
             self.fields['total_odds'].initial = self.ocr_data.get('total_odds', '')
-            self.fields['expires_at'].initial = self.ocr_data.get('expires_at', 
-                timezone.now() + timedelta(hours=24)
-            )
+
+            # Parse expires_at from ISO string if present
+            expires_at = self.ocr_data.get('expires_at')
+            if isinstance(expires_at, str):
+                expires_at = parse_datetime(expires_at)
+            self.fields['expires_at'].initial = expires_at or (timezone.now() + timedelta(hours=24))
         
         # Add dynamic match fields
         for i, match in enumerate(self.matches_data):
@@ -149,9 +153,14 @@ class TipVerificationForm(forms.Form):
             })
         )
         
+        # Parse match_date from ISO string if present
+        match_date = match_data.get('match_date')
+        if isinstance(match_date, str):
+            match_date = parse_datetime(match_date)
+
         self.fields[f'{prefix}match_date'] = forms.DateTimeField(
             label='Match Date & Time',
-            initial=match_data.get('match_date', timezone.now() + timedelta(hours=24)),
+            initial=match_date or (timezone.now() + timedelta(hours=24)),
             widget=forms.DateTimeInput(attrs={
                 'class': 'form-input',
                 'type': 'datetime-local'

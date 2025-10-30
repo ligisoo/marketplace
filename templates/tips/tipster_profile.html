@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ tipster.userprofile.display_name }} - Tipster Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="{% url 'tips:marketplace' %}" class="text-primary hover:opacity-80 transition-opacity">
+            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Back to Marketplace
+        </a>
+    </div>
+
+    <!-- Tipster Profile Header -->
+    <div class="bg-card border border-border rounded-lg p-8 mb-6">
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+            <!-- Profile Picture -->
+            <div class="flex-shrink-0">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="{{ profile.display_name }}"
+                         class="w-32 h-32 rounded-full object-cover border-4 border-primary/20">
+                {% else %}
+                    <div class="w-32 h-32 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center border-4 border-primary/20">
+                        <span class="text-4xl font-bold text-primary-foreground">{{ tipster.phone_number.0|upper }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Tipster Info -->
+            <div class="flex-1 text-center md:text-left">
+                <div class="flex flex-col md:flex-row md:items-center gap-3 mb-3">
+                    <h1 class="text-3xl font-bold text-foreground">{{ profile.display_name }}</h1>
+                    {% if profile.is_verified %}
+                        <span class="inline-flex items-center px-3 py-1 bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            Verified Tipster
+                        </span>
+                    {% endif %}
+                </div>
+
+                {% if profile.bio %}
+                    <p class="text-muted-foreground mb-4 max-w-2xl">{{ profile.bio }}</p>
+                {% else %}
+                    <p class="text-muted-foreground italic mb-4">No bio provided yet.</p>
+                {% endif %}
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-muted/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-primary">{{ stats.total_tips }}</div>
+                        <div class="text-xs text-muted-foreground mt-1">Total Tips</div>
+                    </div>
+                    <div class="bg-muted/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-accent">{{ stats.won_tips }}</div>
+                        <div class="text-xs text-muted-foreground mt-1">Won Tips</div>
+                    </div>
+                    <div class="bg-muted/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold {% if stats.win_rate >= 70 %}text-green-600{% elif stats.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                            {{ stats.win_rate }}%
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
+                    </div>
+                    <div class="bg-muted/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-primary">KES {{ stats.total_sales|floatformat:0 }}</div>
+                        <div class="text-xs text-muted-foreground mt-1">Total Sales</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Tips Section -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-foreground">Active Tips</h2>
+            <span class="text-sm text-muted-foreground">{{ tips|length }} available</span>
+        </div>
+
+        {% if tips %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for tip in tips %}
+                    <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
+                                <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 🔒 Full code after purchase</p>
+                            </div>
+                            <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            <!-- Preview Matches -->
+                            {% for match in tip.get_preview_matches %}
+                                <div class="mb-3 p-2 bg-secondary rounded">
+                                    <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                    <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
+                                </div>
+                            {% endfor %}
+
+                            {% if tip.preview_data.total_matches > 2 %}
+                                <p class="text-xs text-muted-foreground">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }}</p>
+                            {% endif %}
+
+                            <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
+                                <div>
+                                    <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
+                                    <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-muted-foreground">
+                                        {% if tip.time_until_expiry.days > 0 %}
+                                            {{ tip.time_until_expiry.days }}d left
+                                        {% elif tip.time_until_expiry.seconds > 3600 %}
+                                            {{ tip.time_until_expiry.seconds|floatformat:0|slice:":1" }}h left
+                                        {% else %}
+                                            {{ tip.time_until_expiry.seconds|floatformat:0|slice:":2" }}m left
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <a href="{% url 'tips:detail' tip.id %}" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-center block">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-card border border-border rounded-lg p-12 text-center">
+                <svg class="mx-auto h-16 w-16 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-xl font-medium text-foreground mb-2">No Active Tips</h3>
+                <p class="text-muted-foreground">This tipster doesn't have any active tips at the moment.</p>
+                <p class="text-sm text-muted-foreground mt-2">Check back later for new betting insights!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Performance Section (if has resulted tips) -->
+    {% if stats.total_tips > 0 %}
+    <div class="bg-card border border-border rounded-lg p-6">
+        <h2 class="text-xl font-bold text-foreground mb-4">Performance Overview</h2>
+
+        <div class="space-y-4">
+            <!-- Win Rate Bar -->
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-muted-foreground">Win Rate</span>
+                    <span class="font-medium text-foreground">{{ stats.win_rate }}%</span>
+                </div>
+                <div class="w-full bg-muted rounded-full h-3 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-300 {% if stats.win_rate >= 70 %}bg-green-500{% elif stats.win_rate >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
+                         style="width: {{ stats.win_rate }}%"></div>
+                </div>
+            </div>
+
+            <!-- Success Breakdown -->
+            <div class="grid grid-cols-3 gap-4 text-center pt-4 border-t border-border">
+                <div>
+                    <div class="text-3xl font-bold text-green-600">{{ stats.won_tips }}</div>
+                    <div class="text-sm text-muted-foreground">Won</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-red-600">{{ stats.total_tips|add:"-stats.won_tips" }}</div>
+                    <div class="text-sm text-muted-foreground">Lost</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-primary">{{ stats.total_tips }}</div>
+                    <div class="text-sm text-muted-foreground">Total</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -45,8 +45,8 @@ def user_login(request):
                 if next_url:
                     return redirect(next_url)
                 
-                # Redirect based on user type
-                if user.userprofile.user_type == 'tipster':
+                # Redirect based on user roles
+                if user.userprofile.is_tipster:
                     return redirect('tips:my_tips')
                 else:
                     return redirect('tips:marketplace')
@@ -107,7 +107,7 @@ def public_profile(request, user_id):
     }
     
     # Add additional context for tipsters
-    if profile.user_type == 'tipster':
+    if profile.is_tipster:
         # TODO: Add tipster stats when tips app is implemented
         context.update({
             'is_tipster': True,

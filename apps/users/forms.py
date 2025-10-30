@@ -21,9 +21,15 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Optional username'
         })
     )
-    user_type = forms.ChoiceField(
-        choices=UserProfile.USER_TYPE_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-select'})
+    # User roles - multiple selection allowed
+    is_buyer = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
+    )
+    is_tipster = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
     )
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
@@ -47,19 +53,31 @@ class RegistrationForm(UserCreationForm):
         if User.objects.filter(phone_number=phone_number).exists():
             raise forms.ValidationError("This phone number is already registered.")
         return phone_number
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_buyer = cleaned_data.get('is_buyer')
+        is_tipster = cleaned_data.get('is_tipster')
+
+        # At least one role must be selected
+        if not is_buyer and not is_tipster:
+            raise forms.ValidationError("Please select at least one account type (Buyer or Tipster).")
+
+        return cleaned_data
     
     def save(self, commit=True):
         user = super().save(commit=False)
         user.phone_number = self.cleaned_data['phone_number']
         if self.cleaned_data.get('username'):
             user.username = self.cleaned_data['username']
-        
+
         if commit:
             user.save()
-            # Set user type in profile
-            user.userprofile.user_type = self.cleaned_data['user_type']
+            # Set user roles in profile
+            user.userprofile.is_buyer = self.cleaned_data.get('is_buyer', False)
+            user.userprofile.is_tipster = self.cleaned_data.get('is_tipster', False)
             user.userprofile.save()
-        
+
         return user
 
 

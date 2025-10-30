@@ -138,7 +138,7 @@
         </svg>
         <h3 class="mt-2 text-lg font-medium text-foreground">No tips available</h3>
         <p class="mt-1 text-muted-foreground">Check back later for new betting tips from expert tipsters.</p>
-        {% if user.is_authenticated and user.userprofile.user_type == 'tipster' %}
+        {% if user.is_authenticated and user.userprofile.is_tipster %}
             <div class="mt-4">
                 <a href="{% url 'tips:create_tip' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Post Your First Tip</a>
             </div>

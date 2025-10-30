@@ -109,7 +109,7 @@ def tip_detail(request, tip_id):
 @login_required
 def my_tips(request):
     """Tipster's dashboard showing their tips"""
-    if request.user.userprofile.user_type != 'tipster':
+    if not request.user.userprofile.is_tipster:
         messages.error(request, 'Only tipsters can access this page.')
         return redirect('tips:marketplace')
     
@@ -143,7 +143,7 @@ def my_tips(request):
 @login_required
 def create_tip(request):
     """Create a new tip - Step 1: Upload betslip"""
-    if request.user.userprofile.user_type != 'tipster':
+    if not request.user.userprofile.is_tipster:
         messages.error(request, 'Only tipsters can create tips.')
         return redirect('tips:marketplace')
     
@@ -270,7 +270,7 @@ def purchase_tip(request, tip_id):
             'error': 'This tip cannot be purchased at the moment.'
         })
     
-    if request.user.userprofile.user_type != 'buyer':
+    if not request.user.userprofile.is_buyer:
         return JsonResponse({
             'success': False,
             'error': 'Only buyers can purchase tips.'
@@ -342,7 +342,7 @@ def tipster_profile(request, tipster_id):
     tipster = get_object_or_404(
         User,
         id=tipster_id,
-        userprofile__user_type='tipster'
+        userprofile__is_tipster=True
     )
     
     # Get tipster's active tips

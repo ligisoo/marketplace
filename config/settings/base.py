@@ -156,3 +156,8 @@ MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
 MPESA_SHORTCODE = config('MPESA_SHORTCODE', default='')
 MPESA_TILL_NUMBER = config('MPESA_TILL_NUMBER', default='')
 MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+
+# AWS Configuration for Textract OCR
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_S3_REGION_NAME = config('AWS_REGION_NAME', default='us-east-1')
