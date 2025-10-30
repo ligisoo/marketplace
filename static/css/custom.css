@@ -1,0 +1,203 @@
+/* Custom CSS for Ligisoo Tips Marketplace */
+
+/* HTMX Indicator */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 2px solid #374151;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Fade-in animation for HTMX swapped content */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modern tip card styling */
+.tip-card {
+    background: hsl(227, 27%, 18%);
+    border: 1px solid hsl(227, 27%, 22%);
+    transition: all 0.3s ease;
+}
+
+.tip-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: hsl(120, 50%, 60%);
+}
+
+/* Form Input Styling - Higher specificity to override Tailwind */
+.form-input,
+.form-select,
+input.form-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="file"],
+select,
+textarea {
+    width: 100% !important;
+    padding: 0.625rem 0.875rem !important;
+    background-color: hsl(227, 27%, 20%) !important;
+    border: 1px solid hsl(227, 27%, 22%) !important;
+    border-radius: 0.375rem !important;
+    color: hsl(0, 0%, 98%) !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease !important;
+    line-height: 1.5 !important;
+}
+
+.form-input:focus,
+.form-select:focus,
+input.form-input:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+select:focus,
+textarea:focus {
+    outline: none !important;
+    border-color: hsl(120, 50%, 60%) !important;
+    box-shadow: 0 0 0 3px hsla(120, 50%, 60%, 0.1) !important;
+}
+
+.form-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: hsl(0, 0%, 65%) !important;
+}
+
+/* Special styling for file inputs */
+input[type="file"] {
+    padding: 0.5rem !important;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    padding: 0.5rem 1rem !important;
+    background-color: hsl(227, 27%, 25%) !important;
+    border: 1px solid hsl(227, 27%, 22%) !important;
+    border-radius: 0.375rem !important;
+    color: hsl(0, 0%, 98%) !important;
+    cursor: pointer;
+    margin-right: 1rem;
+    transition: all 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background-color: hsl(120, 50%, 60%) !important;
+    color: hsl(227, 27%, 14%) !important;
+}
+
+/* Price input with KES prefix */
+.price-input {
+    padding-left: 4.5rem !important;
+}
+
+/* Form Labels */
+.form-label,
+label {
+    display: block !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: hsl(0, 0%, 98%) !important;
+    margin-bottom: 0.375rem !important;
+}
+
+/* Select dropdown arrow */
+.form-select,
+select {
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+    background-position: right 0.5rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1.5em 1.5em !important;
+    padding-right: 2.5rem !important;
+}
+
+/* Button Styling */
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.625rem 1.25rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    border-radius: 0.375rem !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+.btn-primary {
+    background-color: hsl(120, 50%, 60%) !important;
+    color: hsl(227, 27%, 14%) !important;
+}
+
+.btn-primary:hover {
+    background-color: hsl(120, 50%, 55%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsla(120, 50%, 60%, 0.3);
+}
+
+.btn-secondary {
+    background-color: hsl(227, 27%, 20%) !important;
+    color: hsl(0, 0%, 98%) !important;
+    border: 1px solid hsl(227, 27%, 22%) !important;
+}
+
+.btn-secondary:hover {
+    background-color: hsl(227, 27%, 25%) !important;
+}
+
+/* Form Group */
+.form-group {
+    margin-bottom: 1.25rem !important;
+}
+
+/* Alert/Error Styling */
+.alert {
+    padding: 0.875rem 1rem !important;
+    border-radius: 0.375rem !important;
+    margin-bottom: 1rem !important;
+    font-size: 0.875rem !important;
+}
+
+.alert-danger {
+    background-color: hsla(0, 62%, 30%, 0.2) !important;
+    border: 1px solid hsl(0, 62%, 30%) !important;
+    color: hsl(0, 70%, 60%) !important;
+}
+
+.alert-success {
+    background-color: hsla(120, 50%, 40%, 0.2) !important;
+    border: 1px solid hsl(120, 50%, 40%) !important;
+    color: hsl(120, 50%, 60%) !important;
+}
