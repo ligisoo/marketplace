@@ -3,44 +3,54 @@
 {% block title %}Login - Ligisoo{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Sign In</h2>
-    
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {{ form.non_field_errors }}
+<div class="max-w-md mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-foreground mb-2">Welcome Back!</h1>
+        <p class="text-muted-foreground">Sign in to your Ligisoo account</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-card border border-border rounded-lg shadow-lg p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
+                {{ form.phone_number }}
+                {% if form.phone_number.errors %}
+                    <div class="text-red-400 text-sm mt-1">{{ form.phone_number.errors }}</div>
+                {% endif %}
             </div>
-        {% endif %}
-        
-        <div class="form-group">
-            <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
-            {{ form.phone_number }}
-            {% if form.phone_number.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.phone_number.errors }}</div>
-            {% endif %}
-        </div>
-        
-        <div class="form-group">
-            <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
-            {{ form.password }}
-            {% if form.password.errors %}
-                <div class="text-red-600 text-sm mt-1">{{ form.password.errors }}</div>
-            {% endif %}
-        </div>
-        
-        <button type="submit" class="w-full btn btn-primary">
-            Sign In
-        </button>
-        
-        <div class="text-center mt-4">
-            <p class="text-sm text-gray-600">
-                Don't have an account? 
-                <a href="{% url 'users:register' %}" class="text-blue-600 hover:text-blue-800">Create one</a>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="text-red-400 text-sm mt-1">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="w-full btn btn-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                </svg>
+                Sign In
+            </button>
+        </form>
+
+        <div class="mt-6 pt-6 border-t border-border text-center">
+            <p class="text-sm text-muted-foreground">
+                Don't have an account?
+                <a href="{% url 'users:register' %}" class="text-primary hover:text-primary/80 font-semibold transition-colors">Create one</a>
             </p>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock %}
