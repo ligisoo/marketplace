@@ -28,9 +28,7 @@
                     </svg>
                     Phone Number
                 </label>
-                <input type="tel" name="phone_number" id="{{ form.phone_number.id_for_label }}"
-                       class="form-input" placeholder="0712345678" required
-                       value="{{ form.phone_number.value|default:'' }}">
+                {{ form.phone_number }}
                 {% if form.phone_number.errors %}
                     <div class="text-red-400 text-sm mt-1">{{ form.phone_number.errors }}</div>
                 {% endif %}
@@ -43,8 +41,7 @@
                     </svg>
                     Password
                 </label>
-                <input type="password" name="password" id="{{ form.password.id_for_label }}"
-                       class="form-input" placeholder="Enter your password" required>
+                {{ form.password }}
                 {% if form.password.errors %}
                     <div class="text-red-400 text-sm mt-1">{{ form.password.errors }}</div>
                 {% endif %}
