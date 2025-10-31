@@ -5,71 +5,63 @@ from django.conf import settings
 
 
 class MpesaService:
-    """M-Pesa API integration service for tip purchases (STK)"""
-
+    """M-Pesa API integration service for tip purchases"""
+    
     def __init__(self):
         self.consumer_key = getattr(settings, 'MPESA_CONSUMER_KEY', '')
         self.consumer_secret = getattr(settings, 'MPESA_CONSUMER_SECRET', '')
-        self.shortcode = getattr(settings, 'MPESA_SHORTCODE', '')      # should be the Till for BuyGoods
-        self.till_number = getattr(settings, 'MPESA_TILL_NUMBER', '')  # should match the Till used for STK
+        self.shortcode = getattr(settings, 'MPESA_SHORTCODE', '')
+        self.till_number = getattr(settings, 'MPESA_TILL_NUMBER', '')
         self.passkey = getattr(settings, 'MPESA_PASSKEY', '')
-        self.env = getattr(settings, 'MPESA_ENV', 'production').lower()  # 'production' or 'sandbox'
-
-        # Development mode if any core cred is missing
+        
+        # Check if we're in development mode (no M-Pesa credentials)
         self.dev_mode = not all([
-            str(self.consumer_key).strip(),
-            str(self.consumer_secret).strip(),
-            str(self.shortcode).strip(),
-            str(self.passkey).strip()
+            self.consumer_key and self.consumer_key.strip(),
+            self.consumer_secret and self.consumer_secret.strip(), 
+            self.shortcode and self.shortcode.strip(),
+            self.passkey and self.passkey.strip()
         ])
-
-        # Base URLs
-        base = "https://api.safaricom.co.ke" if self.env == "production" else "https://sandbox.safaricom.co.ke"
-        self.auth_url = f"{base}/oauth/v1/generate?grant_type=client_credentials"
-        self.stk_push_url = f"{base}/mpesa/stkpush/v1/processrequest"
-
-        # For BuyGoods/Till STK, these MUST match and be the Till
-        # If MPESA_TILL_NUMBER is set, force BusinessShortCode to it
-        if self.till_number:
-            self.business_shortcode = self.till_number
-        else:
-            self.business_shortcode = self.shortcode
-
-        # Hard guard: BuyGoods requires BSC == PartyB and = Till
+        
         if not self.dev_mode:
-            if not self.business_shortcode or not self.business_shortcode.isdigit():
-                raise ValueError("Invalid BusinessShortCode/Till. Ensure MPESA_TILL_NUMBER or MPESA_SHORTCODE is set to your Till number.")
-            if self.till_number and self.business_shortcode != self.till_number:
-                raise ValueError("For CustomerBuyGoodsOnline, BusinessShortCode must equal PartyB and both must be the Till number. Set MPESA_SHORTCODE=MPESA_TILL_NUMBER.")
-            # At this point, for BuyGoods we consider:
-            # BusinessShortCode == PartyB == Till number
-            # Passkey must be for this exact Till.
-
+            # M-Pesa API URLs (production)
+            self.auth_url = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+            self.stk_push_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        
     def get_access_token(self):
         """Get M-Pesa access token"""
         try:
+            # Create authorization string
             auth_string = f"{self.consumer_key}:{self.consumer_secret}"
-            auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
-            headers = {'Authorization': f'Basic {auth_base64}'}
-            response = requests.get(self.auth_url, headers=headers, timeout=30)
-            data = response.json()
-            if response.status_code == 200 and 'access_token' in data:
-                return data['access_token']
-            raise Exception(f"Failed to get access token: {data}")
+            auth_bytes = auth_string.encode('utf-8')
+            auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
+            
+            headers = {
+                'Authorization': f'Basic {auth_base64}'
+            }
+            
+            response = requests.get(self.auth_url, headers=headers)
+            response_data = response.json()
+            
+            if response.status_code == 200:
+                return response_data['access_token']
+            else:
+                raise Exception(f"Failed to get access token: {response_data}")
+                
         except Exception as e:
             raise Exception(f"M-Pesa authentication failed: {str(e)}")
-
+    
     def generate_password(self):
-        """Generate M-Pesa STK password for BuyGoods (Till)"""
+        """Generate M-Pesa STK push password"""
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        # IMPORTANT: password uses BusinessShortCode (the Till), not an unrelated shortcode.
-        password_raw = f"{self.business_shortcode}{self.passkey}{timestamp}"
-        password = base64.b64encode(password_raw.encode('utf-8')).decode('utf-8')
-        return password, timestamp
-
+        password_string = f"{self.shortcode}{self.passkey}{timestamp}"
+        password_bytes = password_string.encode('utf-8')
+        password_base64 = base64.b64encode(password_bytes).decode('utf-8')
+        
+        return password_base64, timestamp
+    
     def initiate_stk_push(self, phone_number, amount, account_reference, transaction_desc, callback_url):
-        """Initiate M-Pesa STK Push payment for tip purchase (BuyGoods/Till)"""
-
+        """Initiate M-Pesa STK Push payment for tip purchase"""
+        
         # Development mode simulation
         if self.dev_mode:
             import uuid
@@ -81,60 +73,61 @@ class MpesaService:
                 'response_code': '0',
                 'response_description': 'Development mode simulation'
             }
-
+        
         try:
+            # Get access token
             access_token = self.get_access_token()
+            
+            # Generate password and timestamp
             password, timestamp = self.generate_password()
-
-            # Normalize phone -> 2547XXXXXXXX
-            msisdn = phone_number.replace('+', '').replace(' ', '').replace('-', '')
-            if msisdn.startswith('0'):
-                msisdn = '254' + msisdn[1:]
-            elif not msisdn.startswith('254'):
-                msisdn = '254' + msisdn
-
-            # Keep short per Daraja guidelines
-            account_ref = (account_reference or '')[:12]
-            txn_desc = (transaction_desc or '')[:20]
-
+            
+            # Format phone number to 254XXXXXXXXX format
+            phone_number = phone_number.replace('+', '').replace(' ', '').replace('-', '')
+            if phone_number.startswith('0'):
+                phone_number = '254' + phone_number[1:]
+            elif not phone_number.startswith('254'):
+                phone_number = '254' + phone_number
+            
+            # STK Push payload for tip purchases
             payload = {
-                "BusinessShortCode": self.business_shortcode,          # Till number
+                "BusinessShortCode": self.shortcode,
                 "Password": password,
                 "Timestamp": timestamp,
                 "TransactionType": "CustomerBuyGoodsOnline",
                 "Amount": int(amount),
-                "PartyA": msisdn,                                      # customer
-                "PartyB": self.business_shortcode,                     # MUST match BSC and be the Till
-                "PhoneNumber": msisdn,
-                "CallBackURL": callback_url,                           # must be public HTTPS and respond 200 fast
-                "AccountReference": account_ref,
-                "TransactionDesc": txn_desc
+                "PartyA": phone_number,
+                "PartyB": self.till_number,
+                "PhoneNumber": phone_number,
+                "CallBackURL": callback_url,
+                "AccountReference": account_reference,
+                "TransactionDesc": transaction_desc
             }
-
+            
             headers = {
                 'Authorization': f'Bearer {access_token}',
                 'Content-Type': 'application/json'
             }
-
-            response = requests.post(self.stk_push_url, json=payload, headers=headers, timeout=30)
-            try:
-                data = response.json()
-            except ValueError:
-                data = {"raw": response.text}
-
-            ok = (response.status_code == 200) and (data.get('ResponseCode') == '0')
-
-            return {
-                'success': ok,
-                'http_status': response.status_code,
-                'payload_sent': payload,
-                'raw_response': data,
-                'checkout_request_id': data.get('CheckoutRequestID'),
-                'merchant_request_id': data.get('MerchantRequestID'),
-                'customer_message': data.get('CustomerMessage'),
-                'error': None if ok else (data.get('errorMessage') or data.get('ResponseDescription') or 'STK Push failed')
-            }
-
+            
+            response = requests.post(self.stk_push_url, json=payload, headers=headers)
+            response_data = response.json()
+            
+            if response.status_code == 200 and response_data.get('ResponseCode') == '0':
+                return {
+                    'success': True,
+                    'checkout_request_id': response_data.get('CheckoutRequestID'),
+                    'merchant_request_id': response_data.get('MerchantRequestID'),
+                    'customer_message': response_data.get('CustomerMessage'),
+                    'response_code': response_data.get('ResponseCode'),
+                    'response_description': response_data.get('ResponseDescription')
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': response_data.get('errorMessage', 'STK Push failed'),
+                    'response_code': response_data.get('ResponseCode'),
+                    'response_description': response_data.get('ResponseDescription')
+                }
+                
         except Exception as e:
             return {
                 'success': False,
