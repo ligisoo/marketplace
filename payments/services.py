@@ -12,13 +12,16 @@ class MpesaService:
         self.consumer_secret = getattr(settings, 'MPESA_CONSUMER_SECRET', '')
         self.shortcode = getattr(settings, 'MPESA_SHORTCODE', '')
         self.till_number = getattr(settings, 'MPESA_TILL_NUMBER', '')
+        self.hono = getattr(settings, 'MPESA_HONO', '')
         self.passkey = getattr(settings, 'MPESA_PASSKEY', '')
         
         # Check if we're in development mode (no M-Pesa credentials)
         self.dev_mode = not all([
             self.consumer_key and self.consumer_key.strip(),
-            self.consumer_secret and self.consumer_secret.strip(), 
+            self.consumer_secret and self.consumer_secret.strip(),
             self.shortcode and self.shortcode.strip(),
+            self.hono and self.hono.strip(),
+            self.till_number and self.till_number.strip(),
             self.passkey and self.passkey.strip()
         ])
         
@@ -51,12 +54,15 @@ class MpesaService:
             raise Exception(f"M-Pesa authentication failed: {str(e)}")
     
     def generate_password(self):
-        """Generate M-Pesa STK push password"""
+        """Generate M-Pesa STK push password
+        For CustomerBuyGoodsOnline, uses HONO instead of shortcode
+        """
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        password_string = f"{self.shortcode}{self.passkey}{timestamp}"
+        # Use HONO for CustomerBuyGoodsOnline transactions
+        password_string = f"{self.hono}{self.passkey}{timestamp}"
         password_bytes = password_string.encode('utf-8')
         password_base64 = base64.b64encode(password_bytes).decode('utf-8')
-        
+
         return password_base64, timestamp
     
     def initiate_stk_push(self, phone_number, amount, account_reference, transaction_desc, callback_url):
@@ -89,8 +95,9 @@ class MpesaService:
                 phone_number = '254' + phone_number
             
             # STK Push payload for tip purchases
+            # For CustomerBuyGoodsOnline: BusinessShortCode = HONO, PartyB = Till Number
             payload = {
-                "BusinessShortCode": self.shortcode,
+                "BusinessShortCode": self.hono,
                 "Password": password,
                 "Timestamp": timestamp,
                 "TransactionType": "CustomerBuyGoodsOnline",
