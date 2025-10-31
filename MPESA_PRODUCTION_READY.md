@@ -21,7 +21,7 @@ Your Ligisoo marketplace now has **live M-Pesa payments enabled** with productio
 ✅ Till Number: 682249
 ✅ HONO: 901473
 ✅ Passkey: 739202... (configured)
-✅ Callback URL: https://ligisoo.co.ke/api/payment-webhook
+✅ Callback URL: https://ligisoo.co.ke/api/callback
 ✅ Environment: production
 ```
 
@@ -49,7 +49,7 @@ Added production credentials:
 - MPESA_TILL_NUMBER: 682249
 - MPESA_HONO: 901473
 - MPESA_PASSKEY (from ligisooke backup)
-- MPESA_CALLBACK_URL: https://ligisoo.co.ke/api/payment-webhook
+- MPESA_CALLBACK_URL: https://ligisoo.co.ke/api/callback
 - ENVIRONMENT: production
 
 ### 2. Django Settings (config/settings/base.py)
@@ -69,7 +69,7 @@ Changed callback URL from hardcoded to dynamic:
 callback_url = f"https://ligisoo.co.ke/payments/api/callback/"
 
 # After
-callback_url = getattr(settings, 'MPESA_CALLBACK_URL', 'https://ligisoo.co.ke/api/payment-webhook')
+callback_url = getattr(settings, 'MPESA_CALLBACK_URL', 'https://ligisoo.co.ke/api/callback')
 ```
 
 ### 4. URL Configuration (config/urls.py)
@@ -77,7 +77,7 @@ callback_url = getattr(settings, 'MPESA_CALLBACK_URL', 'https://ligisoo.co.ke/ap
 
 Added production callback alias:
 ```python
-path('api/payment-webhook', TipPaymentCallbackView.as_view(), name='mpesa_webhook_legacy')
+path('api/callback', TipPaymentCallbackView.as_view(), name='mpesa_webhook_legacy')
 ```
 
 **Purpose:** Support legacy production callback URL from ligisooke
@@ -95,14 +95,14 @@ path('api/payment-webhook', TipPaymentCallbackView.as_view(), name='mpesa_webhoo
 
 2. **Legacy (Production):**
    ```
-   POST /api/payment-webhook
+   POST /api/callback
    ```
 
 Both routes point to the same handler: `TipPaymentCallbackView`
 
 ### M-Pesa Will Call:
 ```
-https://ligisoo.co.ke/api/payment-webhook
+https://ligisoo.co.ke/api/callback
 ```
 
 **Important:** Ensure this URL is:
@@ -135,7 +135,7 @@ User enters M-Pesa PIN → Payment processes → M-Pesa sends callback
 
 ### 4. M-Pesa Callback
 ```
-POST https://ligisoo.co.ke/api/payment-webhook
+POST https://ligisoo.co.ke/api/callback
 ├── Updates TipPayment status
 ├── Creates TipPurchase record
 ├── Credits tipster wallet (60%)
@@ -177,7 +177,7 @@ Production mode uses **real M-Pesa transactions**. Start with small amounts!
 ### Test Checklist
 
 **Before First Real Payment:**
-- [ ] Verify callback URL is accessible at https://ligisoo.co.ke/api/payment-webhook
+- [ ] Verify callback URL is accessible at https://ligisoo.co.ke/api/callback
 - [ ] Confirm SSL certificate is valid
 - [ ] Check Daraja portal has callback URL registered
 - [ ] Test with KES 1-10 first
@@ -214,7 +214,7 @@ Production mode uses **real M-Pesa transactions**. Start with small amounts!
 tail -f /var/log/django/app.log
 
 # Watch M-Pesa callbacks
-tail -f /var/log/nginx/access.log | grep payment-webhook
+tail -f /var/log/nginx/access.log | grep callback
 
 # Check payment records
 python manage.py shell -c "
@@ -266,14 +266,14 @@ grep "STK Push" /var/log/django/app.log
 **Symptoms:** Payment stuck in 'pending' status
 
 **Solutions:**
-1. Verify https://ligisoo.co.ke/api/payment-webhook is accessible
+1. Verify https://ligisoo.co.ke/api/callback is accessible
 2. Check SSL certificate is valid
 3. Verify callback URL in Daraja portal
 4. Check server logs for callback attempts
 
 **Check Callback Route:**
 ```bash
-curl -X POST https://ligisoo.co.ke/api/payment-webhook \
+curl -X POST https://ligisoo.co.ke/api/callback \
   -H "Content-Type: application/json" \
   -d '{"test": "connection"}'
 ```

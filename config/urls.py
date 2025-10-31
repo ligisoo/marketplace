@@ -31,7 +31,7 @@ urlpatterns = [
     path('payments/', include('payments.urls')),
 
     # M-Pesa callback alias for production (legacy URL)
-    path('api/payment-webhook', lambda request: __import__('payments.views', fromlist=['TipPaymentCallbackView']).TipPaymentCallbackView.as_view()(request), name='mpesa_webhook_legacy'),
+    path('api/callback', lambda request: __import__('payments.views', fromlist=['TipPaymentCallbackView']).TipPaymentCallbackView.as_view()(request), name='mpesa_webhook_legacy'),
 
     # path('transactions/', include('apps.transactions.urls')),
     # path('withdrawals/', include('apps.withdrawals.urls')),

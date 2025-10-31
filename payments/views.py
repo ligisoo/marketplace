@@ -88,7 +88,7 @@ class InitiateTipPaymentView(APIView):
             mpesa_service = MpesaService()
             
             # Get callback URL from settings
-            callback_url = getattr(settings, 'MPESA_CALLBACK_URL', 'https://ligisoo.co.ke/api/payment-webhook')
+            callback_url = getattr(settings, 'MPESA_CALLBACK_URL', 'https://ligisoo.co.ke/api/callback')
             
             # Initiate STK Push
             mpesa_result = mpesa_service.initiate_stk_push(
