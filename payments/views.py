@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 from .models import TipPayment
 from .services import MpesaService
@@ -130,18 +132,24 @@ class InitiateTipPaymentView(APIView):
             )
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TipPaymentCallbackView(APIView):
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         """Handle M-Pesa payment callback for tip purchases"""
+        import logging
+        logger = logging.getLogger(__name__)
+
         try:
             callback_data = request.data
-            
+            logger.info(f"M-Pesa callback received: {json.dumps(callback_data)}")
+
             # Extract checkout request ID from callback
             checkout_request_id = callback_data.get('Body', {}).get('stkCallback', {}).get('CheckoutRequestID')
-            
+
             if not checkout_request_id:
+                logger.error(f"Invalid callback data - no checkout request ID: {callback_data}")
                 return Response({'error': 'Invalid callback data'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Find payment
