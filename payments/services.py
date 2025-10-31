@@ -29,6 +29,7 @@ class MpesaService:
             # M-Pesa API URLs (production)
             self.auth_url = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
             self.stk_push_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+            self.stk_query_url = "https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query"
         
     def get_access_token(self):
         """Get M-Pesa access token"""
@@ -139,4 +140,60 @@ class MpesaService:
             return {
                 'success': False,
                 'error': f"STK Push initiation failed: {str(e)}"
+            }
+
+    def query_stk_push(self, checkout_request_id):
+        """Query the status of an STK Push transaction"""
+
+        # Development mode simulation
+        if self.dev_mode:
+            return {
+                'success': True,
+                'result_code': '0',
+                'result_desc': 'DEV MODE: Simulated success'
+            }
+
+        try:
+            # Get access token
+            access_token = self.get_access_token()
+
+            # Generate password and timestamp
+            password, timestamp = self.generate_password()
+
+            # Query payload
+            payload = {
+                "BusinessShortCode": self.hono,
+                "Password": password,
+                "Timestamp": timestamp,
+                "CheckoutRequestID": checkout_request_id
+            }
+
+            headers = {
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }
+
+            response = requests.post(self.stk_query_url, json=payload, headers=headers)
+            response_data = response.json()
+
+            if response.status_code == 200:
+                return {
+                    'success': True,
+                    'result_code': response_data.get('ResultCode'),
+                    'result_desc': response_data.get('ResultDesc'),
+                    'response_code': response_data.get('ResponseCode'),
+                    'response_description': response_data.get('ResponseDescription'),
+                    'raw_response': response_data
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': response_data.get('errorMessage', 'Query failed'),
+                    'raw_response': response_data
+                }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"STK Push query failed: {str(e)}"
             }

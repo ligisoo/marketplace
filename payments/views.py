@@ -214,7 +214,7 @@ class TipPaymentCallbackView(APIView):
 
 class TipPaymentStatusView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request, checkout_request_id):
         """Get tip payment status"""
         try:
@@ -222,7 +222,51 @@ class TipPaymentStatusView(APIView):
                 checkout_request_id=checkout_request_id,
                 user=request.user
             )
-            
+
+            # If payment is still pending, query M-Pesa for status
+            if payment.status == 'pending':
+                mpesa_service = MpesaService()
+                query_result = mpesa_service.query_stk_push(checkout_request_id)
+
+                if query_result.get('success'):
+                    result_code = str(query_result.get('result_code', ''))
+
+                    # ResultCode '0' means successful payment
+                    if result_code == '0':
+                        # Update payment to completed
+                        payment.status = 'completed'
+                        payment.mpesa_receipt_number = f"QUERY_{timezone.now().timestamp()}"
+                        payment.completed_at = timezone.now()
+                        payment.save()
+
+                        # Create TipPurchase record
+                        transaction_id = f"MPESA_{payment.tip.id}_{payment.user.id}_{timezone.now().timestamp()}"
+
+                        TipPurchase.objects.get_or_create(
+                            tip=payment.tip,
+                            buyer=payment.user,
+                            defaults={
+                                'amount': payment.amount,
+                                'transaction_id': transaction_id,
+                                'status': 'completed',
+                                'completed_at': timezone.now()
+                            }
+                        )
+
+                        # Add to tipster's earnings
+                        from decimal import Decimal
+                        tipster_earning = payment.amount * Decimal('0.6')
+                        payment.tip.tipster.userprofile.wallet_balance += tipster_earning
+                        payment.tip.tipster.userprofile.save()
+
+                    # ResultCode '1032' means user cancelled
+                    # ResultCode '1037' means timeout (user didn't enter PIN)
+                    # ResultCode '1' means insufficient funds
+                    elif result_code in ['1', '1032', '1037', '2001']:
+                        payment.status = 'failed'
+                        payment.response_description = query_result.get('result_desc', 'Payment failed')
+                        payment.save()
+
             return Response({
                 'checkout_request_id': checkout_request_id,
                 'status': payment.status,
@@ -233,9 +277,9 @@ class TipPaymentStatusView(APIView):
                 'created_at': payment.created_at,
                 'completed_at': payment.completed_at
             })
-            
+
         except TipPayment.DoesNotExist:
             return Response(
-                {'error': 'Payment not found'}, 
+                {'error': 'Payment not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
