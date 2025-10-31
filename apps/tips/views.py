@@ -369,5 +369,87 @@ def tipster_profile(request, tipster_id):
         'tips': tips,
         'stats': stats,
     }
-    
+
     return render(request, 'tips/tipster_profile.html', context)
+
+
+def leaderboard(request):
+    """Leaderboard showing top tipsters by various metrics"""
+    from django.contrib.auth import get_user_model
+    from django.db.models import Count, Sum, Q, Avg
+
+    User = get_user_model()
+
+    # Get all tipsters with their stats
+    tipsters = User.objects.filter(
+        userprofile__is_tipster=True
+    ).select_related('userprofile')
+
+    # Calculate stats for each tipster
+    leaderboard_data = []
+
+    for tipster in tipsters:
+        # Get all resulted tips
+        resulted_tips = Tip.objects.filter(
+            tipster=tipster,
+            is_resulted=True
+        )
+
+        # Get all tips
+        all_tips = Tip.objects.filter(tipster=tipster)
+
+        total_tips = resulted_tips.count()
+        won_tips = resulted_tips.filter(is_won=True).count()
+        win_rate = round((won_tips / total_tips * 100), 1) if total_tips > 0 else 0
+
+        # Calculate total sales
+        total_sales = sum(tip.revenue_generated for tip in all_tips)
+
+        # Calculate average odds
+        avg_odds = resulted_tips.aggregate(avg=Avg('odds'))['avg'] or 0
+
+        # Total purchases across all tips
+        total_purchases = sum(tip.purchase_count for tip in all_tips)
+
+        # Active tips count
+        active_tips = all_tips.filter(status='active').count()
+
+        # Only include tipsters with at least 1 resulted tip
+        if total_tips > 0:
+            leaderboard_data.append({
+                'tipster': tipster,
+                'profile': tipster.userprofile,
+                'total_tips': total_tips,
+                'won_tips': won_tips,
+                'win_rate': win_rate,
+                'total_sales': total_sales,
+                'avg_odds': round(avg_odds, 2),
+                'total_purchases': total_purchases,
+                'active_tips': active_tips,
+            })
+
+    # Default sorting
+    sort_by = request.GET.get('sort', 'win_rate')
+
+    # Sort leaderboard
+    if sort_by == 'win_rate':
+        leaderboard_data.sort(key=lambda x: (x['win_rate'], x['total_tips']), reverse=True)
+    elif sort_by == 'total_tips':
+        leaderboard_data.sort(key=lambda x: x['total_tips'], reverse=True)
+    elif sort_by == 'total_sales':
+        leaderboard_data.sort(key=lambda x: x['total_sales'], reverse=True)
+    elif sort_by == 'total_purchases':
+        leaderboard_data.sort(key=lambda x: x['total_purchases'], reverse=True)
+    else:
+        leaderboard_data.sort(key=lambda x: x['win_rate'], reverse=True)
+
+    # Add rank numbers
+    for idx, tipster_data in enumerate(leaderboard_data, 1):
+        tipster_data['rank'] = idx
+
+    context = {
+        'leaderboard': leaderboard_data,
+        'sort_by': sort_by,
+    }
+
+    return render(request, 'tips/leaderboard.html', context)

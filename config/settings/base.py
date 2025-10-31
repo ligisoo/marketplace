@@ -155,7 +155,10 @@ MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
 MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
 MPESA_SHORTCODE = config('MPESA_SHORTCODE', default='')
 MPESA_TILL_NUMBER = config('MPESA_TILL_NUMBER', default='')
+MPESA_HONO = config('MPESA_HONO', default='')
 MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
+MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://ligisoo.co.ke/api/payment-webhook')
+ENVIRONMENT = config('ENVIRONMENT', default='development')
 
 # AWS Configuration for Textract OCR
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')

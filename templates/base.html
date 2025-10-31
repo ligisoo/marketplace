@@ -79,8 +79,8 @@
                     My Tips
                 </a>
                 {% endif %}
-                <a href="#"
-                   class="text-sm font-medium transition-colors hover:text-primary text-muted-foreground">
+                <a href="{% url 'tips:leaderboard' %}"
+                   class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'leaderboard' %}text-primary{% else %}text-muted-foreground{% endif %}">
                     Leaderboard
                 </a>
             </nav>
@@ -201,6 +201,11 @@
                    class="text-lg font-medium transition-colors hover:text-primary {% if 'marketplace' in request.resolver_match.url_name %}text-primary{% else %}text-muted-foreground{% endif %}"
                    @click="$dispatch('toggle-mobile-menu')">
                     Marketplace
+                </a>
+                <a href="{% url 'tips:leaderboard' %}"
+                   class="text-lg font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'leaderboard' %}text-primary{% else %}text-muted-foreground{% endif %}"
+                   @click="$dispatch('toggle-mobile-menu')">
+                    Leaderboard
                 </a>
 
                 {% if user.is_authenticated %}
