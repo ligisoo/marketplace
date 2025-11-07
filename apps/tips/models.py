@@ -32,7 +32,8 @@ class Tip(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     
     # Screenshot and OCR data
-    screenshot = models.ImageField(upload_to='betslips/')
+    screenshot = models.ImageField(upload_to='betslips/', null=True, blank=True)
+    bet_sharing_link = models.URLField(max_length=500, null=True, blank=True, help_text='SportPesa bet sharing/referral link')
     match_details = models.JSONField(default=dict, help_text='OCR extracted match details')
     preview_data = models.JSONField(default=dict, help_text='Preview data for buyers')
     
@@ -185,6 +186,7 @@ class OCRProviderSettings(models.Model):
     OCR_PROVIDER_CHOICES = [
         ('textract', 'AWS Textract'),
         ('easyocr', 'EasyOCR'),
+        ('sportpesa', 'SportPesa Scraper'),
     ]
 
     provider = models.CharField(

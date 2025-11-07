@@ -2,6 +2,7 @@ import boto3
 import json
 import re
 import logging
+import asyncio
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
@@ -849,3 +850,230 @@ class BetslipOCR:
                 'success': False,
                 'error': f'Failed to process image: {str(e)}'
             }
+
+    async def _scrape_sportpesa_bet(self, url: str) -> dict:
+        """
+        Scrapes bet information from a SportPesa referral link using Playwright.
+
+        Args:
+            url: The SportPesa referral URL (e.g., https://www.ke.sportpesa.com/referral/MPCPYA)
+
+        Returns:
+            Dictionary containing bet information with matches, markets, odds, and picks
+        """
+        try:
+            from playwright.async_api import async_playwright
+        except ImportError:
+            return {
+                'error': 'Playwright is not installed. Please run: pip install playwright && playwright install chromium',
+                'url': url,
+                'scraped_at': datetime.now().isoformat()
+            }
+
+        async with async_playwright() as p:
+            # Launch browser
+            browser = await p.chromium.launch(headless=True)
+            context = await browser.new_context(
+                viewport={'width': 1920, 'height': 1080},
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            )
+            page = await context.new_page()
+
+            try:
+                logger.info(f"Navigating to SportPesa URL: {url}")
+                await page.goto(url, wait_until='domcontentloaded', timeout=60000)
+
+                # Wait for JavaScript to execute
+                logger.info("Waiting for content to load...")
+                await asyncio.sleep(5)
+
+                # Extract bet information
+                logger.info("Extracting bet data...")
+                bet_data = {
+                    'referral_code': url.split('/')[-1],
+                    'scraped_at': datetime.now().isoformat(),
+                    'matches': []
+                }
+
+                # Wait for betslip to load
+                try:
+                    await page.wait_for_selector('.betslip-content-bet', timeout=10000)
+                    logger.info("Betslip found!")
+                except Exception as e:
+                    logger.error(f"Betslip not found: {e}")
+                    return {
+                        'error': 'No betslip found on this page',
+                        'referral_code': url.split('/')[-1],
+                        'scraped_at': datetime.now().isoformat()
+                    }
+
+                # Find all bet items in the betslip
+                bet_elements = await page.query_selector_all('li.betslip-content-bet')
+                logger.info(f"Found {len(bet_elements)} bets in betslip")
+
+                for bet_element in bet_elements:
+                    try:
+                        # Extract teams
+                        teams_elem = await bet_element.query_selector('.betslip-game-name, [data-qa="selection-event-description"]')
+                        teams = await teams_elem.inner_text() if teams_elem else None
+
+                        # Extract market
+                        market_elem = await bet_element.query_selector('[data-qa="selection-market"]')
+                        market = await market_elem.inner_text() if market_elem else None
+
+                        # Extract pick
+                        pick_elem = await bet_element.query_selector('.your-pick, [data-qa="selection-your-pick"]')
+                        pick = await pick_elem.inner_text() if pick_elem else None
+
+                        # Extract odds
+                        odds_elem = await bet_element.query_selector('.betslip-bet-current-odd, [data-qa="selection-your-odd"]')
+                        odds = await odds_elem.inner_text() if odds_elem else None
+
+                        # Try to extract date (if available)
+                        date_elem = await bet_element.query_selector('[class*="date"], [class*="time"], time')
+                        date = await date_elem.inner_text() if date_elem else None
+
+                        match_info = {
+                            'teams': teams.strip() if teams else None,
+                            'market': market.strip() if market else None,
+                            'pick': pick.strip() if pick else None,
+                            'odds': odds.strip() if odds else None,
+                            'date': date.strip() if date else None,
+                        }
+
+                        bet_data['matches'].append(match_info)
+                        logger.info(f"Extracted: {teams} - {market} - {pick} @ {odds}")
+
+                    except Exception as e:
+                        logger.error(f"Error extracting bet data: {e}")
+                        continue
+
+                # Get total odds if available
+                try:
+                    total_odds_elem = await page.query_selector('.betslip-total-odd, [data-qa*="total-odd"]')
+                    if total_odds_elem:
+                        bet_data['total_odds'] = await total_odds_elem.inner_text()
+                except Exception as e:
+                    logger.error(f"Could not extract total odds: {e}")
+
+                return bet_data
+
+            except Exception as e:
+                return {
+                    'error': str(e),
+                    'url': url,
+                    'scraped_at': datetime.now().isoformat()
+                }
+            finally:
+                await browser.close()
+
+    def process_sportpesa_link(self, sharing_link: str):
+        """
+        Process a SportPesa bet sharing link and extract match information.
+
+        Args:
+            sharing_link: SportPesa referral/sharing URL
+
+        Returns:
+            Dictionary with success status and extracted data in OCR format
+        """
+        try:
+            logger.info(f"Processing SportPesa link: {sharing_link}")
+
+            # Run async scraper
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            scraped_data = loop.run_until_complete(self._scrape_sportpesa_bet(sharing_link))
+            loop.close()
+
+            # Check for errors
+            if 'error' in scraped_data:
+                return {
+                    'success': False,
+                    'error': scraped_data['error']
+                }
+
+            # Convert scraper format to OCR format
+            parsed_data = self._convert_sportpesa_to_ocr_format(scraped_data)
+
+            return {
+                'success': True,
+                'data': parsed_data,
+                'confidence': 95.0  # High confidence since data comes directly from SportPesa
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to process SportPesa link: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': f'Failed to process SportPesa link: {str(e)}'
+            }
+
+    def _convert_sportpesa_to_ocr_format(self, scraped_data: dict) -> dict:
+        """
+        Convert SportPesa scraper output to OCR format for consistency.
+
+        Args:
+            scraped_data: Data from SportPesa scraper
+
+        Returns:
+            Dictionary in OCR format
+        """
+        matches = []
+        total_odds = 1.0
+
+        for match in scraped_data.get('matches', []):
+            # Parse team names (format: "Team A – Team B")
+            teams_str = match.get('teams', '')
+            if '–' in teams_str:
+                team_parts = teams_str.split('–')
+                home_team = team_parts[0].strip()
+                away_team = team_parts[1].strip() if len(team_parts) > 1 else ''
+            elif ' - ' in teams_str:
+                team_parts = teams_str.split(' - ')
+                home_team = team_parts[0].strip()
+                away_team = team_parts[1].strip() if len(team_parts) > 1 else ''
+            elif ' vs ' in teams_str.lower():
+                team_parts = teams_str.lower().split(' vs ')
+                home_team = team_parts[0].strip().title()
+                away_team = team_parts[1].strip().title() if len(team_parts) > 1 else ''
+            else:
+                home_team = teams_str
+                away_team = ''
+
+            # Parse odds
+            odds_str = match.get('odds', '1.0')
+            try:
+                odds = float(odds_str)
+                total_odds *= odds
+            except (ValueError, TypeError):
+                odds = 1.0
+
+            # Build match object
+            match_obj = {
+                'home_team': home_team,
+                'away_team': away_team,
+                'league': 'SportPesa',  # Default league, will be Unknown League in DB
+                'market': match.get('market', 'Unknown'),
+                'selection': match.get('pick', 'Unknown'),
+                'odds': odds,
+                'match_date': match.get('date'),  # Usually null for referral links
+            }
+
+            matches.append(match_obj)
+
+        # Use scraped total odds if available, otherwise use calculated
+        if 'total_odds' in scraped_data:
+            try:
+                total_odds = float(scraped_data['total_odds'])
+            except (ValueError, TypeError):
+                pass
+
+        return {
+            'bet_code': scraped_data.get('referral_code', 'UNKNOWN'),
+            'total_odds': round(total_odds, 2),
+            'matches': matches,
+            'bookmaker': 'sportpesa',
+            'confidence': 95.0,
+            'scraped_at': scraped_data.get('scraped_at'),
+        }

@@ -8,11 +8,11 @@ from .ocr import BetslipOCR
 
 
 class TipSubmissionForm(forms.ModelForm):
-    """Form for initial tip submission with betslip upload"""
-    
+    """Form for initial tip submission with betslip upload or sharing link"""
+
     class Meta:
         model = Tip
-        fields = ['bookmaker', 'price', 'screenshot']
+        fields = ['bookmaker', 'price', 'screenshot', 'bet_sharing_link']
         widgets = {
             'bookmaker': forms.Select(attrs={
                 'class': 'form-select',
@@ -27,7 +27,12 @@ class TipSubmissionForm(forms.ModelForm):
             'screenshot': forms.FileInput(attrs={
                 'class': 'form-input',
                 'accept': 'image/*',
-                'required': True
+                'required': False
+            }),
+            'bet_sharing_link': forms.URLInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'https://www.ke.sportpesa.com/referral/YOUR_CODE',
+                'required': False
             })
         }
     
@@ -45,12 +50,55 @@ class TipSubmissionForm(forms.ModelForm):
             # Check file size (max 5MB)
             if screenshot.size > 5 * 1024 * 1024:
                 raise ValidationError("Image file too large (max 5MB)")
-            
+
             # Check file type
             if not screenshot.content_type.startswith('image/'):
                 raise ValidationError("File must be an image")
-        
+
         return screenshot
+
+    def clean_bet_sharing_link(self):
+        link = self.cleaned_data.get('bet_sharing_link')
+        if link:
+            # Basic validation for SportPesa referral links
+            if 'sportpesa.com/referral/' not in link.lower():
+                raise ValidationError("Please provide a valid SportPesa referral/sharing link")
+        return link
+
+    def clean(self):
+        cleaned_data = super().clean()
+        screenshot = cleaned_data.get('screenshot')
+        bet_sharing_link = cleaned_data.get('bet_sharing_link')
+
+        # Get active OCR provider
+        from .models import OCRProviderSettings
+        ocr_provider = OCRProviderSettings.get_active_provider()
+
+        if ocr_provider == 'sportpesa':
+            # SportPesa scraper requires bet sharing link
+            if not bet_sharing_link:
+                raise ValidationError({
+                    'bet_sharing_link': 'SportPesa scraper is active. Please provide a bet sharing link.'
+                })
+        else:
+            # OCR providers require screenshot
+            if not screenshot:
+                raise ValidationError({
+                    'screenshot': f'{ocr_provider.upper()} is active. Please upload a betslip screenshot.'
+                })
+
+        # Ensure only one input method is used
+        if screenshot and bet_sharing_link:
+            raise ValidationError(
+                'Please provide either a screenshot OR a bet sharing link, not both.'
+            )
+
+        if not screenshot and not bet_sharing_link:
+            raise ValidationError(
+                'Please provide either a betslip screenshot or a bet sharing link.'
+            )
+
+        return cleaned_data
 
 
 class TipVerificationForm(forms.Form):

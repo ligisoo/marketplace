@@ -165,27 +165,49 @@ def create_tip(request):
             tip.odds = 0  # Will be updated in verification step
             tip.expires_at = timezone.now()  # Will be updated in verification step
             tip.save()
-            
-            # Process OCR
-            ocr_service = BetslipOCR()
-            ocr_result = ocr_service.process_betslip_image(tip.screenshot)
-            
+
+            # Get active OCR provider
+            from .models import OCRProviderSettings
+            ocr_provider = OCRProviderSettings.get_active_provider()
+
+            # Process based on provider
+            ocr_service = BetslipOCR(provider=ocr_provider)
+
+            if ocr_provider == 'sportpesa' and tip.bet_sharing_link:
+                # Process SportPesa sharing link
+                ocr_result = ocr_service.process_sportpesa_link(tip.bet_sharing_link)
+            elif tip.screenshot:
+                # Process betslip screenshot with OCR
+                ocr_result = ocr_service.process_betslip_image(tip.screenshot)
+            else:
+                # Should not happen due to form validation
+                tip.delete()
+                messages.error(request, "No betslip screenshot or sharing link provided")
+                return render(request, 'tips/create_tip.html', {'form': form})
+
             if ocr_result['success']:
-                # Store OCR data
+                # Store extracted data
                 tip.match_details = ocr_result['data']
                 tip.ocr_confidence = ocr_result['confidence']
                 tip.save()
-                
+
                 # Redirect to verification step
                 return redirect('tips:verify_tip', tip_id=tip.id)
             else:
-                # OCR failed, delete tip and show error
+                # Processing failed, delete tip and show error
                 tip.delete()
                 messages.error(request, f"Failed to process betslip: {ocr_result.get('error', 'Unknown error')}")
     else:
         form = TipSubmissionForm()
-    
-    return render(request, 'tips/create_tip.html', {'form': form})
+
+    # Get active provider to pass to template
+    from .models import OCRProviderSettings
+    ocr_provider = OCRProviderSettings.get_active_provider()
+
+    return render(request, 'tips/create_tip.html', {
+        'form': form,
+        'ocr_provider': ocr_provider
+    })
 
 
 @login_required
