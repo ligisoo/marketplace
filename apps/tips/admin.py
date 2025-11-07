@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Tip, TipMatch, TipPurchase, TipView
+from .models import Tip, TipMatch, TipPurchase, TipView, OCRProviderSettings
 
 
 class TipMatchInline(admin.TabularInline):
@@ -71,3 +71,26 @@ class TipViewAdmin(admin.ModelAdmin):
     list_filter = ('viewed_at',)
     search_fields = ('tip__bet_code', 'user__username', 'ip_address')
     readonly_fields = ('tip', 'user', 'ip_address', 'user_agent', 'viewed_at')
+
+
+@admin.register(OCRProviderSettings)
+class OCRProviderSettingsAdmin(admin.ModelAdmin):
+    list_display = ('get_provider_display', 'updated_at', 'updated_by')
+    readonly_fields = ('updated_at', 'updated_by')
+
+    def has_add_permission(self, request):
+        # Only allow adding if no settings exist
+        return not OCRProviderSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        # Don't allow deletion to ensure settings always exist
+        return False
+
+    def save_model(self, request, obj, form, change):
+        # Set the user who updated the settings
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def get_provider_display(self, obj):
+        return obj.get_provider_display()
+    get_provider_display.short_description = 'Active OCR Provider'

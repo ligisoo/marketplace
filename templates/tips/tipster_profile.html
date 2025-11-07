@@ -54,20 +54,32 @@
                     <div class="bg-muted/30 rounded-lg p-4 text-center">
                         <div class="text-2xl font-bold text-primary">{{ stats.total_tips }}</div>
                         <div class="text-xs text-muted-foreground mt-1">Total Tips</div>
+                        {% if stats.active_tips > 0 %}
+                        <div class="text-xs text-green-600 dark:text-green-400 mt-1">{{ stats.active_tips }} active</div>
+                        {% endif %}
                     </div>
                     <div class="bg-muted/30 rounded-lg p-4 text-center">
                         <div class="text-2xl font-bold text-accent">{{ stats.won_tips }}</div>
                         <div class="text-xs text-muted-foreground mt-1">Won Tips</div>
                     </div>
                     <div class="bg-muted/30 rounded-lg p-4 text-center">
-                        <div class="text-2xl font-bold {% if stats.win_rate >= 70 %}text-green-600{% elif stats.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                            {{ stats.win_rate }}%
-                        </div>
-                        <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
+                        {% if stats.resulted_tips > 0 %}
+                            <div class="text-2xl font-bold {% if stats.win_rate >= 70 %}text-green-600{% elif stats.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ stats.win_rate }}%
+                            </div>
+                            <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
+                        {% else %}
+                            <div class="text-2xl font-bold text-muted-foreground">N/A</div>
+                            <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
+                            <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">No results yet</div>
+                        {% endif %}
                     </div>
                     <div class="bg-muted/30 rounded-lg p-4 text-center">
                         <div class="text-2xl font-bold text-primary">KES {{ stats.total_sales|floatformat:0 }}</div>
                         <div class="text-xs text-muted-foreground mt-1">Total Sales</div>
+                        {% if stats.total_purchases > 0 %}
+                        <div class="text-xs text-accent mt-1">{{ stats.total_purchases }} buyer{{ stats.total_purchases|pluralize }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

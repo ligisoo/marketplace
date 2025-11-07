@@ -61,6 +61,34 @@
             <span class="text-sm font-medium">OCR Confidence: {{ ocr_data.confidence|floatformat:1 }}%</span>
         </div>
         {% endif %}
+
+        <!-- Odds Validation -->
+        {% if ocr_data.odds_validation %}
+        <div class="mt-4 p-3 rounded-lg border {% if ocr_data.odds_validation.is_valid %}bg-green-500/10 border-green-500/30{% else %}bg-yellow-500/10 border-yellow-500/30{% endif %}">
+            <div class="flex items-start">
+                <svg class="w-5 h-5 mr-2 flex-shrink-0 {% if ocr_data.odds_validation.is_valid %}text-green-600{% else %}text-yellow-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {% if ocr_data.odds_validation.is_valid %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    {% else %}
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    {% endif %}
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm font-medium {% if ocr_data.odds_validation.is_valid %}text-green-700 dark:text-green-400{% else %}text-yellow-700 dark:text-yellow-400{% endif %}">
+                        {{ ocr_data.odds_validation.message }}
+                    </p>
+                    {% if not ocr_data.odds_validation.is_valid and ocr_data.odds_validation.calculated_odds %}
+                    <div class="mt-2 text-xs {% if ocr_data.odds_validation.is_valid %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %}">
+                        <p>Calculated (Match Odds ✕): <strong>{{ ocr_data.odds_validation.calculated_odds }}</strong></p>
+                        <p>Extracted (Total Odds): <strong>{{ ocr_data.odds_validation.extracted_odds }}</strong></p>
+                        <p>Difference: <strong>{{ ocr_data.odds_validation.difference }} ({{ ocr_data.odds_validation.difference_percentage }}%)</strong></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <p class="text-xs text-muted-foreground mt-2">Please review and correct any errors below</p>
     </div>
     {% endif %}
@@ -88,49 +116,39 @@
         {% endif %}
 
         <!-- General Bet Information -->
-        <div class="bg-card border border-border rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                General Information
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-card border border-border rounded-lg p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <!-- Bet Code -->
-                <div class="space-y-2">
-                    <label for="{{ form.bet_code.id_for_label }}" class="text-sm font-medium text-foreground">
+                <div>
+                    <label for="{{ form.bet_code.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
                         Bet Code *
                     </label>
                     {{ form.bet_code }}
                     {% if form.bet_code.errors %}
-                        <p class="text-sm text-destructive">{{ form.bet_code.errors.0 }}</p>
+                        <p class="text-xs text-destructive mt-1">{{ form.bet_code.errors.0 }}</p>
                     {% endif %}
-                    <p class="text-xs text-muted-foreground">The booking code from your betslip</p>
                 </div>
 
                 <!-- Total Odds -->
-                <div class="space-y-2">
-                    <label for="{{ form.total_odds.id_for_label }}" class="text-sm font-medium text-foreground">
+                <div>
+                    <label for="{{ form.total_odds.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
                         Total Odds *
                     </label>
                     {{ form.total_odds }}
                     {% if form.total_odds.errors %}
-                        <p class="text-sm text-destructive">{{ form.total_odds.errors.0 }}</p>
+                        <p class="text-xs text-destructive mt-1">{{ form.total_odds.errors.0 }}</p>
                     {% endif %}
-                    <p class="text-xs text-muted-foreground">Combined odds for all selections</p>
                 </div>
 
                 <!-- Expires At -->
-                <div class="space-y-2 md:col-span-2">
-                    <label for="{{ form.expires_at.id_for_label }}" class="text-sm font-medium text-foreground">
+                <div>
+                    <label for="{{ form.expires_at.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
                         Expires At *
                     </label>
                     {{ form.expires_at }}
                     {% if form.expires_at.errors %}
-                        <p class="text-sm text-destructive">{{ form.expires_at.errors.0 }}</p>
+                        <p class="text-xs text-destructive mt-1">{{ form.expires_at.errors.0 }}</p>
                     {% endif %}
-                    <p class="text-xs text-muted-foreground">When should this tip expire? (usually before first match kicks off)</p>
                 </div>
             </div>
         </div>
@@ -144,25 +162,53 @@
                 Match Details
             </h2>
 
-            <!-- Render all match fields dynamically -->
-            <div class="bg-card border border-border rounded-lg p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {% for field in form %}
-                        {% if 'match_' in field.name %}
-                            <div class="space-y-2 {% if 'league' in field.name %}md:col-span-2{% endif %}">
-                                <label for="{{ field.id_for_label }}" class="text-sm font-medium text-foreground">
-                                    {{ field.label }}
-                                </label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <p class="text-sm text-destructive">{{ field.errors.0 }}</p>
+            <!-- Editable Table for Matches -->
+            <div class="bg-card border border-border rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="matches-table">
+                        <thead>
+                            <tr>
+                                <th class="table-header">#</th>
+                                <th class="table-header">Home Team</th>
+                                <th class="table-header">Away Team</th>
+                                <th class="table-header">Market</th>
+                                <th class="table-header">Pick</th>
+                                <th class="table-header">Odds</th>
+                                <th class="table-header">Date & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in form %}
+                                {% if 'home_team' in field.name and 'match_' in field.name %}
+                                    {% with match_num=field.name|slice:"6:"|cut:"_home_team" %}
+                                    <tr class="table-row">
+                                        <td class="table-cell text-center">
+                                            <span class="match-number">{{ match_num|add:"1" }}</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <p class="text-xs text-destructive mt-1">{{ field.errors.0 }}</p>
+                                            {% endif %}
+                                        </td>
+                                        {% for other_field in form %}
+                                            {% with other_match_num=other_field.name|slice:"6:"|cut:"_away_team"|cut:"_market"|cut:"_selection"|cut:"_odds"|cut:"_match_date" %}
+                                                {% if other_match_num == match_num and other_field.name != field.name %}
+                                                    <td class="table-cell">
+                                                        {{ other_field }}
+                                                        {% if other_field.errors %}
+                                                            <p class="text-xs text-destructive mt-1">{{ other_field.errors.0 }}</p>
+                                                        {% endif %}
+                                                    </td>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endfor %}
+                                    </tr>
+                                    {% endwith %}
                                 {% endif %}
-                                {% if field.help_text %}
-                                    <p class="text-xs text-muted-foreground">{{ field.help_text }}</p>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -203,6 +249,95 @@
         border-color: var(--primary);
         ring: 2px;
         ring-color: var(--primary);
+    }
+
+    /* Matches Table Styling */
+    .matches-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .table-header {
+        background-color: var(--muted);
+        color: var(--foreground);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        padding: 0.75rem 0.5rem;
+        text-align: left;
+        border-bottom: 2px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .table-header:first-child {
+        width: 50px;
+        text-align: center;
+    }
+
+    .table-row {
+        border-bottom: 1px solid var(--border);
+        transition: background-color 0.2s;
+    }
+
+    .table-row:hover {
+        background-color: var(--muted) / 30%;
+    }
+
+    .table-row:last-child {
+        border-bottom: none;
+    }
+
+    .table-cell {
+        padding: 0.75rem 0.5rem;
+        vertical-align: middle;
+    }
+
+    .table-cell input {
+        font-size: 0.8125rem;
+        padding: 0.4rem 0.5rem;
+        width: 100%;
+    }
+
+    .match-number {
+        display: inline-flex;
+        align-items: center;
+        justify-center: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        border-radius: 50%;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    /* Responsive table for mobile */
+    @media (max-width: 768px) {
+        .matches-table {
+            font-size: 0.75rem;
+        }
+
+        .table-header {
+            padding: 0.5rem 0.25rem;
+            font-size: 0.65rem;
+        }
+
+        .table-cell {
+            padding: 0.5rem 0.25rem;
+        }
+
+        .table-cell input {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.4rem;
+        }
+
+        .match-number {
+            width: 1.5rem;
+            height: 1.5rem;
+            font-size: 0.7rem;
+        }
     }
 </style>
 {% endblock %}

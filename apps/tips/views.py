@@ -146,7 +146,15 @@ def create_tip(request):
     if not request.user.userprofile.is_tipster:
         messages.error(request, 'Only tipsters can create tips.')
         return redirect('tips:marketplace')
-    
+
+    # Clean up old temporary tips (older than 1 hour)
+    from datetime import timedelta
+    one_hour_ago = timezone.now() - timedelta(hours=1)
+    Tip.objects.filter(
+        bet_code__startswith='TEMP_',
+        created_at__lt=one_hour_ago
+    ).delete()
+
     if request.method == 'POST':
         form = TipSubmissionForm(request.POST, request.FILES)
         if form.is_valid():
@@ -183,14 +191,24 @@ def create_tip(request):
 @login_required
 def verify_tip(request, tip_id):
     """Verify and edit OCR-extracted data - Step 2"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
-    
+
     if tip.ocr_processed:
         messages.info(request, 'This tip has already been processed.')
         return redirect('tips:my_tips')
-    
+
     ocr_data = tip.match_details
     matches_data = ocr_data.get('matches', [])
+
+    # Debug logging
+    logger.info(f"=== VERIFY TIP DEBUG ===")
+    logger.info(f"OCR Data: {json.dumps(ocr_data, indent=2)}")
+    logger.info(f"Number of matches: {len(matches_data)}")
+    for i, match in enumerate(matches_data):
+        logger.info(f"Match {i+1}: {match}")
     
     if request.method == 'POST':
         form = TipVerificationForm(
@@ -337,6 +355,7 @@ def purchase_tip(request, tip_id):
 def tipster_profile(request, tipster_id):
     """Public tipster profile with their tips"""
     from django.contrib.auth import get_user_model
+    from django.db.models import Avg
     User = get_user_model()
     
     tipster = get_object_or_404(
@@ -350,18 +369,25 @@ def tipster_profile(request, tipster_id):
         tipster=tipster,
         status='active'
     ).order_by('-created_at')[:10]
-    
-    # Calculate stats
-    all_tips = Tip.objects.filter(tipster=tipster, is_resulted=True)
+
+    # Calculate stats (matching leaderboard logic)
+    all_tips = Tip.objects.filter(tipster=tipster)
+    resulted_tips = all_tips.filter(is_resulted=True)
+
     stats = {
-        'total_tips': all_tips.count(),
-        'won_tips': all_tips.filter(is_won=True).count(),
+        'total_tips': all_tips.count(),  # All tips, not just resulted
+        'resulted_tips': resulted_tips.count(),  # Track resulted separately
+        'won_tips': resulted_tips.filter(is_won=True).count(),
         'win_rate': 0,
-        'total_sales': sum(tip.revenue_generated for tip in Tip.objects.filter(tipster=tipster)),
+        'total_sales': sum(tip.revenue_generated for tip in all_tips),
+        'active_tips': all_tips.filter(status='active').count(),
+        'total_purchases': sum(tip.purchase_count for tip in all_tips),
+        'avg_odds': resulted_tips.aggregate(Avg('odds'))['odds__avg'] or 0,
     }
-    
-    if stats['total_tips'] > 0:
-        stats['win_rate'] = round((stats['won_tips'] / stats['total_tips']) * 100, 1)
+
+    # Calculate win rate only from resulted tips
+    if stats['resulted_tips'] > 0:
+        stats['win_rate'] = round((stats['won_tips'] / stats['resulted_tips']) * 100, 1)
     
     context = {
         'tipster': tipster,
@@ -389,23 +415,24 @@ def leaderboard(request):
     leaderboard_data = []
 
     for tipster in tipsters:
-        # Get all resulted tips
-        resulted_tips = Tip.objects.filter(
-            tipster=tipster,
-            is_resulted=True
-        )
-
-        # Get all tips
+        # Get all tips (not just resulted ones)
         all_tips = Tip.objects.filter(tipster=tipster)
 
-        total_tips = resulted_tips.count()
+        # Get resulted tips for win rate calculation
+        resulted_tips = all_tips.filter(is_resulted=True)
+
+        # Count total tips (all tips, not just resulted)
+        total_tips = all_tips.count()
+
+        # Win rate is only for resulted tips
+        resulted_count = resulted_tips.count()
         won_tips = resulted_tips.filter(is_won=True).count()
-        win_rate = round((won_tips / total_tips * 100), 1) if total_tips > 0 else 0
+        win_rate = round((won_tips / resulted_count * 100), 1) if resulted_count > 0 else 0
 
         # Calculate total sales
         total_sales = sum(tip.revenue_generated for tip in all_tips)
 
-        # Calculate average odds
+        # Calculate average odds (only from resulted tips)
         avg_odds = resulted_tips.aggregate(avg=Avg('odds'))['avg'] or 0
 
         # Total purchases across all tips
@@ -414,7 +441,7 @@ def leaderboard(request):
         # Active tips count
         active_tips = all_tips.filter(status='active').count()
 
-        # Only include tipsters with at least 1 resulted tip
+        # Include tipsters with at least 1 tip (resulted or not)
         if total_tips > 0:
             leaderboard_data.append({
                 'tipster': tipster,
@@ -423,9 +450,10 @@ def leaderboard(request):
                 'won_tips': won_tips,
                 'win_rate': win_rate,
                 'total_sales': total_sales,
-                'avg_odds': round(avg_odds, 2),
+                'avg_odds': round(avg_odds, 2) if avg_odds else 0,
                 'total_purchases': total_purchases,
                 'active_tips': active_tips,
+                'resulted_count': resulted_count,  # Track how many are resulted
             })
 
     # Default sorting

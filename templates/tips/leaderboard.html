@@ -60,12 +60,27 @@
                             </span>
                         {% endif %}
 
-                        <div class="mt-4 space-y-2">
-                            <div class="text-3xl font-bold {% if leaderboard.1.win_rate >= 70 %}text-green-600{% elif leaderboard.1.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                                {{ leaderboard.1.win_rate }}%
+                        <div class="mt-4 space-y-3">
+                            <div>
+                                <div class="text-3xl font-bold {% if leaderboard.1.win_rate >= 70 %}text-green-600{% elif leaderboard.1.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ leaderboard.1.win_rate }}%
+                                </div>
+                                <div class="text-xs text-muted-foreground">Win Rate</div>
                             </div>
-                            <div class="text-xs text-muted-foreground">Win Rate</div>
-                            <div class="text-sm text-muted-foreground">{{ leaderboard.1.won_tips }}/{{ leaderboard.1.total_tips }} won</div>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                                <div>
+                                    <div class="font-semibold text-foreground">{{ leaderboard.1.total_tips }}</div>
+                                    <div class="text-muted-foreground">Tips</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-primary">KES {{ leaderboard.1.total_sales|default:0 }}</div>
+                                    <div class="text-muted-foreground">Sales</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-accent">{{ leaderboard.1.total_purchases }}</div>
+                                    <div class="text-muted-foreground">Buyers</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -99,12 +114,27 @@
                             </span>
                         {% endif %}
 
-                        <div class="mt-4 space-y-2">
-                            <div class="text-4xl font-bold {% if leaderboard.0.win_rate >= 70 %}text-green-600{% elif leaderboard.0.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                                {{ leaderboard.0.win_rate }}%
+                        <div class="mt-4 space-y-3">
+                            <div>
+                                <div class="text-4xl font-bold {% if leaderboard.0.win_rate >= 70 %}text-green-600{% elif leaderboard.0.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ leaderboard.0.win_rate }}%
+                                </div>
+                                <div class="text-xs text-muted-foreground">Win Rate</div>
                             </div>
-                            <div class="text-xs text-muted-foreground">Win Rate</div>
-                            <div class="text-sm text-muted-foreground">{{ leaderboard.0.won_tips }}/{{ leaderboard.0.total_tips }} won</div>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                                <div>
+                                    <div class="font-semibold text-foreground">{{ leaderboard.0.total_tips }}</div>
+                                    <div class="text-muted-foreground">Tips</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-primary">KES {{ leaderboard.0.total_sales|default:0 }}</div>
+                                    <div class="text-muted-foreground">Sales</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-accent">{{ leaderboard.0.total_purchases }}</div>
+                                    <div class="text-muted-foreground">Buyers</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -134,12 +164,27 @@
                             </span>
                         {% endif %}
 
-                        <div class="mt-4 space-y-2">
-                            <div class="text-3xl font-bold {% if leaderboard.2.win_rate >= 70 %}text-green-600{% elif leaderboard.2.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                                {{ leaderboard.2.win_rate }}%
+                        <div class="mt-4 space-y-3">
+                            <div>
+                                <div class="text-3xl font-bold {% if leaderboard.2.win_rate >= 70 %}text-green-600{% elif leaderboard.2.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ leaderboard.2.win_rate }}%
+                                </div>
+                                <div class="text-xs text-muted-foreground">Win Rate</div>
                             </div>
-                            <div class="text-xs text-muted-foreground">Win Rate</div>
-                            <div class="text-sm text-muted-foreground">{{ leaderboard.2.won_tips }}/{{ leaderboard.2.total_tips }} won</div>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                                <div>
+                                    <div class="font-semibold text-foreground">{{ leaderboard.2.total_tips }}</div>
+                                    <div class="text-muted-foreground">Tips</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-primary">KES {{ leaderboard.2.total_sales|default:0 }}</div>
+                                    <div class="text-muted-foreground">Sales</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-accent">{{ leaderboard.2.total_purchases }}</div>
+                                    <div class="text-muted-foreground">Buyers</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -153,48 +198,48 @@
                 <table class="w-full">
                     <thead class="bg-muted/50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Rank</th>
-                            <th class="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipster</th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Win Rate</th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Tips</th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Won</th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Odds</th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Purchases</th>
-                            <th class="px-6 py-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Tips</th>
-                            <th class="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Rank</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipster</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Win Rate</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Tips</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Won</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Odds</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Sales</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Popularity</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
                         {% for tipster_data in leaderboard %}
                         <tr class="hover:bg-muted/30 transition-colors">
                             <!-- Rank -->
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="flex items-center">
                                     {% if tipster_data.rank == 1 %}
-                                        <span class="text-2xl">🥇</span>
+                                        <span class="text-xl">🥇</span>
                                     {% elif tipster_data.rank == 2 %}
-                                        <span class="text-2xl">🥈</span>
+                                        <span class="text-xl">🥈</span>
                                     {% elif tipster_data.rank == 3 %}
-                                        <span class="text-2xl">🥉</span>
+                                        <span class="text-xl">🥉</span>
                                     {% else %}
-                                        <span class="text-lg font-bold text-muted-foreground">{{ tipster_data.rank }}</span>
+                                        <span class="text-base font-bold text-muted-foreground">{{ tipster_data.rank }}</span>
                                     {% endif %}
                                 </div>
                             </td>
 
                             <!-- Tipster -->
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 py-3 whitespace-nowrap">
                                 <div class="flex items-center">
                                     {% if tipster_data.profile.profile_picture %}
                                         <img src="{{ tipster_data.profile.profile_picture.url }}" alt="{{ tipster_data.profile.display_name }}"
-                                             class="w-10 h-10 rounded-full object-cover mr-3">
+                                             class="w-8 h-8 rounded-full object-cover mr-2">
                                     {% else %}
-                                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mr-3">
-                                            <span class="text-sm font-bold text-primary-foreground">{{ tipster_data.tipster.phone_number.0|upper }}</span>
+                                        <div class="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mr-2">
+                                            <span class="text-xs font-bold text-primary-foreground">{{ tipster_data.tipster.phone_number.0|upper }}</span>
                                         </div>
                                     {% endif %}
                                     <div>
-                                        <div class="font-medium text-foreground">{{ tipster_data.profile.display_name }}</div>
+                                        <div class="font-medium text-sm text-foreground">{{ tipster_data.profile.display_name }}</div>
                                         {% if tipster_data.profile.is_verified %}
                                             <span class="text-xs text-green-600 dark:text-green-400">✓ Verified</span>
                                         {% endif %}
@@ -203,45 +248,53 @@
                             </td>
 
                             <!-- Win Rate -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                    {% if tipster_data.win_rate >= 70 %}bg-green-500/10 text-green-700 dark:text-green-400
-                                    {% elif tipster_data.win_rate >= 50 %}bg-yellow-500/10 text-yellow-700 dark:text-yellow-400
-                                    {% else %}bg-red-500/10 text-red-700 dark:text-red-400{% endif %}">
-                                    {{ tipster_data.win_rate }}%
-                                </div>
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                {% if tipster_data.resulted_count > 0 %}
+                                    <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        {% if tipster_data.win_rate >= 70 %}bg-green-500/10 text-green-700 dark:text-green-400
+                                        {% elif tipster_data.win_rate >= 50 %}bg-yellow-500/10 text-yellow-700 dark:text-yellow-400
+                                        {% else %}bg-red-500/10 text-red-700 dark:text-red-400{% endif %}">
+                                        {{ tipster_data.win_rate }}%
+                                    </div>
+                                {% else %}
+                                    <span class="text-xs text-muted-foreground">N/A</span>
+                                {% endif %}
                             </td>
 
                             <!-- Total Tips -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
                                 <span class="text-sm font-medium text-foreground">{{ tipster_data.total_tips }}</span>
                             </td>
 
                             <!-- Won -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
                                 <span class="text-sm text-green-600 dark:text-green-400 font-medium">{{ tipster_data.won_tips }}</span>
                             </td>
 
                             <!-- Avg Odds -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-sm text-muted-foreground">{{ tipster_data.avg_odds }}x</span>
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                {% if tipster_data.resulted_count > 0 %}
+                                    <span class="text-sm text-muted-foreground">{{ tipster_data.avg_odds }}x</span>
+                                {% else %}
+                                    <span class="text-xs text-muted-foreground">N/A</span>
+                                {% endif %}
                             </td>
 
-                            <!-- Purchases -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-sm font-medium text-primary">{{ tipster_data.total_purchases }}</span>
+                            <!-- Sales -->
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                <span class="text-xs font-semibold text-primary">KES {{ tipster_data.total_sales|default:0 }}</span>
                             </td>
 
-                            <!-- Active Tips -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-sm text-muted-foreground">{{ tipster_data.active_tips }}</span>
+                            <!-- Popularity (Purchases) -->
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                <span class="text-sm font-medium text-accent">{{ tipster_data.total_purchases }}</span>
                             </td>
 
                             <!-- Action -->
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <td class="px-4 py-3 whitespace-nowrap text-right">
                                 <a href="{% url 'tips:tipster_profile' tipster_data.tipster.id %}"
-                                   class="text-primary hover:text-primary/80 text-sm font-medium">
-                                    View Profile →
+                                   class="text-primary hover:text-primary/80 text-xs font-medium">
+                                    View →
                                 </a>
                             </td>
                         </tr>

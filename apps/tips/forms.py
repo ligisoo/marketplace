@@ -117,13 +117,7 @@ class TipVerificationForm(forms.Form):
             initial=match_data.get('away_team', ''),
             widget=forms.TextInput(attrs={'class': 'form-input'})
         )
-        
-        self.fields[f'{prefix}league'] = forms.CharField(
-            label='League/Competition',
-            initial=match_data.get('league', ''),
-            widget=forms.TextInput(attrs={'class': 'form-input'})
-        )
-        
+
         self.fields[f'{prefix}market'] = forms.CharField(
             label='Betting Market',
             initial=match_data.get('market', ''),
@@ -196,7 +190,7 @@ class TipVerificationForm(forms.Form):
             match_data = {
                 'home_team': self.cleaned_data[f'match_{i}_home_team'],
                 'away_team': self.cleaned_data[f'match_{i}_away_team'],
-                'league': self.cleaned_data[f'match_{i}_league'],
+                'league': 'Unknown League',  # Default value since field removed
                 'market': self.cleaned_data[f'match_{i}_market'],
                 'selection': self.cleaned_data[f'match_{i}_selection'],
                 'odds': self.cleaned_data[f'match_{i}_odds'],

@@ -175,6 +175,55 @@ class TipView(models.Model):
     ip_address = models.GenericIPAddressField()
     user_agent = models.TextField(blank=True)
     viewed_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-viewed_at']
+
+
+class OCRProviderSettings(models.Model):
+    """Settings for OCR provider selection"""
+    OCR_PROVIDER_CHOICES = [
+        ('textract', 'AWS Textract'),
+        ('easyocr', 'EasyOCR'),
+    ]
+
+    provider = models.CharField(
+        max_length=20,
+        choices=OCR_PROVIDER_CHOICES,
+        default='textract',
+        help_text='Select which OCR provider to use for processing betslips'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ocr_settings_updates'
+    )
+
+    class Meta:
+        verbose_name = 'OCR Provider Setting'
+        verbose_name_plural = 'OCR Provider Settings'
+
+    def __str__(self):
+        return f"OCR Provider: {self.get_provider_display()}"
+
+    @classmethod
+    def get_active_provider(cls):
+        """Get the currently active OCR provider"""
+        settings_obj = cls.objects.first()
+        if settings_obj:
+            return settings_obj.provider
+        return 'textract'  # Default to Textract
+
+    def save(self, *args, **kwargs):
+        # Ensure only one settings record exists
+        if not self.pk and OCRProviderSettings.objects.exists():
+            # Update the existing record instead
+            existing = OCRProviderSettings.objects.first()
+            existing.provider = self.provider
+            existing.updated_by = self.updated_by
+            super(OCRProviderSettings, existing).save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
