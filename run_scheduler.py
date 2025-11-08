@@ -30,7 +30,10 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.base')
 django.setup()
 
 from django.utils import timezone
+from django.core import management
 from apps.tips.services import ResultVerifier
+from apps.tips.models import Tip
+from datetime import timedelta
 
 # Configure logging
 LOG_DIR = BASE_DIR / 'logs'
@@ -89,6 +92,54 @@ def run_result_verification():
     logger.info("")  # Blank line for readability
 
 
+def cleanup_temp_tips():
+    """
+    Clean up abandoned temporary tip submissions.
+    Deletes tips with bet_code starting with 'TEMP_' that are older than 1 hour.
+    """
+    logger.info("=" * 60)
+    logger.info("TEMP TIP CLEANUP STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
+
+    try:
+        hours = 1  # Delete temp tips older than 1 hour
+        cutoff_time = timezone.now() - timedelta(hours=hours)
+
+        # Find temporary tips
+        temp_tips = Tip.objects.filter(
+            bet_code__startswith='TEMP_',
+            created_at__lt=cutoff_time
+        )
+
+        count = temp_tips.count()
+
+        if count == 0:
+            logger.info(f"No temporary tips older than {hours} hour(s) found")
+        else:
+            logger.info(f"Found {count} temporary tip(s) to delete")
+
+            # Log first few for reference
+            for tip in temp_tips[:5]:
+                age_hours = (timezone.now() - tip.created_at).total_seconds() / 3600
+                logger.info(f"  - {tip.bet_code} (age: {age_hours:.1f}h)")
+
+            if count > 5:
+                logger.info(f"  ... and {count - 5} more")
+
+            # Delete temp tips
+            temp_tips.delete()
+            logger.info(f"✓ Successfully deleted {count} temporary tip(s)")
+
+    except Exception as e:
+        logger.error(f"Error during temp tip cleanup: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("TEMP TIP CLEANUP COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")  # Blank line for readability
+
+
 def schedule_jobs():
     """
     Configure all scheduled jobs here.
@@ -96,10 +147,13 @@ def schedule_jobs():
     You can customize the schedule by modifying the intervals below.
     """
 
-    # Run result verification every 30 minutes
+    # Job 1: Run result verification every 30 minutes
     schedule.every(30).minutes.do(run_result_verification)
 
-    # Alternative schedules (uncomment the one you prefer):
+    # Job 2: Clean up temporary tips every hour
+    schedule.every().hour.do(cleanup_temp_tips)
+
+    # Alternative schedules for result verification (uncomment the one you prefer):
 
     # Every hour
     # schedule.every().hour.do(run_result_verification)

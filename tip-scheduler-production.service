@@ -1,0 +1,28 @@
+[Unit]
+Description=Tip Result Verification Scheduler
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+
+# IMPORTANT: Update these values for your production environment
+# Find correct user with: whoami
+# Find correct path with: pwd
+WorkingDirectory=/path/to/your/marketplace
+Environment="DJANGO_SETTINGS_MODULE=config.settings.production"
+
+# Use the Python from your virtual environment
+# Find with: which python
+ExecStart=/path/to/your/venv/bin/python /path/to/your/marketplace/run_scheduler.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging - these paths should exist
+StandardOutput=append:/path/to/your/marketplace/logs/tip_scheduler.log
+StandardError=append:/path/to/your/marketplace/logs/tip_scheduler_error.log
+
+[Install]
+WantedBy=multi-user.target
