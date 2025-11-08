@@ -513,17 +513,64 @@ def leaderboard(request):
     # Default sorting
     sort_by = request.GET.get('sort', 'win_rate')
 
-    # Sort leaderboard
+    # Sort leaderboard with better tiebreakers
     if sort_by == 'win_rate':
-        leaderboard_data.sort(key=lambda x: (x['win_rate'], x['total_tips']), reverse=True)
+        # Sort by: win_rate (desc), resulted_count (desc), total_purchases (desc), total_sales (desc)
+        # This puts tipsters with results first, then by popularity and sales
+        leaderboard_data.sort(
+            key=lambda x: (
+                x['resulted_count'] > 0,  # Tipsters with results first
+                x['win_rate'],
+                x['total_purchases'],
+                x['total_sales'],
+                x['total_tips']
+            ),
+            reverse=True
+        )
     elif sort_by == 'total_tips':
-        leaderboard_data.sort(key=lambda x: x['total_tips'], reverse=True)
+        # Sort by: total_tips (desc), win_rate (desc), total_purchases (desc)
+        leaderboard_data.sort(
+            key=lambda x: (
+                x['total_tips'],
+                x['win_rate'],
+                x['total_purchases'],
+                x['total_sales']
+            ),
+            reverse=True
+        )
     elif sort_by == 'total_sales':
-        leaderboard_data.sort(key=lambda x: x['total_sales'], reverse=True)
+        # Sort by: total_sales (desc), total_purchases (desc), win_rate (desc)
+        leaderboard_data.sort(
+            key=lambda x: (
+                x['total_sales'],
+                x['total_purchases'],
+                x['win_rate'],
+                x['total_tips']
+            ),
+            reverse=True
+        )
     elif sort_by == 'total_purchases':
-        leaderboard_data.sort(key=lambda x: x['total_purchases'], reverse=True)
+        # Sort by: total_purchases (desc), total_sales (desc), win_rate (desc)
+        leaderboard_data.sort(
+            key=lambda x: (
+                x['total_purchases'],
+                x['total_sales'],
+                x['win_rate'],
+                x['total_tips']
+            ),
+            reverse=True
+        )
     else:
-        leaderboard_data.sort(key=lambda x: x['win_rate'], reverse=True)
+        # Default to win_rate sorting
+        leaderboard_data.sort(
+            key=lambda x: (
+                x['resulted_count'] > 0,
+                x['win_rate'],
+                x['total_purchases'],
+                x['total_sales']
+            ),
+            reverse=True
+        )
 
     # Add rank numbers
     for idx, tipster_data in enumerate(leaderboard_data, 1):
