@@ -1,0 +1,28 @@
+[Unit]
+Description=Tip Result Verification Scheduler
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=walter
+Group=walter
+WorkingDirectory=/home/walter/marketplace
+Environment="PATH=/home/walter/marketplace/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="DJANGO_SETTINGS_MODULE=config.settings.base"
+ExecStart=/home/walter/marketplace/venv/bin/python3 /home/walter/marketplace/run_scheduler.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/home/walter/marketplace/logs/tip_scheduler.log
+StandardError=append:/home/walter/marketplace/logs/tip_scheduler_error.log
+
+# Security settings (optional but recommended)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

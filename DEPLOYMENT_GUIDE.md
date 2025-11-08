@@ -2,26 +2,17 @@
 
 ## Overview
 
-This guide covers deploying the automated tip result verification system to production.
+This guide covers deploying the automated tip result verification system using Python's `schedule` library instead of cron jobs.
 
 ## Prerequisites
 
 ✅ All tests passing (`python test_livescore_verification.py`)
 ✅ Playwright browsers installed
-✅ Required dependencies in requirements.txt
+✅ Required dependencies in requirements.txt (including `schedule==1.2.2`)
 
 ## Installation Steps
 
-### 1. Install Playwright Browsers
-
-```bash
-cd /home/walter/marketplace
-playwright install chromium
-```
-
-This installs the Chromium browser that Playwright uses for web scraping.
-
-### 2. Verify Installation
+### 1. Verify Installation
 
 Run a quick test to ensure everything works:
 
@@ -44,72 +35,163 @@ Matches not found:   X
 ============================================================
 ```
 
-## Setting Up Cron Jobs
-
-### Option 1: Every 30 Minutes (Recommended)
-
-This catches matches as soon as they finish.
+### 2. Create Log Files
 
 ```bash
-crontab -e
+sudo touch /var/log/tip_scheduler.log
+sudo touch /var/log/tip_scheduler_error.log
+sudo chown walter:walter /var/log/tip_scheduler.log
+sudo chown walter:walter /var/log/tip_scheduler_error.log
 ```
 
-Add this line:
-```
-*/30 * * * * cd /home/walter/marketplace && /usr/bin/python3 manage.py schedule_result_verification >> /var/log/tip_verification.log 2>&1
-```
+## Deployment Options
 
-### Option 2: Strategic Times Only
+### Option 1: Systemd Service (Recommended for Production)
 
-Run at times when most matches finish (less frequent, lower resource usage):
+This runs the scheduler as a system service that starts automatically on boot.
 
-```
-0 22 * * * cd /home/walter/marketplace && /usr/bin/python3 manage.py schedule_result_verification >> /var/log/tip_verification.log 2>&1
-0 0 * * * cd /home/walter/marketplace && /usr/bin/python3 manage.py schedule_result_verification >> /var/log/tip_verification.log 2>&1
-```
+#### Step 1: Install the service
 
-This runs at 10 PM and midnight daily.
+```bash
+# Copy service file to systemd directory
+sudo cp /home/walter/marketplace/tip-scheduler.service /etc/systemd/system/
 
-### Option 3: Hourly
+# Reload systemd to recognize the new service
+sudo systemctl daemon-reload
 
-Balanced approach:
+# Enable service to start on boot
+sudo systemctl enable tip-scheduler
 
-```
-0 * * * * cd /home/walter/marketplace && /usr/bin/python3 manage.py schedule_result_verification >> /var/log/tip_verification.log 2>&1
+# Start the service
+sudo systemctl start tip-scheduler
 ```
 
-## Cron Setup Steps
+#### Step 2: Verify it's running
 
-1. **Find your Python path:**
-   ```bash
-   which python3
-   ```
-   Use this path in the cron command (replace `/usr/bin/python3`)
+```bash
+# Check service status
+sudo systemctl status tip-scheduler
 
-2. **Create log directory:**
-   ```bash
-   sudo mkdir -p /var/log
-   sudo touch /var/log/tip_verification.log
-   sudo chmod 666 /var/log/tip_verification.log
-   ```
+# View recent logs
+sudo journalctl -u tip-scheduler -n 50 --no-pager
 
-3. **Edit crontab:**
-   ```bash
-   crontab -e
-   ```
+# Follow logs in real-time
+sudo journalctl -u tip-scheduler -f
+```
 
-4. **Add your chosen schedule** (paste one of the options above)
+#### Managing the Service
 
-5. **Save and exit** (Ctrl+X, then Y, then Enter in nano)
+```bash
+# Start
+sudo systemctl start tip-scheduler
 
-6. **Verify cron is set:**
-   ```bash
-   crontab -l
-   ```
+# Stop
+sudo systemctl stop tip-scheduler
+
+# Restart
+sudo systemctl restart tip-scheduler
+
+# Check status
+sudo systemctl status tip-scheduler
+
+# Disable auto-start on boot
+sudo systemctl disable tip-scheduler
+```
+
+### Option 2: Run Manually in Background (Development/Testing)
+
+For testing or non-production environments:
+
+```bash
+# Run in foreground (see output, Ctrl+C to stop)
+python run_scheduler.py
+
+# Run in background
+nohup python run_scheduler.py &
+
+# Stop background process
+pkill -f run_scheduler.py
+```
+
+### Option 3: Screen/Tmux Session
+
+For servers where you want to easily attach/detach:
+
+```bash
+# Using screen
+screen -S tip-scheduler
+python run_scheduler.py
+# Press Ctrl+A then D to detach
+# screen -r tip-scheduler to reattach
+
+# Using tmux
+tmux new -s tip-scheduler
+python run_scheduler.py
+# Press Ctrl+B then D to detach
+# tmux attach -t tip-scheduler to reattach
+```
+
+## Configuring the Schedule
+
+Edit `/home/walter/marketplace/run_scheduler.py` to customize when verification runs:
+
+```python
+def schedule_jobs():
+    # Default: Every 30 minutes
+    schedule.every(30).minutes.do(run_result_verification)
+
+    # Alternative schedules:
+
+    # Every hour
+    # schedule.every().hour.do(run_result_verification)
+
+    # Every hour at :30 minutes past
+    # schedule.every().hour.at(":30").do(run_result_verification)
+
+    # Every day at specific times
+    # schedule.every().day.at("22:00").do(run_result_verification)  # 10 PM
+    # schedule.every().day.at("00:00").do(run_result_verification)  # Midnight
+
+    # Every 2 hours
+    # schedule.every(2).hours.do(run_result_verification)
+
+    # Multiple times per day
+    # schedule.every().day.at("10:00").do(run_result_verification)
+    # schedule.every().day.at("14:00").do(run_result_verification)
+    # schedule.every().day.at("18:00").do(run_result_verification)
+    # schedule.every().day.at("22:00").do(run_result_verification)
+```
+
+After editing, restart the service:
+```bash
+sudo systemctl restart tip-scheduler
+```
+
+## Recommended Schedules
+
+### Small-scale (< 50 tips/day)
+```python
+schedule.every(30).minutes.do(run_result_verification)
+```
+Catches matches quickly with minimal overhead.
+
+### Medium-scale (50-200 tips/day)
+```python
+schedule.every().hour.do(run_result_verification)
+```
+Balanced approach.
+
+### Large-scale (200+ tips/day)
+```python
+schedule.every().day.at("22:00").do(run_result_verification)
+schedule.every().day.at("23:00").do(run_result_verification)
+schedule.every().day.at("00:00").do(run_result_verification)
+```
+Strategic times when most matches finish.
 
 ## Manual Verification
 
-You can always trigger verification manually:
+You can still trigger verification manually anytime:
 
 ```bash
 # Verify today's tips
@@ -124,14 +206,21 @@ python manage.py verify_tip_results --date 2025-11-07
 ### View Logs
 
 ```bash
-# Live monitoring
-tail -f /var/log/tip_verification.log
+# Using systemd journal (if using systemd)
+sudo journalctl -u tip-scheduler -f
 
-# View last 50 lines
-tail -n 50 /var/log/tip_verification.log
+# Using log files directly
+tail -f /var/log/tip_scheduler.log
 
-# Search for errors
-grep ERROR /var/log/tip_verification.log
+# View errors
+tail -f /var/log/tip_scheduler_error.log
+
+# View last 100 lines
+tail -n 100 /var/log/tip_scheduler.log
+
+# Search for specific terms
+grep "verified" /var/log/tip_scheduler.log
+grep "ERROR" /var/log/tip_scheduler.log
 ```
 
 ### What to Look For
@@ -156,23 +245,16 @@ SCHEDULED RESULT VERIFICATION COMPLETED
 ============================================================
 ```
 
-**Warning signs:**
+**Healthy scheduler:**
 ```
-⚠️ No livescore match found for: Team A vs Team B
-⚠️ Match Team A vs Team B not yet finished
+TIP RESULT VERIFICATION SCHEDULER STARTING
+Started at: 2025-11-08 10:00:00
+Scheduler configured with the following jobs:
+  - Every 30 minutes do run_result_verification()
+Scheduler is running. Press Ctrl+C to stop.
 ```
-These are normal - just means matches haven't finished yet or team names don't match perfectly.
-
-**Error signs:**
-```
-❌ Error during scheduled verification: ...
-ERROR: Exception occurred
-```
-These need investigation - check the full error message.
 
 ## Database Checks
-
-### Check Verified Tips
 
 ```bash
 python manage.py shell
@@ -196,106 +278,89 @@ pending = Tip.objects.filter(
 print(f"\nPending verification: {pending.count()} tips")
 ```
 
-### Check TipMatch Results
+## Troubleshooting
 
-```python
-from apps.tips.models import TipMatch
+### Service Won't Start
 
-# Recently verified matches
-matches = TipMatch.objects.filter(is_resulted=True).order_by('-id')[:10]
-for m in matches:
-    print(f"{m.home_team} vs {m.away_team}: {m.actual_result} - {'WON' if m.is_won else 'LOST'}")
+```bash
+# Check service status
+sudo systemctl status tip-scheduler
+
+# View detailed logs
+sudo journalctl -u tip-scheduler -n 100 --no-pager
+
+# Check if Python path is correct
+which python3
+
+# Test script manually
+python run_scheduler.py
 ```
 
-## Performance Considerations
+### Common Issues
+
+**1. Permission Denied on Log Files**
+```bash
+sudo chown walter:walter /var/log/tip_scheduler.log
+sudo chown walter:walter /var/log/tip_scheduler_error.log
+sudo chmod 664 /var/log/tip_scheduler.log
+sudo chmod 664 /var/log/tip_scheduler_error.log
+```
+
+**2. Service Keeps Restarting**
+```bash
+# Check error logs
+sudo journalctl -u tip-scheduler -n 50 --no-pager | grep ERROR
+
+# Run script manually to see error
+python run_scheduler.py
+```
+
+**3. Database Connection Issues**
+Make sure PostgreSQL is running:
+```bash
+sudo systemctl status postgresql
+```
+
+**4. Import Errors**
+Ensure virtual environment is activated in service file:
+```bash
+# Check service file has correct Python path
+cat /etc/systemd/system/tip-scheduler.service | grep ExecStart
+```
+
+### Scheduler Not Running Tasks
+
+```bash
+# Check if scheduler loop is active
+ps aux | grep run_scheduler
+
+# View logs to see if jobs are scheduled
+tail -n 20 /var/log/tip_scheduler.log
+
+# Check system time is correct
+date
+```
+
+## Performance Monitoring
 
 ### Resource Usage
 
-Each verification run:
-- Takes ~10-15 seconds
-- Opens one browser instance
-- Scrapes one page from livescore.com
-- Updates database records
-
-### Recommendations
-
-**Small-scale (< 50 tips/day):**
-- Run every 30 minutes ✅
-- Minimal resource impact
-
-**Medium-scale (50-200 tips/day):**
-- Run every hour ✅
-- Consider rate limiting
-
-**Large-scale (200+ tips/day):**
-- Run at strategic times (10pm, midnight) ✅
-- Consider implementing caching
-- Monitor livescore.com access
-
-## Troubleshooting
-
-### Cron Not Running
-
-1. **Check cron service:**
-   ```bash
-   sudo service cron status
-   sudo service cron restart
-   ```
-
-2. **Check cron logs:**
-   ```bash
-   grep CRON /var/log/syslog
-   ```
-
-3. **Test command directly:**
-   ```bash
-   cd /home/walter/marketplace && python manage.py schedule_result_verification
-   ```
-
-### Browser Not Found
-
-If you see: `Error: Playwright browser not found`
+Check scheduler resource consumption:
 
 ```bash
-cd /home/walter/marketplace
-playwright install chromium
+# CPU and memory usage
+ps aux | grep run_scheduler
+
+# Detailed stats (if running as systemd service)
+systemctl status tip-scheduler
 ```
 
-### Team Names Not Matching
+### Expected Resource Usage
 
-If matches consistently show as "not found":
-
-1. Check actual team names in livescore.com
-2. Add abbreviation to `livescore_scraper.py`:
-
-```python
-abbreviations = {
-    'man utd': 'manchester united',
-    'new_abbreviation': 'full_name',  # Add here
-}
-```
-
-### No Matches Found
-
-If no matches are found even though they exist:
-
-1. **Check livescore.com structure:**
-   ```bash
-   python manage.py shell
-   ```
-   ```python
-   from apps.tips.services import LivescoreScraper
-   scraper = LivescoreScraper()
-   matches = scraper.scrape_live_scores_sync()
-   print(f"Found {len(matches)} matches")
-   for m in matches[:3]:
-       print(m)
-   ```
-
-2. **Check if HTML structure changed:**
-   - Visit https://www.livescore.com/en/football/live/
-   - View page source
-   - Compare with `livescore_scraper.py` selectors
+- **CPU**: < 1% when idle, 5-10% during scraping
+- **Memory**: 50-100 MB
+- **Disk I/O**: Minimal (log writes only)
+- **Network**: ~1 MB per scraping session
 
 ## Backup Strategy
 
@@ -305,55 +370,110 @@ Before deploying:
 # Backup database
 python manage.py dumpdata tips > backup_tips_$(date +%Y%m%d).json
 
-# Backup crontab
-crontab -l > backup_crontab_$(date +%Y%m%d).txt
+# Backup scheduler configuration
+cp run_scheduler.py run_scheduler.py.backup
 ```
 
 ## Rollback Plan
 
-If verification causes issues:
+If scheduler causes issues:
 
-1. **Stop cron:**
-   ```bash
-   crontab -e
-   # Comment out the verification line with #
-   ```
+```bash
+# Stop the service
+sudo systemctl stop tip-scheduler
 
-2. **Revert database (if needed):**
-   ```bash
-   python manage.py loaddata backup_tips_YYYYMMDD.json
-   ```
+# Disable auto-start
+sudo systemctl disable tip-scheduler
+
+# Restore database if needed
+python manage.py loaddata backup_tips_YYYYMMDD.json
+```
 
 ## Production Checklist
 
 Before going live:
 
 - [ ] All tests passing (`python test_livescore_verification.py`)
-- [ ] Playwright browsers installed (`playwright install chromium`)
-- [ ] Cron job configured and tested
-- [ ] Log file created and writable
+- [ ] Log files created with correct permissions
+- [ ] Systemd service installed and enabled
+- [ ] Service starts successfully (`sudo systemctl status tip-scheduler`)
 - [ ] Database backup taken
 - [ ] Manual verification tested successfully
-- [ ] Monitoring dashboard set up (optional)
-- [ ] Error alerting configured (optional)
+- [ ] Logs show scheduler is running jobs at correct intervals
+- [ ] Verified at least one automatic verification cycle
 
-## Next Steps
+## Testing the Deployment
 
-1. **Monitor for 24-48 hours** - Watch logs closely
-2. **Verify accuracy** - Check a few tips manually
-3. **Adjust schedule if needed** - Based on match times
-4. **Add more abbreviations** - As you discover team name variations
+### Step-by-Step Test
+
+1. **Test the script manually:**
+   ```bash
+   python run_scheduler.py
+   ```
+   Let it run for 1-2 minutes, then Ctrl+C. Check logs.
+
+2. **Test as systemd service:**
+   ```bash
+   sudo systemctl start tip-scheduler
+   sudo systemctl status tip-scheduler
+   sudo journalctl -u tip-scheduler -f
+   ```
+   Watch for 5 minutes to ensure it's stable.
+
+3. **Verify a task runs:**
+   - Edit `run_scheduler.py` temporarily to run every 1 minute:
+     ```python
+     schedule.every(1).minutes.do(run_result_verification)
+     ```
+   - Restart service: `sudo systemctl restart tip-scheduler`
+   - Watch logs: `tail -f /var/log/tip_scheduler.log`
+   - You should see verification run within 1 minute
+   - Revert to 30 minutes after testing
+
+4. **Check database updates:**
+   ```bash
+   python manage.py shell
+   ```
+   ```python
+   from apps.tips.models import Tip
+   Tip.objects.filter(is_resulted=True).count()
+   ```
+
+## Advantages Over Cron
+
+✅ **Better Logging** - Integrated with Python logging
+✅ **Error Handling** - Automatic restarts on failure (with systemd)
+✅ **Easier Configuration** - Edit Python file instead of crontab
+✅ **Platform Independent** - Works on any OS with Python
+✅ **No Cron Syntax** - Use readable Python code
+✅ **Flexible Scheduling** - Easy to add complex schedules
+✅ **Testing** - Can run scheduler manually for testing
+
+## Migration from Cron (if applicable)
+
+If you previously used cron:
+
+```bash
+# Remove old cron job
+crontab -e
+# Delete the verification line
+
+# Verify cron job removed
+crontab -l
+```
 
 ## Support
 
-For issues or questions:
-1. Check logs: `tail -f /var/log/tip_verification.log`
-2. Run test script: `python test_livescore_verification.py`
-3. Review documentation: `LIVESCORE_AUTO_VERIFICATION.md`
+For issues:
+1. Check logs: `tail -f /var/log/tip_scheduler.log`
+2. Check service status: `sudo systemctl status tip-scheduler`
+3. Run test script: `python test_livescore_verification.py`
+4. Run manually: `python run_scheduler.py`
 
 ## Additional Resources
 
+- **run_scheduler.py** - Main scheduler script
+- **tip-scheduler.service** - Systemd service configuration
 - **livescore_scraper.py** - Scraping logic
 - **result_verifier.py** - Verification logic
 - **LIVESCORE_AUTO_VERIFICATION.md** - Technical documentation
-- **test_livescore_verification.py** - Test suite
