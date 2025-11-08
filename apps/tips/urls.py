@@ -14,6 +14,9 @@ urlpatterns = [
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
 
+    # Buyer views
+    path('my-purchases/', views.my_purchases, name='my_purchases'),
+
     # Purchase
     path('purchase/<int:tip_id>/', views.purchase_tip, name='purchase_tip'),
 

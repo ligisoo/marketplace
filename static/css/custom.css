@@ -201,3 +201,24 @@ select {
     border: 1px solid hsl(120, 50%, 40%) !important;
     color: hsl(120, 50%, 60%) !important;
 }
+
+/* Bet Code Toggle Styling */
+.bet-code-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.bet-code-toggle:active {
+    transform: scale(0.95);
+}
+
+.bet-code-display {
+    transition: opacity 0.2s ease;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    letter-spacing: 0.5px;
+}
+
+.eye-open,
+.eye-closed {
+    transition: opacity 0.2s ease;
+}

@@ -141,6 +141,38 @@ def my_tips(request):
 
 
 @login_required
+def my_purchases(request):
+    """Show user's purchased tips"""
+    # Get all purchased tips for this user
+    purchases = TipPurchase.objects.filter(
+        buyer=request.user,
+        status='completed'
+    ).select_related('tip', 'tip__tipster').order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(purchases, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Calculate stats
+    stats = {
+        'total_purchases': purchases.count(),
+        'total_spent': sum(p.amount for p in purchases),
+        'won_tips': purchases.filter(tip__is_resulted=True, tip__is_won=True).count(),
+        'lost_tips': purchases.filter(tip__is_resulted=True, tip__is_won=False).count(),
+        'pending_tips': purchases.filter(tip__is_resulted=False).count(),
+    }
+
+    context = {
+        'page_obj': page_obj,
+        'purchases': page_obj.object_list,
+        'stats': stats,
+    }
+
+    return render(request, 'tips/my_purchases.html', context)
+
+
+@login_required
 def create_tip(request):
     """Create a new tip - Step 1: Upload betslip"""
     if not request.user.userprofile.is_tipster:

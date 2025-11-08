@@ -108,11 +108,25 @@
 
                 <!-- Bet Code and Bookmaker -->
                 <div class="text-center mb-4">
-                    <h3 class="text-xl font-bold text-primary mb-1">
-                        <a href="{% url 'tips:detail' tip.id %}" class="hover:text-primary/80 transition-colors">
-                            {{ tip.bet_code }}
-                        </a>
-                    </h3>
+                    <div class="flex items-center justify-center gap-2 mb-1">
+                        <h3 class="text-xl font-bold text-primary">
+                            <a href="{% url 'tips:detail' tip.id %}" class="hover:text-primary/80 transition-colors bet-code-link" data-full-code="{{ tip.bet_code }}">
+                                <span class="bet-code-display">{{ tip.bet_code }}</span>
+                            </a>
+                        </h3>
+                        <button class="bet-code-toggle text-muted-foreground hover:text-primary transition-colors p-1 rounded hover:bg-primary/10"
+                                type="button"
+                                aria-label="Toggle bet code visibility"
+                                title="Toggle bet code visibility">
+                            <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }}</p>
                 </div>
 
@@ -234,4 +248,79 @@
         </div>
     </div>
 {% endif %}
+
+<script>
+// Bet Code Visibility Toggle
+(function() {
+    'use strict';
+
+    // Function to obfuscate bet code
+    function obfuscateBetCode(code) {
+        if (code.length <= 5) {
+            return '***';
+        }
+        const firstThree = code.substring(0, 3);
+        const lastTwo = code.substring(code.length - 2);
+        return firstThree + '***' + lastTwo;
+    }
+
+    // Get stored preference (default to hidden for privacy)
+    const isVisible = localStorage.getItem('betCodeVisible') === 'true';
+
+    // Get all bet code elements
+    const betCodeLinks = document.querySelectorAll('.bet-code-link');
+    const toggleButtons = document.querySelectorAll('.bet-code-toggle');
+
+    // Initialize display state
+    betCodeLinks.forEach((link, index) => {
+        const fullCode = link.dataset.fullCode;
+        const displaySpan = link.querySelector('.bet-code-display');
+        const toggleButton = toggleButtons[index];
+
+        if (displaySpan && toggleButton) {
+            // Set initial state
+            if (isVisible) {
+                displaySpan.textContent = fullCode;
+                toggleButton.querySelector('.eye-open').classList.remove('hidden');
+                toggleButton.querySelector('.eye-closed').classList.add('hidden');
+            } else {
+                displaySpan.textContent = obfuscateBetCode(fullCode);
+                toggleButton.querySelector('.eye-open').classList.add('hidden');
+                toggleButton.querySelector('.eye-closed').classList.remove('hidden');
+            }
+        }
+    });
+
+    // Add click handlers to toggle buttons
+    toggleButtons.forEach((button, index) => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const link = betCodeLinks[index];
+            const fullCode = link.dataset.fullCode;
+            const displaySpan = link.querySelector('.bet-code-display');
+            const eyeOpen = button.querySelector('.eye-open');
+            const eyeClosed = button.querySelector('.eye-closed');
+
+            // Toggle visibility
+            const currentlyVisible = !eyeOpen.classList.contains('hidden');
+
+            if (currentlyVisible) {
+                // Hide the code
+                displaySpan.textContent = obfuscateBetCode(fullCode);
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+                localStorage.setItem('betCodeVisible', 'false');
+            } else {
+                // Show the code
+                displaySpan.textContent = fullCode;
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+                localStorage.setItem('betCodeVisible', 'true');
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}
