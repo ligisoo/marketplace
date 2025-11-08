@@ -11,6 +11,7 @@ urlpatterns = [
 
     # Tipster views
     path('my-tips/', views.my_tips, name='my_tips'),
+    path('earnings/', views.earnings_dashboard, name='earnings'),
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
 

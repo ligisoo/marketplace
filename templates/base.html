@@ -78,6 +78,10 @@
                    class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'my_tips' %}text-primary{% else %}text-muted-foreground{% endif %}">
                     My Tips
                 </a>
+                <a href="{% url 'tips:earnings' %}"
+                   class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'earnings' %}text-primary{% else %}text-muted-foreground{% endif %}">
+                    Earnings
+                </a>
                 {% endif %}
                 <a href="{% url 'tips:leaderboard' %}"
                    class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'leaderboard' %}text-primary{% else %}text-muted-foreground{% endif %}">
@@ -214,6 +218,11 @@
                        class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
                        @click="$dispatch('toggle-mobile-menu')">
                         My Tips
+                    </a>
+                    <a href="{% url 'tips:earnings' %}"
+                       class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        Earnings
                     </a>
                     <a href="{% url 'tips:create_tip' %}"
                        class="text-lg font-medium transition-colors hover:text-primary text-primary"

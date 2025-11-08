@@ -3,35 +3,35 @@
 {% block title %}Verify Tip Details - Ligisoo{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
+<div class="max-w-5xl mx-auto px-4 py-8">
     <!-- Page Header -->
     <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-foreground mb-2">Verify Tip Details</h1>
-        <p class="text-muted-foreground">Review and correct the extracted information from your betslip</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-2">Verify Tip Details</h1>
+        <p class="text-lg text-muted-foreground">Review and correct the extracted information from your betslip</p>
     </div>
 
     <!-- Progress Steps -->
     <div class="mb-8">
         <div class="flex items-center justify-center">
             <div class="flex items-center text-primary">
-                <span class="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground rounded-full text-sm font-bold shadow-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span class="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold shadow-lg">
+                    <svg class="w-4 h-4 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                 </span>
-                <span class="ml-3 text-sm font-medium">Upload Betslip</span>
+                <span class="ml-2 md:ml-3 text-xs md:text-sm font-medium hidden sm:inline">Upload Betslip</span>
             </div>
-            <div class="flex-1 mx-4 h-2 bg-primary rounded-full max-w-20"></div>
+            <div class="flex-1 mx-2 md:mx-4 h-2 bg-primary rounded-full max-w-20"></div>
             <div class="flex items-center text-primary">
-                <span class="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground rounded-full text-sm font-bold shadow-lg">2</span>
-                <span class="ml-3 text-sm font-medium">Verify Details</span>
+                <span class="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold shadow-lg">2</span>
+                <span class="ml-2 md:ml-3 text-xs md:text-sm font-medium hidden sm:inline">Verify Details</span>
             </div>
-            <div class="flex-1 mx-4 h-2 bg-muted rounded-full max-w-20">
+            <div class="flex-1 mx-2 md:mx-4 h-2 bg-muted rounded-full max-w-20">
                 <div class="h-full bg-primary/30 rounded-full w-1/2"></div>
             </div>
             <div class="flex items-center text-muted-foreground">
-                <span class="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-full text-sm font-medium">3</span>
-                <span class="ml-3 text-sm font-medium">Go Live</span>
+                <span class="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-muted text-muted-foreground rounded-full text-xs md:text-sm font-medium">3</span>
+                <span class="ml-2 md:ml-3 text-xs md:text-sm font-medium hidden sm:inline">Go Live</span>
             </div>
         </div>
     </div>
@@ -116,8 +116,8 @@
         {% endif %}
 
         <!-- General Bet Information -->
-        <div class="bg-card border border-border rounded-lg p-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div class="bg-card border border-border rounded-lg p-4 md:p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
                 <!-- Bet Code -->
                 <div>
                     <label for="{{ form.bet_code.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
@@ -164,8 +164,12 @@
 
             <!-- Editable Table for Matches -->
             <div class="bg-card border border-border rounded-lg overflow-hidden">
+                <!-- Mobile: Scroll Hint -->
+                <div class="md:hidden bg-muted/30 px-4 py-2 text-xs text-muted-foreground text-center border-b border-border">
+                    👉 Swipe left to see all match details
+                </div>
                 <div class="overflow-x-auto">
-                    <table class="matches-table">
+                    <table class="matches-table min-w-[800px] md:min-w-full">
                         <thead>
                             <tr>
                                 <th class="table-header">#</th>
@@ -214,11 +218,11 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center justify-between pt-6 border-t border-border">
-            <a href="{% url 'tips:marketplace' %}" class="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors">
+        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-6 border-t border-border">
+            <a href="{% url 'tips:marketplace' %}" class="w-full sm:w-auto px-6 py-3.5 border border-border text-foreground rounded-lg hover:bg-muted transition-colors text-center font-medium">
                 Cancel
             </a>
-            <button type="submit" class="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-lg flex items-center">
+            <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg flex items-center justify-center text-base">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>

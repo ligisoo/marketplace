@@ -10,6 +10,17 @@ from .ocr import BetslipOCR
 class TipSubmissionForm(forms.ModelForm):
     """Form for initial tip submission with betslip upload or sharing link"""
 
+    # MVP1: Only SportPesa available
+    # To enable more bookmakers, uncomment the ones below:
+    AVAILABLE_BOOKMAKERS = [
+        ('sportpesa', 'SportPesa'),
+        # ('betika', 'Betika'),      # Coming soon
+        # ('odibets', 'Odibets'),    # Coming soon
+        # ('mozzart', 'Mozzart'),    # Coming soon
+        # ('betin', 'Betin'),        # Coming soon
+        # ('other', 'Other'),        # Coming soon
+    ]
+
     class Meta:
         model = Tip
         fields = ['bookmaker', 'price', 'screenshot', 'bet_sharing_link']
@@ -35,6 +46,11 @@ class TipSubmissionForm(forms.ModelForm):
                 'required': False
             })
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Override bookmaker choices to only show available ones
+        self.fields['bookmaker'].choices = self.AVAILABLE_BOOKMAKERS
     
     def clean_price(self):
         price = self.cleaned_data.get('price')
@@ -252,7 +268,17 @@ class TipVerificationForm(forms.Form):
 
 class TipSearchForm(forms.Form):
     """Form for searching and filtering tips in marketplace"""
-    
+
+    # MVP1: Only SportPesa available
+    AVAILABLE_BOOKMAKERS = [
+        ('sportpesa', 'SportPesa'),
+        # ('betika', 'Betika'),      # Coming soon
+        # ('odibets', 'Odibets'),    # Coming soon
+        # ('mozzart', 'Mozzart'),    # Coming soon
+        # ('betin', 'Betin'),        # Coming soon
+        # ('other', 'Other'),        # Coming soon
+    ]
+
     SORT_CHOICES = [
         ('-created_at', 'Newest First'),
         ('price', 'Price: Low to High'),
@@ -260,7 +286,7 @@ class TipSearchForm(forms.Form):
         ('-odds', 'Highest Odds'),
         ('expires_at', 'Expiring Soon'),
     ]
-    
+
     search = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
@@ -268,9 +294,9 @@ class TipSearchForm(forms.Form):
             'placeholder': 'Search tips, teams, tipsters...'
         })
     )
-    
+
     bookmaker = forms.ChoiceField(
-        choices=[('', 'All Bookmakers')] + Tip.BOOKMAKER_CHOICES,
+        choices=[('', 'All Bookmakers')] + AVAILABLE_BOOKMAKERS,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )

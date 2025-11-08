@@ -4,50 +4,86 @@
 
 {% block content %}
 <div class="mb-6">
-    <h1 class="text-3xl font-bold text-foreground mb-2">Football Tips Marketplace</h1>
-    <p class="text-muted-foreground">Browse expert tips from verified tipsters</p>
+    <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-2">Football Tips Marketplace</h1>
+    <p class="text-lg text-muted-foreground">Browse expert tips from verified tipsters</p>
+</div>
+
+<!-- MVP Notice -->
+<div class="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+    <div class="flex items-center">
+        <svg class="w-5 h-5 text-blue-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div class="flex-1">
+            <p class="text-sm text-foreground">
+                <span class="font-semibold">Currently showing SportPesa tips.</span>
+                <span class="text-muted-foreground ml-1">More bookmakers (Betika, Odibets, Mozzart) coming soon!</span>
+            </p>
+        </div>
+    </div>
 </div>
 
 <!-- Search and Filters -->
-<div class="bg-card rounded-lg border border-border p-6 mb-6">
+<div class="bg-card rounded-lg border border-border p-4 md:p-6 mb-6">
     <form method="get" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-                {{ form.search.label_tag }}
-                {{ form.search }}
+        <!-- Mobile: Collapsible Filters -->
+        <div x-data="{ showFilters: false }" class="space-y-4">
+            <!-- Always visible: Search and Quick Sort -->
+            <div class="grid grid-cols-1 gap-3">
+                <div>
+                    {{ form.search.label_tag }}
+                    {{ form.search }}
+                </div>
+                <div>
+                    {{ form.sort_by.label_tag }}
+                    {{ form.sort_by }}
+                </div>
             </div>
-            <div>
-                {{ form.bookmaker.label_tag }}
-                {{ form.bookmaker }}
-            </div>
-            <div>
-                {{ form.min_odds.label_tag }}
-                {{ form.min_odds }}
-            </div>
-            <div>
-                {{ form.max_odds.label_tag }}
-                {{ form.max_odds }}
+
+            <!-- Toggle Filters Button (Mobile Only) -->
+            <button type="button" @click="showFilters = !showFilters"
+                    class="md:hidden w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                </svg>
+                <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'">Show Filters</span>
+            </button>
+
+            <!-- Additional Filters (Hidden on mobile by default, always visible on desktop) -->
+            <div x-show="showFilters" x-collapse class="space-y-4 md:block">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        {{ form.bookmaker.label_tag }}
+                        {{ form.bookmaker }}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            {{ form.min_odds.label_tag }}
+                            {{ form.min_odds }}
+                        </div>
+                        <div>
+                            {{ form.max_odds.label_tag }}
+                            {{ form.max_odds }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        {{ form.min_price.label_tag }}
+                        {{ form.min_price }}
+                    </div>
+                    <div>
+                        {{ form.max_price.label_tag }}
+                        {{ form.max_price }}
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                {{ form.min_price.label_tag }}
-                {{ form.min_price }}
-            </div>
-            <div>
-                {{ form.max_price.label_tag }}
-                {{ form.max_price }}
-            </div>
-            <div>
-                {{ form.sort_by.label_tag }}
-                {{ form.sort_by }}
-            </div>
-        </div>
-        
-        <div class="flex space-x-2">
-            <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Apply Filters</button>
-            <a href="{% url 'tips:marketplace' %}" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Clear Filters</a>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+            <button type="submit" class="flex-1 sm:flex-none bg-primary text-primary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium">Apply Filters</button>
+            <a href="{% url 'tips:marketplace' %}" class="flex-1 sm:flex-none text-center bg-secondary text-secondary-foreground px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity font-medium">Clear Filters</a>
         </div>
     </form>
 </div>

@@ -16,56 +16,56 @@
     </div>
 
     <!-- Stats Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
         <!-- Total Tips -->
-        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="text-center">
-                <div class="bg-primary/20 text-primary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-primary/20 text-primary p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-foreground mb-1">{{ stats.total_tips }}</h3>
-                <p class="text-sm text-muted-foreground">Total Tips</p>
+                <h3 class="text-xl md:text-2xl font-bold text-foreground mb-1">{{ stats.total_tips }}</h3>
+                <p class="text-xs md:text-sm text-muted-foreground">Total Tips</p>
             </div>
         </div>
 
         <!-- Active Tips -->
-        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="text-center">
-                <div class="bg-primary/20 text-primary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-primary/20 text-primary p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-foreground mb-1">{{ stats.active_tips }}</h3>
-                <p class="text-sm text-muted-foreground">Active Tips</p>
+                <h3 class="text-xl md:text-2xl font-bold text-foreground mb-1">{{ stats.active_tips }}</h3>
+                <p class="text-xs md:text-sm text-muted-foreground">Active Tips</p>
             </div>
         </div>
 
         <!-- Pending Approval -->
-        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="text-center">
-                <div class="bg-accent/20 text-accent p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-accent/20 text-accent p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-foreground mb-1">{{ stats.pending_tips }}</h3>
-                <p class="text-sm text-muted-foreground">Pending Approval</p>
+                <h3 class="text-xl md:text-2xl font-bold text-foreground mb-1">{{ stats.pending_tips }}</h3>
+                <p class="text-xs md:text-sm text-muted-foreground">Pending Approval</p>
             </div>
         </div>
 
         <!-- Total Revenue -->
-        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="text-center">
-                <div class="bg-accent/20 text-accent p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-accent/20 text-accent p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-accent mb-1">KES {{ stats.total_sales|floatformat:0 }}</h3>
-                <p class="text-sm text-muted-foreground">Total Revenue</p>
+                <h3 class="text-xl md:text-2xl font-bold text-accent mb-1">KES {{ stats.total_sales|floatformat:0 }}</h3>
+                <p class="text-xs md:text-sm text-muted-foreground">Total Revenue</p>
             </div>
         </div>
     </div>

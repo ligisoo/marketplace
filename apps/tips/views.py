@@ -173,6 +173,159 @@ def my_purchases(request):
 
 
 @login_required
+def earnings_dashboard(request):
+    """Tipster earnings dashboard with detailed analytics"""
+    if not request.user.userprofile.is_tipster:
+        messages.error(request, 'Only tipsters can access this page.')
+        return redirect('tips:marketplace')
+
+    from django.db.models import Sum, Count, Q
+    from datetime import timedelta
+    from decimal import Decimal
+
+    # Get all tipster's tips
+    all_tips = Tip.objects.filter(tipster=request.user)
+
+    # Calculate total revenue
+    total_revenue = sum(tip.revenue_generated for tip in all_tips)
+
+    # Calculate earnings split (60/40)
+    platform_commission_rate = Decimal('0.40')
+    tipster_share_rate = Decimal('0.60')
+
+    tipster_earnings = Decimal(str(total_revenue)) * tipster_share_rate
+    platform_commission = Decimal(str(total_revenue)) * platform_commission_rate
+
+    # Get completed purchases
+    all_purchases = TipPurchase.objects.filter(
+        tip__tipster=request.user,
+        status='completed'
+    ).select_related('tip')
+
+    # Anonymous buyer statistics
+    unique_buyers_count = all_purchases.values('buyer').distinct().count()
+
+    # Repeat customers (buyers who purchased more than once)
+    buyer_purchase_counts = all_purchases.values('buyer').annotate(
+        purchase_count=Count('id')
+    )
+    repeat_customers = sum(1 for b in buyer_purchase_counts if b['purchase_count'] > 1)
+
+    # Time-based analytics
+    now = timezone.now()
+    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
+
+    # This month's earnings
+    this_month_purchases = all_purchases.filter(completed_at__gte=this_month_start)
+    this_month_revenue = sum(p.amount for p in this_month_purchases)
+    this_month_earnings = Decimal(str(this_month_revenue)) * tipster_share_rate
+
+    # Last month's earnings
+    last_month_purchases = all_purchases.filter(
+        completed_at__gte=last_month_start,
+        completed_at__lt=this_month_start
+    )
+    last_month_revenue = sum(p.amount for p in last_month_purchases)
+    last_month_earnings = Decimal(str(last_month_revenue)) * tipster_share_rate
+
+    # Calculate growth
+    if last_month_earnings > 0:
+        growth_percentage = ((this_month_earnings - last_month_earnings) / last_month_earnings) * 100
+    else:
+        growth_percentage = 100 if this_month_earnings > 0 else 0
+
+    # Top performing tips (by revenue)
+    top_tips_by_revenue = []
+    for tip in all_tips:
+        revenue = tip.revenue_generated
+        if revenue > 0:
+            top_tips_by_revenue.append({
+                'tip': tip,
+                'revenue': revenue,
+                'earnings': Decimal(str(revenue)) * tipster_share_rate,
+                'purchases': tip.purchase_count,
+            })
+
+    top_tips_by_revenue.sort(key=lambda x: x['revenue'], reverse=True)
+    top_tips_by_revenue = top_tips_by_revenue[:5]  # Top 5
+
+    # Top tips by purchase count
+    top_tips_by_sales = []
+    for tip in all_tips:
+        purchase_count = tip.purchase_count
+        if purchase_count > 0:
+            top_tips_by_sales.append({
+                'tip': tip,
+                'purchases': purchase_count,
+                'revenue': tip.revenue_generated,
+                'earnings': Decimal(str(tip.revenue_generated)) * tipster_share_rate,
+            })
+
+    top_tips_by_sales.sort(key=lambda x: x['purchases'], reverse=True)
+    top_tips_by_sales = top_tips_by_sales[:5]  # Top 5
+
+    # Recent transactions (last 10, anonymous)
+    recent_transactions = all_purchases.order_by('-completed_at')[:10]
+
+    # Weekly breakdown (last 4 weeks)
+    weekly_data = []
+    for week_num in range(4):
+        week_end = now - timedelta(days=week_num * 7)
+        week_start = week_end - timedelta(days=7)
+
+        week_purchases = all_purchases.filter(
+            completed_at__gte=week_start,
+            completed_at__lt=week_end
+        )
+        week_revenue = sum(p.amount for p in week_purchases)
+        week_earnings = Decimal(str(week_revenue)) * tipster_share_rate
+
+        weekly_data.insert(0, {
+            'week_label': f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}",
+            'revenue': week_revenue,
+            'earnings': week_earnings,
+            'purchases': week_purchases.count(),
+        })
+
+    context = {
+        # Overall earnings
+        'total_revenue': total_revenue,
+        'tipster_earnings': tipster_earnings,
+        'platform_commission': platform_commission,
+        'tipster_share_percentage': 60,
+        'platform_commission_percentage': 40,
+
+        # Monthly stats
+        'this_month_revenue': this_month_revenue,
+        'this_month_earnings': this_month_earnings,
+        'last_month_earnings': last_month_earnings,
+        'growth_percentage': round(growth_percentage, 1),
+
+        # Buyer statistics (anonymous)
+        'total_purchases': all_purchases.count(),
+        'unique_buyers': unique_buyers_count,
+        'repeat_customers': repeat_customers,
+
+        # Top performing tips
+        'top_tips_by_revenue': top_tips_by_revenue,
+        'top_tips_by_sales': top_tips_by_sales,
+
+        # Recent activity
+        'recent_transactions': recent_transactions,
+
+        # Weekly breakdown
+        'weekly_data': weekly_data,
+
+        # General stats
+        'total_tips': all_tips.count(),
+        'active_tips': all_tips.filter(status='active').count(),
+    }
+
+    return render(request, 'tips/earnings_dashboard.html', context)
+
+
+@login_required
 def create_tip(request):
     """Create a new tip - Step 1: Upload betslip"""
     if not request.user.userprofile.is_tipster:

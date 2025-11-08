@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}My Earnings - Ligisoo{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-foreground mb-2">💰 My Earnings</h1>
+        <p class="text-muted-foreground">Track your revenue, performance analytics, and earnings breakdown</p>
+    </div>
+
+    <!-- Earnings Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Revenue -->
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-muted-foreground">Total Revenue</span>
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+            </div>
+            <h3 class="text-3xl font-bold text-foreground mb-1">KES {{ total_revenue|floatformat:0 }}</h3>
+            <p class="text-xs text-muted-foreground">From {{ total_purchases }} sale{{ total_purchases|pluralize }}</p>
+        </div>
+
+        <!-- Your Earnings (60%) -->
+        <div class="bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/30 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-green-700 dark:text-green-400 font-medium">Your Earnings (60%)</span>
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-3xl font-bold text-green-700 dark:text-green-400 mb-1">KES {{ tipster_earnings|floatformat:0 }}</h3>
+            <p class="text-xs text-green-600/80 dark:text-green-400/80">Your share from sales</p>
+        </div>
+
+        <!-- Platform Commission (40%) -->
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-muted-foreground">Platform Fee (40%)</span>
+                <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+            </div>
+            <h3 class="text-3xl font-bold text-foreground mb-1">KES {{ platform_commission|floatformat:0 }}</h3>
+            <p class="text-xs text-muted-foreground">Service & hosting fees</p>
+        </div>
+
+        <!-- This Month Earnings -->
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-muted-foreground">This Month</span>
+                {% if growth_percentage > 0 %}
+                    <span class="inline-flex items-center text-xs font-medium text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        {{ growth_percentage }}%
+                    </span>
+                {% elif growth_percentage < 0 %}
+                    <span class="inline-flex items-center text-xs font-medium text-red-600 bg-red-100 dark:bg-red-900/20 px-2 py-0.5 rounded-full">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                        </svg>
+                        {{ growth_percentage }}%
+                    </span>
+                {% endif %}
+            </div>
+            <h3 class="text-3xl font-bold text-foreground mb-1">KES {{ this_month_earnings|floatformat:0 }}</h3>
+            <p class="text-xs text-muted-foreground">vs KES {{ last_month_earnings|floatformat:0 }} last month</p>
+        </div>
+    </div>
+
+    <!-- Revenue Split Visualization -->
+    <div class="bg-card border border-border rounded-lg p-6 shadow-sm mb-8">
+        <h3 class="text-lg font-semibold text-foreground mb-4">Revenue Split Breakdown</h3>
+        <div class="space-y-4">
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-foreground font-medium">Your Earnings (60%)</span>
+                    <span class="text-green-600 dark:text-green-400 font-bold">KES {{ tipster_earnings|floatformat:0 }}</span>
+                </div>
+                <div class="w-full bg-muted rounded-full h-3">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full" style="width: 60%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-foreground font-medium">Platform Commission (40%)</span>
+                    <span class="text-muted-foreground font-bold">KES {{ platform_commission|floatformat:0 }}</span>
+                </div>
+                <div class="w-full bg-muted rounded-full h-3">
+                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 h-3 rounded-full" style="width: 40%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Anonymous Buyer Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm text-center">
+            <div class="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+            <h4 class="text-3xl font-bold text-foreground mb-1">{{ unique_buyers }}</h4>
+            <p class="text-sm text-muted-foreground">Unique Buyer{{ unique_buyers|pluralize }}</p>
+        </div>
+
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm text-center">
+            <div class="bg-accent/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+            </div>
+            <h4 class="text-3xl font-bold text-foreground mb-1">{{ repeat_customers }}</h4>
+            <p class="text-sm text-muted-foreground">Repeat Customer{{ repeat_customers|pluralize }}</p>
+        </div>
+
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm text-center">
+            <div class="bg-blue-500/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+            </div>
+            <h4 class="text-3xl font-bold text-foreground mb-1">{{ total_purchases }}</h4>
+            <p class="text-sm text-muted-foreground">Total Purchase{{ total_purchases|pluralize }}</p>
+        </div>
+    </div>
+
+    <!-- Top Performing Tips -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- By Revenue -->
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-foreground mb-4">Top Tips by Revenue</h3>
+            {% if top_tips_by_revenue %}
+                <div class="space-y-3">
+                    {% for item in top_tips_by_revenue %}
+                        <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                            <div class="flex-1">
+                                <a href="{% url 'tips:detail' item.tip.id %}" class="text-sm font-medium text-primary hover:text-primary/80">
+                                    {{ item.tip.bet_code }}
+                                </a>
+                                <p class="text-xs text-muted-foreground">{{ item.purchases }} sale{{ item.purchases|pluralize }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-green-600 dark:text-green-400">KES {{ item.earnings|floatformat:0 }}</p>
+                                <p class="text-xs text-muted-foreground">from KES {{ item.revenue|floatformat:0 }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-sm text-muted-foreground text-center py-8">No sales yet</p>
+            {% endif %}
+        </div>
+
+        <!-- By Sales Count -->
+        <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-foreground mb-4">Most Popular Tips</h3>
+            {% if top_tips_by_sales %}
+                <div class="space-y-3">
+                    {% for item in top_tips_by_sales %}
+                        <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                            <div class="flex-1">
+                                <a href="{% url 'tips:detail' item.tip.id %}" class="text-sm font-medium text-primary hover:text-primary/80">
+                                    {{ item.tip.bet_code }}
+                                </a>
+                                <p class="text-xs text-muted-foreground">{{ item.tip.odds }}x odds</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-accent">{{ item.purchases }} buyer{{ item.purchases|pluralize }}</p>
+                                <p class="text-xs text-muted-foreground">KES {{ item.earnings|floatformat:0 }} earned</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-sm text-muted-foreground text-center py-8">No sales yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Weekly Earnings Breakdown -->
+    <div class="bg-card border border-border rounded-lg p-6 shadow-sm mb-8">
+        <h3 class="text-lg font-semibold text-foreground mb-4">Last 4 Weeks Performance</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-muted/50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Week</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">Sales</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Revenue</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Your Earnings</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    {% for week in weekly_data %}
+                        <tr class="hover:bg-muted/30 transition-colors">
+                            <td class="px-4 py-3 text-sm text-foreground">{{ week.week_label }}</td>
+                            <td class="px-4 py-3 text-sm text-center text-foreground">{{ week.purchases }}</td>
+                            <td class="px-4 py-3 text-sm text-right text-foreground">KES {{ week.revenue|floatformat:0 }}</td>
+                            <td class="px-4 py-3 text-sm text-right font-semibold text-green-600 dark:text-green-400">KES {{ week.earnings|floatformat:0 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Transactions (Anonymous) -->
+    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-foreground mb-4">Recent Sales Activity</h3>
+        {% if recent_transactions %}
+            <div class="space-y-2">
+                {% for purchase in recent_transactions %}
+                    <div class="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-foreground">
+                                    <a href="{% url 'tips:detail' purchase.tip.id %}" class="text-primary hover:text-primary/80">
+                                        {{ purchase.tip.bet_code }}
+                                    </a>
+                                </p>
+                                <p class="text-xs text-muted-foreground">{{ purchase.completed_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-semibold text-foreground">KES {{ purchase.amount }}</p>
+                            <p class="text-xs text-green-600 dark:text-green-400">+KES {% widthratio purchase.amount 100 60 %}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-sm text-muted-foreground text-center py-8">No transactions yet</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
