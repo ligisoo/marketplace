@@ -870,102 +870,126 @@ class BetslipOCR:
                 'scraped_at': datetime.now().isoformat()
             }
 
-        async with async_playwright() as p:
-            # Launch browser
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(
-                viewport={'width': 1920, 'height': 1080},
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            )
-            page = await context.new_page()
+        try:
+            async with async_playwright() as p:
+                # Launch browser
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context(
+                    viewport={'width': 1920, 'height': 1080},
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                )
+                page = await context.new_page()
 
-            try:
-                logger.info(f"Navigating to SportPesa URL: {url}")
-                await page.goto(url, wait_until='domcontentloaded', timeout=60000)
-
-                # Wait for JavaScript to execute
-                logger.info("Waiting for content to load...")
-                await asyncio.sleep(5)
-
-                # Extract bet information
-                logger.info("Extracting bet data...")
-                bet_data = {
-                    'referral_code': url.split('/')[-1],
-                    'scraped_at': datetime.now().isoformat(),
-                    'matches': []
-                }
-
-                # Wait for betslip to load
                 try:
-                    await page.wait_for_selector('.betslip-content-bet', timeout=10000)
-                    logger.info("Betslip found!")
-                except Exception as e:
-                    logger.error(f"Betslip not found: {e}")
-                    return {
-                        'error': 'No betslip found on this page',
+                    logger.info(f"Navigating to SportPesa URL: {url}")
+                    await page.goto(url, wait_until='domcontentloaded', timeout=60000)
+
+                    # Wait for JavaScript to execute
+                    logger.info("Waiting for content to load...")
+                    await asyncio.sleep(5)
+
+                    # Extract bet information
+                    logger.info("Extracting bet data...")
+                    bet_data = {
                         'referral_code': url.split('/')[-1],
-                        'scraped_at': datetime.now().isoformat()
+                        'scraped_at': datetime.now().isoformat(),
+                        'matches': []
                     }
 
-                # Find all bet items in the betslip
-                bet_elements = await page.query_selector_all('li.betslip-content-bet')
-                logger.info(f"Found {len(bet_elements)} bets in betslip")
-
-                for bet_element in bet_elements:
+                    # Wait for betslip to load
                     try:
-                        # Extract teams
-                        teams_elem = await bet_element.query_selector('.betslip-game-name, [data-qa="selection-event-description"]')
-                        teams = await teams_elem.inner_text() if teams_elem else None
-
-                        # Extract market
-                        market_elem = await bet_element.query_selector('[data-qa="selection-market"]')
-                        market = await market_elem.inner_text() if market_elem else None
-
-                        # Extract pick
-                        pick_elem = await bet_element.query_selector('.your-pick, [data-qa="selection-your-pick"]')
-                        pick = await pick_elem.inner_text() if pick_elem else None
-
-                        # Extract odds
-                        odds_elem = await bet_element.query_selector('.betslip-bet-current-odd, [data-qa="selection-your-odd"]')
-                        odds = await odds_elem.inner_text() if odds_elem else None
-
-                        # Try to extract date (if available)
-                        date_elem = await bet_element.query_selector('[class*="date"], [class*="time"], time')
-                        date = await date_elem.inner_text() if date_elem else None
-
-                        match_info = {
-                            'teams': teams.strip() if teams else None,
-                            'market': market.strip() if market else None,
-                            'pick': pick.strip() if pick else None,
-                            'odds': odds.strip() if odds else None,
-                            'date': date.strip() if date else None,
+                        await page.wait_for_selector('.betslip-content-bet', timeout=10000)
+                        logger.info("Betslip found!")
+                    except Exception as e:
+                        logger.error(f"Betslip not found: {e}")
+                        return {
+                            'error': 'No betslip found on this page',
+                            'referral_code': url.split('/')[-1],
+                            'scraped_at': datetime.now().isoformat()
                         }
 
-                        bet_data['matches'].append(match_info)
-                        logger.info(f"Extracted: {teams} - {market} - {pick} @ {odds}")
+                    # Find all bet items in the betslip
+                    bet_elements = await page.query_selector_all('li.betslip-content-bet')
+                    logger.info(f"Found {len(bet_elements)} bets in betslip")
 
+                    for bet_element in bet_elements:
+                        try:
+                            # Extract teams
+                            teams_elem = await bet_element.query_selector('.betslip-game-name, [data-qa="selection-event-description"]')
+                            teams = await teams_elem.inner_text() if teams_elem else None
+
+                            # Extract market
+                            market_elem = await bet_element.query_selector('[data-qa="selection-market"]')
+                            market = await market_elem.inner_text() if market_elem else None
+
+                            # Extract pick
+                            pick_elem = await bet_element.query_selector('.your-pick, [data-qa="selection-your-pick"]')
+                            pick = await pick_elem.inner_text() if pick_elem else None
+
+                            # Extract odds
+                            odds_elem = await bet_element.query_selector('.betslip-bet-current-odd, [data-qa="selection-your-odd"]')
+                            odds = await odds_elem.inner_text() if odds_elem else None
+
+                            # Try to extract date (if available)
+                            date_elem = await bet_element.query_selector('[class*="date"], [class*="time"], time')
+                            date = await date_elem.inner_text() if date_elem else None
+
+                            match_info = {
+                                'teams': teams.strip() if teams else None,
+                                'market': market.strip() if market else None,
+                                'pick': pick.strip() if pick else None,
+                                'odds': odds.strip() if odds else None,
+                                'date': date.strip() if date else None,
+                            }
+
+                            bet_data['matches'].append(match_info)
+                            logger.info(f"Extracted: {teams} - {market} - {pick} @ {odds}")
+
+                        except Exception as e:
+                            logger.error(f"Error extracting bet data: {e}")
+                            continue
+
+                    # Get total odds if available
+                    try:
+                        total_odds_elem = await page.query_selector('.betslip-total-odd, [data-qa*="total-odd"]')
+                        if total_odds_elem:
+                            bet_data['total_odds'] = await total_odds_elem.inner_text()
                     except Exception as e:
-                        logger.error(f"Error extracting bet data: {e}")
-                        continue
+                        logger.error(f"Could not extract total odds: {e}")
 
-                # Get total odds if available
-                try:
-                    total_odds_elem = await page.query_selector('.betslip-total-odd, [data-qa*="total-odd"]')
-                    if total_odds_elem:
-                        bet_data['total_odds'] = await total_odds_elem.inner_text()
+                    return bet_data
+
                 except Exception as e:
-                    logger.error(f"Could not extract total odds: {e}")
+                    return {
+                        'error': str(e),
+                        'url': url,
+                        'scraped_at': datetime.now().isoformat()
+                    }
+                finally:
+                    await browser.close()
 
-                return bet_data
-
-            except Exception as e:
+        except Exception as e:
+            # Handle Playwright browser not installed or other launch errors
+            error_msg = str(e)
+            if "Executable doesn't exist" in error_msg or "ms-playwright" in error_msg:
+                logger.error(
+                    "Playwright browsers not installed. "
+                    "Run 'playwright install chromium' in production to fix this. "
+                    "Skipping SportPesa scraping."
+                )
                 return {
-                    'error': str(e),
+                    'error': 'Playwright browsers not installed. Please run: playwright install chromium',
+                    'url': url,
+                    'scraped_at': datetime.now().isoformat(),
+                    'help': 'Contact admin to install Playwright browsers on the server'
+                }
+            else:
+                logger.error(f"Failed to launch browser for SportPesa scraping: {error_msg}")
+                return {
+                    'error': f'Failed to launch browser: {error_msg}',
                     'url': url,
                     'scraped_at': datetime.now().isoformat()
                 }
-            finally:
-                await browser.close()
 
     def process_sportpesa_link(self, sharing_link: str):
         """

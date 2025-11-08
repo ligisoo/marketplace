@@ -45,34 +45,47 @@ class LivescoreScraper:
 
         matches = []
 
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
 
-            try:
-                logger.info(f"Scraping livescore from: {url}")
-                await page.goto(url, wait_until='domcontentloaded', timeout=60000)
+                try:
+                    logger.info(f"Scraping livescore from: {url}")
+                    await page.goto(url, wait_until='domcontentloaded', timeout=60000)
 
-                # Wait for matches to load
-                await asyncio.sleep(5)
+                    # Wait for matches to load
+                    await asyncio.sleep(5)
 
-                # Find all match containers
-                match_elements = await page.query_selector_all('[data-id*="_mtc-r"]')
-                logger.info(f"Found {len(match_elements)} matches")
+                    # Find all match containers
+                    match_elements = await page.query_selector_all('[data-id*="_mtc-r"]')
+                    logger.info(f"Found {len(match_elements)} matches")
 
-                for match_elem in match_elements:
-                    try:
-                        match_data = await self._extract_match_data(match_elem)
-                        if match_data:
-                            matches.append(match_data)
-                    except Exception as e:
-                        logger.error(f"Error extracting match: {str(e)}")
-                        continue
+                    for match_elem in match_elements:
+                        try:
+                            match_data = await self._extract_match_data(match_elem)
+                            if match_data:
+                                matches.append(match_data)
+                        except Exception as e:
+                            logger.error(f"Error extracting match: {str(e)}")
+                            continue
 
-            except Exception as e:
-                logger.error(f"Error scraping livescore: {str(e)}")
-            finally:
-                await browser.close()
+                except Exception as e:
+                    logger.error(f"Error scraping livescore: {str(e)}")
+                finally:
+                    await browser.close()
+
+        except Exception as e:
+            # Handle Playwright browser not installed or other launch errors
+            error_msg = str(e)
+            if "Executable doesn't exist" in error_msg or "ms-playwright" in error_msg:
+                logger.error(
+                    "Playwright browsers not installed. "
+                    "Run 'playwright install chromium' to fix. "
+                    "Skipping livescore scraping for this run."
+                )
+            else:
+                logger.error(f"Failed to launch browser: {error_msg}")
 
         return matches
 
