@@ -181,6 +181,124 @@ class TipView(models.Model):
         ordering = ['-viewed_at']
 
 
+class TipsterPayment(models.Model):
+    """Track tipster payments for revenue earned from tip sales"""
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('mpesa', 'M-Pesa'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('paypal', 'PayPal'),
+        ('other', 'Other'),
+    ]
+
+    # Tipster information
+    tipster = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='payments_received'
+    )
+
+    # Payment period
+    period_start = models.DateTimeField(help_text='Start of payment period')
+    period_end = models.DateTimeField(help_text='End of payment period')
+
+    # Financial details
+    total_revenue = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text='Total revenue from tip sales in this period'
+    )
+    platform_commission = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=40.00,
+        help_text='Platform commission percentage (default: 40%)'
+    )
+    tipster_share = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text='Amount to be paid to tipster (60% of revenue)'
+    )
+
+    # Payment details
+    status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='pending'
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        blank=True
+    )
+    transaction_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='M-Pesa confirmation code or bank reference'
+    )
+    phone_number = models.CharField(
+        max_length=15,
+        blank=True,
+        help_text='M-Pesa phone number'
+    )
+
+    # Metadata
+    tips_count = models.IntegerField(
+        default=0,
+        help_text='Number of tips sold in this period'
+    )
+    purchases_count = models.IntegerField(
+        default=0,
+        help_text='Number of purchases in this period'
+    )
+    notes = models.TextField(blank=True, help_text='Payment notes or remarks')
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    processed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payments_processed'
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['tipster', 'status']),
+            models.Index(fields=['period_start', 'period_end']),
+            models.Index(fields=['status', 'created_at']),
+        ]
+        verbose_name = 'Tipster Payment'
+        verbose_name_plural = 'Tipster Payments'
+
+    def __str__(self):
+        return f"{self.tipster.userprofile.display_name} - KES {self.tipster_share} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate tipster share if not set
+        if not self.tipster_share and self.total_revenue:
+            commission_rate = self.platform_commission / 100
+            self.tipster_share = self.total_revenue * (1 - commission_rate)
+        super().save(*args, **kwargs)
+
+    @property
+    def platform_amount(self):
+        """Calculate platform's share"""
+        commission_rate = self.platform_commission / 100
+        return self.total_revenue * commission_rate
+
+
 class OCRProviderSettings(models.Model):
     """Settings for OCR provider selection"""
     OCR_PROVIDER_CHOICES = [
