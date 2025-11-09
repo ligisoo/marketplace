@@ -3,212 +3,291 @@
 {% block title %}Tipster Leaderboard - Ligisoo{% endblock %}
 
 {% block content %}
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  [x-cloak]{ display:none !important; }
+</style>
+
 <div class="max-w-7xl mx-auto">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-2">🏆 Tipster Leaderboard</h1>
-                <p class="text-lg text-muted-foreground">Top performing tipsters ranked by success rate and performance</p>
-            </div>
 
-            <!-- Sort Options -->
-            <div class="mt-4 md:mt-0">
-                <!-- Mobile: Dropdown Sort -->
-                <div class="md:hidden">
-                    <select onchange="window.location.href=this.value" class="w-full px-4 py-2.5 rounded-lg border border-border bg-card text-foreground text-sm font-medium">
-                        <option value="?sort=win_rate" {% if sort_by == 'win_rate' %}selected{% endif %}>Sort by: Win Rate</option>
-                        <option value="?sort=total_tips" {% if sort_by == 'total_tips' %}selected{% endif %}>Sort by: Total Tips</option>
-                        <option value="?sort=total_sales" {% if sort_by == 'total_sales' %}selected{% endif %}>Sort by: Sales</option>
-                        <option value="?sort=total_purchases" {% if sort_by == 'total_purchases' %}selected{% endif %}>Sort by: Popularity</option>
-                    </select>
-                </div>
-                <!-- Desktop: Button Group -->
-                <div class="hidden md:inline-flex rounded-lg border border-border bg-card p-1">
-                    <a href="?sort=win_rate" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if sort_by == 'win_rate' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
-                        Win Rate
-                    </a>
-                    <a href="?sort=total_tips" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_tips' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
-                        Total Tips
-                    </a>
-                    <a href="?sort=total_sales" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_sales' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
-                        Sales
-                    </a>
-                    <a href="?sort=total_purchases" class="px-4 py-2 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_purchases' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
-                        Popularity
-                    </a>
-                </div>
-            </div>
+  <!-- Ultra-compact header -->
+  <div class="mb-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h1 class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
+        Tipster Leaderboard
+        <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">
+          · Top performers by success & momentum
+        </span>
+      </h1>
+
+      <!-- Desktop: segmented sort -->
+      <div class="hidden md:flex items-center">
+        <div class="inline-flex rounded-lg border border-border bg-card p-1">
+          <a href="?sort=win_rate"
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'win_rate' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            Win Rate
+          </a>
+          <a href="?sort=total_tips"
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_tips' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            Total Tips
+          </a>
+          <a href="?sort=total_sales"
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_sales' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            Sales
+          </a>
+          <a href="?sort=total_purchases"
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_purchases' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            Popularity
+          </a>
         </div>
+      </div>
     </div>
+    <p class="mt-1 text-sm text-muted-foreground md:hidden">
+      Top performers by success & momentum
+    </p>
 
-    {% if leaderboard %}
-        <!-- Info Banner for Pending Results -->
-        {% if leaderboard.0.resulted_count == 0 %}
-        <div class="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-            <div class="flex items-start">
-                <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div>
-                    <h4 class="text-base font-semibold text-blue-700 dark:text-blue-400 mb-1">Waiting for Match Results</h4>
-                    <p class="text-sm text-blue-600/80 dark:text-blue-400/80">Win rates and statistics will be calculated once matches complete and results are verified. Rankings are currently based on sales and popularity.</p>
-                </div>
+    <!-- Mobile: dropdown sort -->
+    <div class="mt-2 md:hidden">
+      <label for="sortSelect" class="sr-only">Sort by</label>
+      <select id="sortSelect" onchange="window.location.href=this.value"
+              class="w-full h-9 rounded-md border border-border bg-card text-foreground text-sm">
+        <option value="?sort=win_rate" {% if sort_by == 'win_rate' %}selected{% endif %}>Sort by: Win Rate</option>
+        <option value="?sort=total_tips" {% if sort_by == 'total_tips' %}selected{% endif %}>Sort by: Total Tips</option>
+        <option value="?sort=total_sales" {% if sort_by == 'total_sales' %}selected{% endif %}>Sort by: Sales</option>
+        <option value="?sort=total_purchases" {% if sort_by == 'total_purchases' %}selected{% endif %}>Sort by: Popularity</option>
+      </select>
+    </div>
+  </div>
+
+  {% if leaderboard %}
+    <!-- Ribbon: compact summary chips -->
+    <div class="mb-5">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Leaderboard summary">
+        <!-- Tipsters count -->
+        <div role="listitem"
+             class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+          <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857"/>
+            </svg>
+          </span>
+          <div class="leading-tight">
+            <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Tipsters</div>
+            <div class="text-sm font-semibold text-foreground">{{ leaderboard|length }}</div>
+          </div>
+        </div>
+
+        <!-- Current sort -->
+        <div role="listitem"
+             class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+          <span class="inline-flex items-center justify-center rounded-md bg-foreground/10 text-foreground w-7 h-7">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10l4-4 4 4M18 14l-4 4-4-4"/>
+            </svg>
+          </span>
+          <div class="leading-tight">
+            <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Sorted</div>
+            <div class="text-sm font-semibold text-foreground">
+              {% if sort_by == 'win_rate' %}Win Rate{% elif sort_by == 'total_tips' %}Total Tips{% elif sort_by == 'total_sales' %}Sales{% elif sort_by == 'total_purchases' %}Popularity{% else %}Default{% endif %}
             </div>
+          </div>
+        </div>
+
+        {% if leaderboard.0.resulted_count == 0 %}
+        <!-- Status note -->
+        <div role="listitem"
+             class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2">
+          <span class="inline-flex items-center justify-center rounded-md bg-blue-500/20 text-blue-600 w-7 h-7">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </span>
+          <div class="leading-tight">
+            <div class="text-[11px] uppercase tracking-wide text-blue-700/80">Status</div>
+            <div class="text-sm font-semibold text-blue-700/90">Awaiting Results</div>
+          </div>
         </div>
         {% endif %}
+      </div>
+    </div>
 
-        <!-- Full Leaderboard Table -->
-        <div class="bg-card border border-border rounded-lg overflow-hidden">
-            <!-- Mobile: Scroll Hint -->
-            <div class="md:hidden bg-muted/30 px-4 py-2 text-xs text-muted-foreground text-center border-b border-border">
-                👉 Swipe left to see more stats
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[640px]">
-                    <thead class="bg-muted/50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground uppercase tracking-wider">Rank</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold text-muted-foreground uppercase tracking-wider">Tipster</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider">Tips</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider">Won</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider">Avg Odds</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider">Sales</th>
-                            <th class="px-6 py-4 text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider">Popularity</th>
-                            <th class="px-6 py-4 text-right text-sm font-semibold text-muted-foreground uppercase tracking-wider">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        {% for tipster_data in leaderboard %}
-                        <tr class="hover:bg-muted/30 transition-colors">
-                            <!-- Rank -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    {% if tipster_data.rank == 1 %}
-                                        <span class="text-2xl">🥇</span>
-                                    {% elif tipster_data.rank == 2 %}
-                                        <span class="text-2xl">🥈</span>
-                                    {% elif tipster_data.rank == 3 %}
-                                        <span class="text-2xl">🥉</span>
-                                    {% else %}
-                                        <span class="text-lg font-bold text-muted-foreground">{{ tipster_data.rank }}</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-
-                            <!-- Tipster -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    {% if tipster_data.profile.profile_picture %}
-                                        <img src="{{ tipster_data.profile.profile_picture.url }}" alt="{{ tipster_data.profile.display_name }}"
-                                             class="w-10 h-10 rounded-full object-cover mr-3">
-                                    {% else %}
-                                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mr-3">
-                                            <span class="text-sm font-bold text-primary-foreground">{{ tipster_data.tipster.phone_number.0|upper }}</span>
-                                        </div>
-                                    {% endif %}
-                                    <div>
-                                        <div class="font-medium text-base text-foreground">{{ tipster_data.profile.display_name }}</div>
-                                        {% if tipster_data.profile.is_verified %}
-                                            <span class="text-sm text-green-600 dark:text-green-400">✓ Verified</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </td>
-
-                            <!-- Win Rate -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                {% if tipster_data.resulted_count > 0 %}
-                                    <div class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold
-                                        {% if tipster_data.win_rate >= 70 %}bg-green-500/10 text-green-700 dark:text-green-400
-                                        {% elif tipster_data.win_rate >= 50 %}bg-yellow-500/10 text-yellow-700 dark:text-yellow-400
-                                        {% else %}bg-red-500/10 text-red-700 dark:text-red-400{% endif %}">
-                                        {{ tipster_data.win_rate }}%
-                                    </div>
-                                {% else %}
-                                    <span class="text-sm text-muted-foreground cursor-help" title="No completed tips with results yet">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </span>
-                                {% endif %}
-                            </td>
-
-                            <!-- Total Tips -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-base font-semibold text-foreground">{{ tipster_data.total_tips }}</span>
-                            </td>
-
-                            <!-- Won -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-base text-green-600 dark:text-green-400 font-semibold">{{ tipster_data.won_tips }}</span>
-                            </td>
-
-                            <!-- Avg Odds -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                {% if tipster_data.resulted_count > 0 %}
-                                    <span class="text-base text-muted-foreground font-medium">{{ tipster_data.avg_odds }}x</span>
-                                {% else %}
-                                    <span class="text-sm text-muted-foreground cursor-help" title="No completed tips with results yet">
-                                        <svg class="w-5 h-5 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </span>
-                                {% endif %}
-                            </td>
-
-                            <!-- Sales -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-sm font-bold text-primary">KES {{ tipster_data.total_sales|default:0 }}</span>
-                            </td>
-
-                            <!-- Popularity (Purchases) -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-base font-semibold text-accent">{{ tipster_data.total_purchases }}</span>
-                            </td>
-
-                            <!-- Action -->
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <a href="{% url 'tips:tipster_profile' tipster_data.tipster.id %}"
-                                   class="text-primary hover:text-primary/80 text-sm font-semibold">
-                                    View →
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- Info banner (kept) 
+    {% if leaderboard.0.resulted_count == 0 %}
+    <div class="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+      <div class="flex items-start">
+        <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div class="text-sm">
+          <h4 class="font-semibold text-blue-700 dark:text-blue-400 mb-0.5">Waiting for Match Results</h4>
+          <p class="text-blue-600/80 dark:text-blue-400/80">Win rates update after matches complete and results are verified. Rankings may rely more on sales and popularity meanwhile.</p>
         </div>
-    {% else %}
-        <!-- Empty State -->
-        <div class="bg-card border border-border rounded-lg p-12 text-center">
-            <div class="bg-primary/10 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                <svg class="h-12 w-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                </svg>
-            </div>
-            <h3 class="text-2xl font-bold text-foreground mb-3">Leaderboard Coming Soon</h3>
-            <p class="text-muted-foreground mb-6 max-w-md mx-auto">The leaderboard will showcase top-performing tipsters once tips are created and matches complete. Be the first to claim your spot!</p>
-
-            <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                <a href="{% url 'tips:marketplace' %}" class="inline-flex items-center bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    Browse Marketplace
-                </a>
-                {% if user.userprofile.is_tipster %}
-                <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center bg-card border border-border text-foreground px-6 py-3 rounded-lg font-medium hover:bg-muted transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Create Your First Tip
-                </a>
-                {% endif %}
-            </div>
-        </div>
+      </div>
+    </div>
     {% endif %}
+    -->
+    
+    <!-- Table -->
+    <div class="bg-card border border-border rounded-lg overflow-hidden">
+      <!-- Mobile hint -->
+      <div class="md:hidden bg-muted/30 px-4 py-2 text-xs text-muted-foreground text-center border-b border-border">
+        👉 Swipe left to see more stats
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[720px]">
+          <thead class="bg-muted/50">
+            <tr>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rank</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipster</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tips</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Won</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg Odds</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sales</th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Popularity</th>
+              <th class="px-5 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            {% for tipster_data in leaderboard %}
+            <tr class="hover:bg-muted/30 transition-colors">
+              <!-- Rank -->
+              <td class="px-5 py-3 whitespace-nowrap">
+                {% if tipster_data.rank == 1 %}
+                  <span class="text-2xl">🥇</span>
+                {% elif tipster_data.rank == 2 %}
+                  <span class="text-2xl">🥈</span>
+                {% elif tipster_data.rank == 3 %}
+                  <span class="text-2xl">🥉</span>
+                {% else %}
+                  <span class="text-sm font-bold text-muted-foreground">{{ tipster_data.rank }}</span>
+                {% endif %}
+              </td>
+
+              <!-- Tipster -->
+              <td class="px-5 py-3 whitespace-nowrap">
+                <div class="flex items-center">
+                  {% if tipster_data.profile.profile_picture %}
+                    <img src="{{ tipster_data.profile.profile_picture.url }}" alt="{{ tipster_data.profile.display_name }}"
+                         class="w-9 h-9 rounded-full object-cover mr-3">
+                  {% else %}
+                    <div class="w-9 h-9 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mr-3">
+                      <span class="text-xs font-bold text-primary-foreground">
+                        {{ tipster_data.tipster.phone_number.0|upper }}
+                      </span>
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div class="font-medium text-sm text-foreground">{{ tipster_data.profile.display_name }}</div>
+                    {% if tipster_data.profile.is_verified %}
+                      <span class="text-xs text-green-600 dark:text-green-400">✓ Verified</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+
+              <!-- Win Rate -->
+              <td class="px-5 py-3 whitespace-nowrap text-center">
+                {% if tipster_data.resulted_count > 0 %}
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                    {% if tipster_data.win_rate >= 70 %}bg-green-500/10 text-green-700 dark:text-green-400
+                    {% elif tipster_data.win_rate >= 50 %}bg-yellow-500/10 text-yellow-700 dark:text-yellow-400
+                    {% else %}bg-red-500/10 text-red-700 dark:text-red-400{% endif %}">
+                    {{ tipster_data.win_rate }}%
+                  </span>
+                {% else %}
+                  <span class="text-xs text-muted-foreground cursor-help" title="No completed tips with results yet">
+                    <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Total Tips -->
+              <td class="px-5 py-3 whitespace-nowrap text-center">
+                <span class="text-sm font-semibold text-foreground">{{ tipster_data.total_tips }}</span>
+              </td>
+
+              <!-- Won -->
+              <td class="px-5 py-3 whitespace-nowrap text-center">
+                <span class="text-sm text-green-600 dark:text-green-400 font-semibold">{{ tipster_data.won_tips }}</span>
+              </td>
+
+              <!-- Avg Odds -->
+              <td class="px-5 py-3 whitespace-nowrap text-center">
+                {% if tipster_data.resulted_count > 0 %}
+                  <span class="text-sm text-muted-foreground font-medium">{{ tipster_data.avg_odds }}x</span>
+                {% else %}
+                  <span class="text-xs text-muted-foreground cursor-help" title="No completed tips with results yet">
+                    <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Sales -->
+              <td class="px-5 py-3 whitespace-nowrap text-center">
+                <span class="text-sm font-bold text-primary">KES {{ tipster_data.total_sales|default:0 }}</span>
+              </td>
+
+              <!-- Popularity -->
+              <td class="px-5 py-3 whitespace-nowrap text-center">
+                <span class="text-sm font-semibold text-accent">{{ tipster_data.total_purchases }}</span>
+              </td>
+
+              <!-- Action -->
+              <td class="px-5 py-3 whitespace-nowrap text-right">
+                <a href="{% url 'tips:tipster_profile' tipster_data.tipster.id %}"
+                   class="text-primary hover:text-primary/80 text-sm font-semibold">
+                  View →
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- Empty State (kept, compact) -->
+    <div class="bg-card border border-border rounded-lg p-12 text-center">
+      <div class="bg-primary/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
+        <svg class="h-10 w-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806"/>
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-foreground mb-2">Leaderboard Coming Soon</h3>
+      <p class="text-muted-foreground mb-5 max-w-md mx-auto">The leaderboard will showcase top-performing tipsters once tips are created and matches complete. Be the first to claim your spot!</p>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+        <a href="{% url 'tips:marketplace' %}" class="inline-flex items-center bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+          </svg>
+          Browse Marketplace
+        </a>
+        {% if user.userprofile.is_tipster %}
+        <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center bg-card border border-border text-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-muted transition-colors">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Create Your First Tip
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

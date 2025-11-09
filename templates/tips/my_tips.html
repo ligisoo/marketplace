@@ -1,347 +1,267 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}My Tips - Ligisoo{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-    <div class="text-center mb-8">
-        <h1 class="text-4xl font-bold text-foreground mb-3">My Tips Dashboard</h1>
-        <p class="text-lg text-muted-foreground mb-6">Manage your betting tips and track performance</p>
-        <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-lg">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Create New Tip
-        </a>
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<!-- Ultra-compact header -->
+<div class="mb-3">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h1 class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
+      My Tips
+      <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">
+        · Manage & track performance
+      </span>
+    </h1>
+
+    <a href="{% url 'tips:create_tip' %}"
+       aria-label="Create a new tip"
+       class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground
+              h-9 px-3 text-xs md:text-sm font-medium hover:bg-primary/90 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Tip
+    </a>
+  </div>
+
+  <p class="mt-1 text-sm text-muted-foreground md:hidden">
+    Manage & track performance
+  </p>
+</div>
+
+<!-- Stats Ribbon (compact, scrollable on mobile) -->
+<div class="mb-5">
+  <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory"
+       role="list" aria-label="Key metrics">
+
+    <!-- Total Tips -->
+    <div role="listitem"
+         class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586l6.121 6.121V19a2 2 0 01-2 2z"/>
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total</div>
+        <div class="text-sm font-semibold text-foreground">{{ stats.total_tips }}</div>
+      </div>
     </div>
 
-    <!-- Stats Overview -->
-    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
-        <!-- Total Tips -->
-        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <div class="bg-primary/20 text-primary p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
-                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl md:text-2xl font-bold text-foreground mb-1">{{ stats.total_tips }}</h3>
-                <p class="text-xs md:text-sm text-muted-foreground">Total Tips</p>
-            </div>
-        </div>
-
-        <!-- Active Tips -->
-        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <div class="bg-primary/20 text-primary p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
-                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl md:text-2xl font-bold text-foreground mb-1">{{ stats.active_tips }}</h3>
-                <p class="text-xs md:text-sm text-muted-foreground">Active Tips</p>
-            </div>
-        </div>
-
-        <!-- Pending Approval -->
-        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <div class="bg-accent/20 text-accent p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
-                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl md:text-2xl font-bold text-foreground mb-1">{{ stats.pending_tips }}</h3>
-                <p class="text-xs md:text-sm text-muted-foreground">Pending Approval</p>
-            </div>
-        </div>
-
-        <!-- Total Revenue -->
-        <div class="bg-card border border-border rounded-lg p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <div class="bg-accent/20 text-accent p-3 md:p-4 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-2 md:mb-4 flex items-center justify-center">
-                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl md:text-2xl font-bold text-accent mb-1">KES {{ stats.total_sales|floatformat:0 }}</h3>
-                <p class="text-xs md:text-sm text-muted-foreground">Total Revenue</p>
-            </div>
-        </div>
+    <!-- Active Tips -->
+    <div role="listitem"
+         class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Active</div>
+        <div class="text-sm font-semibold text-foreground">{{ stats.active_tips }}</div>
+      </div>
     </div>
+
+    <!-- Pending Approval -->
+    <div role="listitem"
+         class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+      <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Pending</div>
+        <div class="text-sm font-semibold text-foreground">{{ stats.pending_tips }}</div>
+      </div>
+    </div>
+
+    <!-- Revenue -->
+    <div role="listitem"
+         class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+      <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+        </svg>
+      </span>
+      <div class="leading-tight">
+        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Revenue</div>
+        <div class="text-sm font-semibold text-accent">
+          KES {{ stats.total_sales|floatformat:0|intcomma }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Tips Cards -->
 {% if tips %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for tip in tips %}
-            <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-                <!-- Status Badge and Revenue -->
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        {% if tip.status == 'active' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
-                                <span class="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse"></span>
-                                Active
-                            </span>
-                        {% elif tip.status == 'pending_approval' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent/20 text-accent border border-accent/30">
-                                <span class="w-2 h-2 bg-accent rounded-full mr-2"></span>
-                                Pending Review
-                            </span>
-                        {% elif tip.status == 'archived' %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-muted/20 text-muted-foreground border border-muted/30">
-                                <span class="w-2 h-2 bg-muted-foreground rounded-full mr-2"></span>
-                                Archived
-                            </span>
-                        {% else %}
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-destructive/20 text-destructive border border-destructive/30">
-                                <span class="w-2 h-2 bg-destructive rounded-full mr-2"></span>
-                                {{ tip.get_status_display }}
-                            </span>
-                        {% endif %}
-                    </div>
-                    <div class="text-right">
-                        <p class="text-2xl font-bold text-accent">KES {{ tip.revenue_generated|floatformat:0 }}</p>
-                        <p class="text-xs text-muted-foreground font-medium">Revenue Earned</p>
-                    </div>
-                </div>
-
-                <!-- Bet Code and Bookmaker -->
-                <div class="text-center mb-4">
-                    <div class="flex items-center justify-center gap-2 mb-1">
-                        <h3 class="text-xl font-bold text-primary">
-                            <a href="{% url 'tips:detail' tip.id %}" class="hover:text-primary/80 transition-colors bet-code-link" data-full-code="{{ tip.bet_code }}">
-                                <span class="bet-code-display">{{ tip.bet_code }}</span>
-                            </a>
-                        </h3>
-                        <button class="bet-code-toggle text-muted-foreground hover:text-primary transition-colors p-1 rounded hover:bg-primary/10"
-                                type="button"
-                                aria-label="Toggle bet code visibility"
-                                title="Toggle bet code visibility">
-                            <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                            </svg>
-                            <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }}</p>
-                </div>
-
-                <!-- Key Metrics -->
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="text-center p-3 bg-primary/5 rounded-lg">
-                        <div class="text-lg font-bold text-primary">{{ tip.odds }}x</div>
-                        <div class="text-xs text-muted-foreground">Odds</div>
-                    </div>
-                    <div class="text-center p-3 bg-accent/5 rounded-lg">
-                        <div class="text-lg font-bold text-accent">KES {{ tip.price }}</div>
-                        <div class="text-xs text-muted-foreground">Price</div>
-                    </div>
-                </div>
-
-                <!-- Purchase Stats -->
-                <div class="text-center mb-4">
-                    <div class="flex justify-center items-center space-x-4 text-sm text-muted-foreground">
-                        <span>👥 {{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</span>
-                        <span>⏰ {{ tip.created_at|timesince }} ago</span>
-                    </div>
-                </div>
-
-                <!-- Time Remaining (for active tips) -->
-                {% if tip.status == 'active' %}
-                    <div class="text-center mb-4">
-                        <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
-                            ⏱️ 
-                            {% if tip.time_until_expiry.days > 0 %}
-                                {{ tip.time_until_expiry.days }} day{{ tip.time_until_expiry.days|pluralize }} left
-                            {% else %}
-                                Few hours left
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endif %}
-
-                <!-- Preview Matches -->
-                <div class="space-y-2">
-                    <h4 class="text-sm font-medium text-foreground mb-2">Preview Matches:</h4>
-                    {% with preview_matches=tip.get_preview_matches %}
-                        {% if preview_matches %}
-                            {% for match in preview_matches %}
-                                <div class="text-xs bg-secondary/50 p-2 rounded border">
-                                    <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
-                                    <div class="text-muted-foreground">{{ match.market }}</div>
-                                </div>
-                            {% endfor %}
-                            {% with hidden_count=tip.preview_data.total_matches|add:preview_matches|length|stringformat:"i"|add:"-"|add:tip.preview_data.total_matches|stringformat:"i" %}
-                                {% if tip.preview_data.total_matches == 1 %}
-                                    {# This shouldn't happen now, but just in case #}
-                                {% elif tip.preview_data.total_matches == 2 %}
-                                    <div class="text-xs text-center text-muted-foreground py-1">
-                                        +1 more match hidden
-                                    </div>
-                                {% elif tip.preview_data.total_matches > 2 %}
-                                    <div class="text-xs text-center text-muted-foreground py-1">
-                                        +{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            {# Single match betslip - show nothing in preview #}
-                            <div class="text-xs text-center text-muted-foreground py-3 bg-secondary/30 rounded border border-dashed">
-                                <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                </svg>
-                                <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
-                                <div class="text-muted-foreground/70 mt-1">Purchase to reveal</div>
-                            </div>
-                        {% endif %}
-                    {% endwith %}
-                </div>
-
-                <!-- Action Button -->
-                <div class="mt-4 pt-4 border-t border-border">
-                    <a href="{% url 'tips:detail' tip.id %}" 
-                       class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                        View Details
-                        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
-    
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-        <div class="mt-6 flex justify-center">
-            <nav class="flex space-x-1">
-                {% if page_obj.has_previous %}
-                    <a href="?page=1" class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Previous</a>
-                {% endif %}
-                
-                <span class="px-3 py-2 text-sm bg-primary text-primary-foreground rounded font-medium">
-                    {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </span>
-                
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Next</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Last</a>
-                {% endif %}
-            </nav>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for tip in tips %}
+      <div class="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
+        <!-- Status & Revenue -->
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            {% if tip.status == 'active' %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                <span class="w-2 h-2 bg-primary rounded-full mr-1 animate-pulse"></span>
+                Active
+              </span>
+            {% elif tip.status == 'pending_approval' %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent/20 text-accent border border-accent/30">
+                Pending Review
+              </span>
+            {% elif tip.status == 'archived' %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted/20 text-muted-foreground border border-muted/30">
+                Archived
+              </span>
+            {% else %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/20 text-destructive border border-destructive/30">
+                {{ tip.get_status_display }}
+              </span>
+            {% endif %}
+          </div>
+          <div class="text-right">
+            <p class="text-lg font-bold text-accent">KES {{ tip.revenue_generated|floatformat:0|intcomma }}</p>
+            <p class="text-xs text-muted-foreground font-medium">Revenue</p>
+          </div>
         </div>
-    {% endif %}
-{% else %}
-    <!-- Empty State -->
-    <div class="text-center py-16 bg-card border border-border rounded-lg shadow-sm">
-        <div class="bg-primary/20 text-primary p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-        </div>
-        <h3 class="text-2xl font-bold text-foreground mb-3">🚀 Ready to Share Your Tips?</h3>
-        <p class="text-lg text-muted-foreground mb-8 max-w-md mx-auto">Start your tipster journey by creating your first betting tip and earning from your football expertise!</p>
-        <div class="space-y-4">
-            <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center bg-primary text-primary-foreground px-8 py-4 rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg text-lg">
-                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Create Your First Tip
+
+        <!-- Bet Code -->
+        <div class="text-center mb-3">
+          <h3 class="text-base font-bold text-primary">
+            <a href="{% url 'tips:detail' tip.id %}" class="hover:text-primary/80 transition-colors">
+              {{ tip.bet_code }}
             </a>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-primary">60%</div>
-                    <div class="text-sm text-muted-foreground">Revenue Share</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-accent">24/7</div>
-                    <div class="text-sm text-muted-foreground">AI Processing</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-primary">Instant</div>
-                    <div class="text-sm text-muted-foreground">Payouts</div>
-                </div>
-            </div>
+          </h3>
+          <p class="text-xs text-muted-foreground">{{ tip.get_bookmaker_display }}</p>
         </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div class="text-center p-2 bg-primary/5 rounded-lg">
+            <div class="text-base font-bold text-primary">{{ tip.odds }}x</div>
+            <div class="text-[11px] text-muted-foreground">Odds</div>
+          </div>
+          <div class="text-center p-2 bg-accent/5 rounded-lg">
+            <div class="text-base font-bold text-accent">KES {{ tip.price|floatformat:0|intcomma }}</div>
+            <div class="text-[11px] text-muted-foreground">Price</div>
+          </div>
+        </div>
+
+        <!-- Purchase & Age -->
+        <div class="text-center mb-3">
+          <div class="flex justify-center items-center space-x-3 text-xs text-muted-foreground">
+            <span>👥 {{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</span>
+            <span>⏰ {{ tip.created_at|naturaltime }}</span>
+          </div>
+        </div>
+
+        <!-- Time Remaining -->
+        {% if tip.status == 'active' %}
+          <div class="text-center mb-3">
+            <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
+              ⏱️ 
+              {% if tip.time_until_expiry.days > 0 %}
+                {{ tip.time_until_expiry.days }} day{{ tip.time_until_expiry.days|pluralize }} left
+              {% else %}
+                Few hours left
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Preview Matches -->
+        <div class="space-y-2">
+          <h4 class="text-sm font-medium text-foreground mb-1">Preview Matches:</h4>
+          {% with preview_matches=tip.get_preview_matches %}
+            {% if preview_matches %}
+              {% for match in preview_matches %}
+                <div class="text-xs bg-secondary/50 p-2 rounded border">
+                  <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                  <div class="text-muted-foreground">{{ match.market }}</div>
+                </div>
+              {% endfor %}
+              {% with total=tip.preview_data.total_matches %}
+                {% if total > 2 %}
+                  <div class="text-xs text-center text-muted-foreground py-1">
+                    +{{ total|add:"-2" }} more match{{ total|add:"-2"|pluralize:"es" }} hidden
+                  </div>
+                {% elif total == 2 %}
+                  <div class="text-xs text-center text-muted-foreground py-1">
+                    +1 more match hidden
+                  </div>
+                {% endif %}
+              {% endwith %}
+            {% else %}
+              <div class="text-xs text-center text-muted-foreground py-3 bg-secondary/30 rounded border border-dashed">
+                <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+
+        <!-- Action -->
+        <div class="mt-3 pt-3 border-t border-border">
+          <a href="{% url 'tips:detail' tip.id %}" 
+             class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm">
+            View Details
+            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+      <nav class="flex space-x-1">
+        {% if page_obj.has_previous %}
+          <a href="?page=1" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">First</a>
+          <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Prev</a>
+        {% endif %}
+        <span class="px-3 py-2 text-xs bg-primary text-primary-foreground rounded font-medium">
+          {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Next</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Last</a>
+        {% endif %}
+      </nav>
     </div>
+  {% endif %}
+{% else %}
+  <!-- Empty State -->
+  <div class="text-center py-16 bg-card border border-border rounded-lg shadow-sm">
+    <div class="bg-primary/20 text-primary p-6 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586l6.121 6.121V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <h3 class="text-xl font-semibold text-foreground mb-2">🚀 Ready to Share Your Tips?</h3>
+    <p class="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+      Start your tipster journey by creating your first betting tip and earning from your football expertise!
+    </p>
+    <a href="{% url 'tips:create_tip' %}"
+       class="inline-flex items-center bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create Tip
+    </a>
+  </div>
 {% endif %}
-
-<script>
-// Bet Code Visibility Toggle
-(function() {
-    'use strict';
-
-    // Function to obfuscate bet code
-    function obfuscateBetCode(code) {
-        if (code.length <= 5) {
-            return '***';
-        }
-        const firstThree = code.substring(0, 3);
-        const lastTwo = code.substring(code.length - 2);
-        return firstThree + '***' + lastTwo;
-    }
-
-    // Get stored preference (default to hidden for privacy)
-    const isVisible = localStorage.getItem('betCodeVisible') === 'true';
-
-    // Get all bet code elements
-    const betCodeLinks = document.querySelectorAll('.bet-code-link');
-    const toggleButtons = document.querySelectorAll('.bet-code-toggle');
-
-    // Initialize display state
-    betCodeLinks.forEach((link, index) => {
-        const fullCode = link.dataset.fullCode;
-        const displaySpan = link.querySelector('.bet-code-display');
-        const toggleButton = toggleButtons[index];
-
-        if (displaySpan && toggleButton) {
-            // Set initial state
-            if (isVisible) {
-                displaySpan.textContent = fullCode;
-                toggleButton.querySelector('.eye-open').classList.remove('hidden');
-                toggleButton.querySelector('.eye-closed').classList.add('hidden');
-            } else {
-                displaySpan.textContent = obfuscateBetCode(fullCode);
-                toggleButton.querySelector('.eye-open').classList.add('hidden');
-                toggleButton.querySelector('.eye-closed').classList.remove('hidden');
-            }
-        }
-    });
-
-    // Add click handlers to toggle buttons
-    toggleButtons.forEach((button, index) => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const link = betCodeLinks[index];
-            const fullCode = link.dataset.fullCode;
-            const displaySpan = link.querySelector('.bet-code-display');
-            const eyeOpen = button.querySelector('.eye-open');
-            const eyeClosed = button.querySelector('.eye-closed');
-
-            // Toggle visibility
-            const currentlyVisible = !eyeOpen.classList.contains('hidden');
-
-            if (currentlyVisible) {
-                // Hide the code
-                displaySpan.textContent = obfuscateBetCode(fullCode);
-                eyeOpen.classList.add('hidden');
-                eyeClosed.classList.remove('hidden');
-                localStorage.setItem('betCodeVisible', 'false');
-            } else {
-                // Show the code
-                displaySpan.textContent = fullCode;
-                eyeOpen.classList.remove('hidden');
-                eyeClosed.classList.add('hidden');
-                localStorage.setItem('betCodeVisible', 'true');
-            }
-        });
-    });
-})();
-</script>
 {% endblock %}

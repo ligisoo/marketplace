@@ -3,248 +3,294 @@
 {% block title %}Ligisoo - Football Tips Marketplace{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <!-- Hero Section -->
-    <section class="relative text-center py-16 md:py-24 bg-gradient-to-br from-primary/5 via-background to-accent/5 rounded-xl overflow-hidden shadow-inner">
-        <div class="relative z-10">
-            <h1 class="font-headline text-4xl md:text-6xl font-bold mb-2 text-primary">
-                Welcome to Ligisoo!
-            </h1>
-            <p class="text-sm md:text-md text-foreground/70 mb-6 font-mono tracking-tight">
-                Ligisoo. Sheng [ li/ɡi/ˈsu ]. Translation: big leagues, top-tier competition, prestige
-            </p>
-            <p class="text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto">
-                The premier football tips marketplace in Kenya. Connect with expert tipsters, discover winning strategies, and elevate your betting game!
-            </p>
-            
-            {% if not user.is_authenticated %}
-                <div class="space-x-4">
-                    <a href="{% url 'users:register' %}" 
-                       class="inline-flex items-center bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
-                        Get Started
-                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
-                    <a href="{% url 'users:login' %}" 
-                       class="inline-flex items-center bg-secondary text-secondary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-secondary/80 transition-colors duration-200">
-                        Sign In
-                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                        </svg>
-                    </a>
-                </div>
-            {% else %}
-                <div class="flex flex-wrap gap-4 justify-center">
-                    {% if user.userprofile.is_buyer %}
-                        <a href="{% url 'tips:marketplace' %}"
-                           class="inline-flex items-center bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
-                            Browse Tips
-                            <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </a>
-                    {% endif %}
-                    {% if user.userprofile.is_tipster %}
-                        <a href="{% url 'tips:my_tips' %}"
-                           class="inline-flex items-center bg-secondary text-secondary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-colors duration-200">
-                            My Tips Dashboard
-                            <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </a>
-                        <a href="{% url 'tips:create_tip' %}"
-                           class="inline-flex items-center bg-accent text-accent-foreground px-8 py-3 rounded-lg font-semibold hover:bg-accent/90 transition-colors duration-200">
-                            Post New Tip
-                            <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-    </section>
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  [x-cloak]{ display:none !important; }
+</style>
 
-    <!-- MVP Launch Notice -->
-    <section>
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-gradient-to-r from-primary/10 via-blue-500/10 to-accent/10 border-2 border-primary/30 rounded-xl p-6 shadow-lg">
-                <div class="flex items-start md:items-center flex-col md:flex-row">
-                    <div class="flex-shrink-0 mb-4 md:mb-0 md:mr-4">
-                        <div class="bg-primary/20 rounded-full p-3">
-                            <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-xl font-bold text-foreground mb-2">🚀 Launching with SportPesa</h3>
-                        <p class="text-sm text-muted-foreground mb-3">We're starting with Kenya's leading bookmaker to deliver the best experience. Betika, Odibets, Mozzart, and other platforms coming soon!</p>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                SportPesa Live
-                            </span>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                                <svg class="w-3 h-3 mr-1 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                                    <circle cx="10" cy="10" r="3"></circle>
-                                </svg>
-                                More Bookmakers Soon
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<div class="space-y-6">
 
-    <!-- Features Section -->
-    <section>
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-headline font-bold mb-4 text-foreground">
-                Why Choose Ligisoo?
-            </h2>
-            <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Join Kenya's most trusted football tips marketplace with expert tipsters and proven results
-            </p>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Expert Tips -->
-            <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                <div class="bg-primary/20 text-primary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-3 text-foreground">Expert Tips</h3>
-                <p class="text-muted-foreground mb-4">Get betting tips from verified expert tipsters with proven track records and transparent performance metrics.</p>
-                <div class="text-sm text-accent font-semibold">High Success Rate</div>
-            </div>
-            
-            <!-- Secure Payments -->
-            <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                <div class="bg-accent/20 text-accent p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-3 text-foreground">Secure Payments</h3>
-                <p class="text-muted-foreground mb-4">Safe and secure M-Pesa payments with escrow protection for all transactions. Your money is protected until tip delivery.</p>
-                <div class="text-sm text-accent font-semibold">M-Pesa Integrated</div>
-            </div>
-            
-            <!-- Performance Tracking -->
-            <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow text-center">
-                <div class="bg-primary/20 text-primary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-3 text-foreground">Performance Tracking</h3>
-                <p class="text-muted-foreground mb-4">Transparent performance metrics and leaderboards for all tipsters. See win rates, ROI, and detailed analytics.</p>
-                <div class="text-sm text-accent font-semibold">Real-time Analytics</div>
-            </div>
-        </div>
-    </section>
+  <!-- Compact Hero (icons unchanged) -->
+  <section class="relative text-center py-10 md:py-14 bg-gradient-to-br from-primary/5 via-background to-accent/5 rounded-xl overflow-hidden shadow-inner">
+    <div class="relative z-10 max-w-3xl mx-auto px-4">
+      <h1 class="font-headline text-3xl md:text-5xl font-bold mb-1 text-primary">
+        Welcome to Ligisoo!
+      </h1>
+      <p class="text-[12px] md:text-sm text-foreground/70 mb-4 font-mono tracking-tight">
+        Ligisoo. Sheng [ li/ɡi/ˈsu ]. Translation: big leagues, top-tier competition, prestige
+      </p>
+      <p class="text-base md:text-lg text-foreground/80 mb-6">
+        The premier football tips marketplace in Kenya. Connect with expert tipsters, discover winning strategies, and elevate your betting game!
+      </p>
 
-    <!-- Quick Actions (for authenticated users) -->
-    {% if user.is_authenticated %}
-    <section class="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-6 border border-primary/10">
-        <h2 class="text-2xl font-bold mb-6 text-center text-foreground">Quick Actions</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {% if user.userprofile.is_buyer %}
-            <a href="{% url 'tips:marketplace' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
-                <div class="text-3xl mb-2">🎯</div>
-                <div class="font-semibold text-foreground">Browse Tips</div>
-                <div class="text-sm text-muted-foreground">Find Expert Tips</div>
-            </a>
-            {% endif %}
-            {% if user.userprofile.is_tipster %}
-            <a href="{% url 'tips:my_tips' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
-                <div class="text-3xl mb-2">📊</div>
-                <div class="font-semibold text-foreground">My Dashboard</div>
-                <div class="text-sm text-muted-foreground">Track Performance</div>
-            </a>
-            <a href="{% url 'tips:create_tip' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
-                <div class="text-3xl mb-2">➕</div>
-                <div class="font-semibold text-foreground">Post Tip</div>
-                <div class="text-sm text-muted-foreground">Share Your Insight</div>
-            </a>
-            {% endif %}
-            <a href="{% url 'users:profile' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
-                <div class="text-3xl mb-2">👤</div>
-                <div class="font-semibold text-foreground">My Profile</div>
-                <div class="text-sm text-muted-foreground">Account Settings</div>
-            </a>
-            <a href="{% url 'tips:leaderboard' %}" class="text-center p-4 bg-primary/10 border border-primary/20 rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
-                <div class="text-3xl mb-2">🏆</div>
-                <div class="font-semibold text-primary">Leaderboard</div>
-                <div class="text-sm text-primary/80">Top Tipsters</div>
-            </a>
-        </div>
-    </section>
-    {% endif %}
+      {% if not user.is_authenticated %}
+      <div class="flex flex-wrap gap-2 justify-center">
+        <a href="{% url 'users:register' %}" 
+           class="inline-flex items-center bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
+          Get Started
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
+        <a href="{% url 'users:login' %}" 
+           class="inline-flex items-center bg-secondary text-secondary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-secondary/80 transition-colors duration-200">
+          Sign In
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+          </svg>
+        </a>
+      </div>
+      {% else %}
+      <div class="flex flex-wrap gap-2 justify-center">
+        {% if user.userprofile.is_buyer %}
+        <a href="{% url 'tips:marketplace' %}"
+           class="inline-flex items-center bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
+          Browse Tips
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </a>
+        {% endif %}
+        {% if user.userprofile.is_tipster %}
+        <a href="{% url 'tips:my_tips' %}"
+           class="inline-flex items-center bg-secondary text-secondary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-secondary/90 transition-colors duration-200">
+          My Tips Dashboard
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+        </a>
+        <a href="{% url 'tips:create_tip' %}"
+           class="inline-flex items-center bg-accent text-accent-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-accent/90 transition-colors duration-200">
+          Post New Tip
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
-    <!-- CTA Section -->
-    <section class="py-16 bg-gradient-to-r from-secondary/50 to-accent/20 rounded-lg text-center">
-        <div class="space-y-4">
-            {% if not user.is_authenticated %}
-                <!-- Not logged in - Show registration CTA -->
-                <h2 class="text-3xl font-headline font-semibold mb-4 text-foreground">Join Our Growing Community!</h2>
-                <p class="text-foreground/80 mb-6 max-w-xl mx-auto">
-                    Register today to start accessing expert tips, build your reputation as a tipster, and join Kenya's premier football betting community.
-                </p>
-                <a href="{% url 'users:register' %}" 
-                   class="inline-flex items-center bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
-                    Create Your Account
-                    <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </a>
-                <p class="text-sm text-muted-foreground mt-4">
-                    Already have an account?
-                    <a href="{% url 'users:login' %}" class="text-primary hover:underline font-semibold">
-                        Sign in here
-                    </a>
-                </p>
-            {% else %}
-                <!-- Logged in -->
-                <svg class="mx-auto h-12 w-12 text-primary mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <h2 class="text-3xl font-headline font-semibold mb-4 text-foreground">Ready to Win Big?</h2>
-                <p class="text-foreground/80 mb-6 max-w-xl mx-auto">
-                    You're all set! Browse expert tips from verified tipsters or start sharing your own insights to build your reputation and earn revenue.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                    {% if user.userprofile.is_buyer %}
-                    <a href="{% url 'tips:marketplace' %}"
-                       class="inline-flex items-center bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
-                        Browse Expert Tips
-                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </a>
-                    {% endif %}
-                    {% if user.userprofile.is_tipster %}
-                    <a href="{% url 'tips:my_tips' %}"
-                       class="inline-flex items-center bg-secondary text-secondary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-secondary/80 transition-colors duration-200">
-                        My Dashboard
-                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </a>
-                    {% endif %}
-                </div>
-                <p class="text-sm text-muted-foreground mt-4">
-                    Welcome back! Ready to discover winning strategies?
-                </p>
-            {% endif %}
+  <!-- Optional Ribbon Chips (render if provided) -->
+  {% if total_tipsters or total_tips or total_purchases or total_sales %}
+  <section class="mb-1">
+    <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Platform snapshot">
+      {% if total_tipsters %}
+      <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+        <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
+          <!-- icon unchanged in features area we use emojis elsewhere; this is a simple people glyph kept generic -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857"></path>
+          </svg>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Tipsters</div>
+          <div class="text-sm font-semibold text-foreground">{{ total_tipsters }}</div>
         </div>
-    </section>
+      </div>
+      {% endif %}
+
+      {% if total_tips %}
+      <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+        <span class="inline-flex items-center justify-center rounded-md bg-foreground/10 text-foreground w-7 h-7">
+          <!-- original list icon style -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
+          </svg>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Tips Posted</div>
+          <div class="text-sm font-semibold text-foreground">{{ total_tips }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if total_purchases %}
+      <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+        <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7">
+          <!-- original cart-ish path used elsewhere -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 13h10l4-8H5.4"></path>
+          </svg>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Purchases</div>
+          <div class="text-sm font-semibold text-foreground">{{ total_purchases }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if total_sales %}
+      <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+        <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
+          <!-- original money glyph from your Secure Payments card -->
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1"></path>
+          </svg>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total Sales (KES)</div>
+          <div class="text-sm font-semibold text-foreground">KES {{ total_sales|floatformat:0 }}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Features (icons unchanged) -->
+  <section class="mt-2">
+    <div class="text-center mb-6">
+      <h2 class="text-2xl md:text-3xl font-headline font-bold mb-2 text-foreground">Why Choose Ligisoo?</h2>
+      <p class="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+        Join Kenya's most trusted football tips marketplace with expert tipsters and proven results
+      </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      <!-- Expert Tips -->
+      <div class="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow text-center">
+        <div class="bg-primary/20 text-primary p-4 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+          <!-- original icon -->
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg md:text-xl font-semibold mb-2 text-foreground">Expert Tips</h3>
+        <p class="text-sm text-muted-foreground mb-3">Get betting tips from verified expert tipsters with proven track records and transparent performance metrics.</p>
+        <div class="text-xs text-accent font-semibold">High Success Rate</div>
+      </div>
+      
+      <!-- Secure Payments -->
+      <div class="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow text-center">
+        <div class="bg-accent/20 text-accent p-4 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+          <!-- original icon -->
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg md:text-xl font-semibold mb-2 text-foreground">Secure Payments</h3>
+        <p class="text-sm text-muted-foreground mb-3">Safe and secure M-Pesa payments with escrow protection for all transactions. Your money is protected until tip delivery.</p>
+        <div class="text-xs text-accent font-semibold">M-Pesa Integrated</div>
+      </div>
+      
+      <!-- Performance Tracking -->
+      <div class="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow text-center">
+        <div class="bg-primary/20 text-primary p-4 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+          <!-- original icon -->
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg md:text-xl font-semibold mb-2 text-foreground">Performance Tracking</h3>
+        <p class="text-sm text-muted-foreground mb-3">Transparent performance metrics and leaderboards for all tipsters. See win rates, ROI, and detailed analytics.</p>
+        <div class="text-xs text-accent font-semibold">Real-time Analytics</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Actions (auth) -->
+  {% if user.is_authenticated %}
+  <section class="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-5 border border-primary/10">
+    <h2 class="text-xl md:text-2xl font-bold mb-4 text-center text-foreground">Quick Actions</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {% if user.userprofile.is_buyer %}
+      <a href="{% url 'tips:marketplace' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
+        <div class="text-3xl mb-2">🎯</div>
+        <div class="font-semibold text-foreground">Browse Tips</div>
+        <div class="text-sm text-muted-foreground">Find Expert Tips</div>
+      </a>
+      {% endif %}
+      {% if user.userprofile.is_tipster %}
+      <a href="{% url 'tips:my_tips' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
+        <div class="text-3xl mb-2">📊</div>
+        <div class="font-semibold text-foreground">My Dashboard</div>
+        <div class="text-sm text-muted-foreground">Track Performance</div>
+      </a>
+      <a href="{% url 'tips:create_tip' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
+        <div class="text-3xl mb-2">➕</div>
+        <div class="font-semibold text-foreground">Post Tip</div>
+        <div class="text-sm text-muted-foreground">Share Your Insight</div>
+      </a>
+      {% endif %}
+      <a href="{% url 'users:profile' %}" class="text-center p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
+        <div class="text-3xl mb-2">👤</div>
+        <div class="font-semibold text-foreground">My Profile</div>
+        <div class="text-sm text-muted-foreground">Account Settings</div>
+      </a>
+      <a href="{% url 'tips:leaderboard' %}" class="text-center p-4 bg-primary/10 border border-primary/20 rounded-lg shadow-sm hover:shadow-md transition-all hover:scale-105">
+        <div class="text-3xl mb-2">🏆</div>
+        <div class="font-semibold text-primary">Leaderboard</div>
+        <div class="text-sm text-primary/80">Top Tipsters</div>
+      </a>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- CTA (icons unchanged) -->
+  <section class="py-12 bg-gradient-to-r from-secondary/50 to-accent/20 rounded-lg text-center">
+    <div class="space-y-3 max-w-2xl mx-auto px-4">
+      {% if not user.is_authenticated %}
+      <h2 class="text-2xl md:text-3xl font-headline font-semibold mb-1 text-foreground">Join Our Growing Community!</h2>
+      <p class="text-foreground/80">
+        Register today to start accessing expert tips, build your reputation as a tipster, and join Kenya's premier football betting community.
+      </p>
+      <a href="{% url 'users:register' %}" 
+         class="inline-flex items-center bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
+        Create Your Account
+        <!-- original icon -->
+        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </a>
+      <p class="text-xs text-muted-foreground">
+        Already have an account?
+        <a href="{% url 'users:login' %}" class="text-primary hover:underline font-semibold">
+          Sign in here
+        </a>
+      </p>
+      {% else %}
+      <!-- original check icon -->
+      <svg class="mx-auto h-12 w-12 text-primary mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <h2 class="text-2xl md:text-3xl font-headline font-semibold mb-1 text-foreground">Ready to Win Big?</h2>
+      <p class="text-foreground/80">
+        You're all set! Browse expert tips from verified tipsters or start sharing your own insights to build your reputation and earn revenue.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-2 justify-center">
+        {% if user.userprofile.is_buyer %}
+        <a href="{% url 'tips:marketplace' %}"
+           class="inline-flex items-center bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-primary/90 transition-colors duration-200">
+          Browse Expert Tips
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </a>
+        {% endif %}
+        {% if user.userprofile.is_tipster %}
+        <a href="{% url 'tips:my_tips' %}"
+           class="inline-flex items-center bg-secondary text-secondary-foreground px-6 py-2.5 rounded-lg font-semibold hover:bg-secondary/80 transition-colors duration-200">
+          My Dashboard
+          <!-- original icon -->
+          <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+        </a>
+        {% endif %}
+      </div>
+      <p class="text-xs text-muted-foreground">Welcome back! Ready to discover winning strategies?</p>
+      {% endif %}
+    </div>
+  </section>
+
 </div>
 {% endblock %}

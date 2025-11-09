@@ -11,7 +11,8 @@ urlpatterns = [
 
     # Tipster views
     path('my-tips/', views.my_tips, name='my_tips'),
-    path('earnings/', views.earnings_dashboard, name='earnings'),
+    path('earnings/', views.earnings_dashboard, name='earnings'),   
+    # path("earnings/export.csv", views.earnings_export_csv, name="earnings_export_csv"),
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
     path('processing/<int:tip_id>/', views.tip_processing_status, name='tip_processing_status'),
