@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Processing Betslip - LigiSoo{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Processing Your Betslip</h1>
+
+            <!-- Status Card -->
+            <div class="border border-gray-200 rounded-lg p-6 mb-6">
+                {% if tip.processing_status == 'pending' %}
+                    <div class="flex items-center mb-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Queued for Processing</h3>
+                            <p class="text-sm text-gray-600">Your betslip is in the queue and will be processed shortly.</p>
+                        </div>
+                    </div>
+                {% elif tip.processing_status == 'processing' %}
+                    <div class="flex items-center mb-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Processing in Progress</h3>
+                            <p class="text-sm text-gray-600">We're extracting match data and enriching it with accurate fixture information.</p>
+                        </div>
+                    </div>
+                {% elif tip.processing_status == 'completed' %}
+                    <div class="flex items-center mb-4">
+                        <svg class="h-8 w-8 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Processing Complete!</h3>
+                            <p class="text-sm text-gray-600">Your betslip has been processed successfully.</p>
+                        </div>
+                    </div>
+                    <p class="text-center mt-6">
+                        <a href="{% url 'tips:verify_tip' tip.id %}" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                            Continue to Verification
+                        </a>
+                    </p>
+                {% elif tip.processing_status == 'failed' %}
+                    <div class="flex items-center mb-4">
+                        <svg class="h-8 w-8 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Processing Failed</h3>
+                            <p class="text-sm text-gray-600">There was an error processing your betslip.</p>
+                        </div>
+                    </div>
+                    {% if tip.processing_error %}
+                        <div class="bg-red-50 border border-red-200 rounded p-4 mt-4">
+                            <p class="text-sm text-red-800">Error: {{ tip.processing_error }}</p>
+                        </div>
+                    {% endif %}
+                    <p class="text-center mt-6">
+                        <a href="{% url 'tips:create_tip' %}" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+                            Try Again
+                        </a>
+                    </p>
+                {% endif %}
+
+                <!-- Processing Steps -->
+                <div class="mt-6 space-y-3">
+                    <div class="flex items-center text-sm">
+                        <svg class="h-5 w-5 mr-2 {% if tip.ocr_processed %}text-green-500{% else %}text-gray-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="{% if tip.ocr_processed %}text-green-700{% else %}text-gray-600{% endif %}">
+                            Extract betslip data
+                        </span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <svg class="h-5 w-5 mr-2 {% if tip.enrichment_completed %}text-green-500{% else %}text-gray-400{% endif %}" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="{% if tip.enrichment_completed %}text-green-700{% else %}text-gray-600{% endif %}">
+                            Enrich with accurate match data
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex">
+                    <svg class="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div>
+                        <p class="text-sm text-blue-800">
+                            <strong>What's happening?</strong><br>
+                            We're processing your betslip in the background. This includes extracting match information 
+                            and enriching it with accurate dates, times, and league details from our football database.
+                        </p>
+                        <p class="text-sm text-blue-800 mt-2">
+                            This page will automatically update. You can also refresh manually or come back later.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto-refresh for pending/processing status -->
+            {% if tip.processing_status == 'pending' or tip.processing_status == 'processing' %}
+                <script>
+                    // Auto-refresh every 5 seconds
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 5000);
+                </script>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

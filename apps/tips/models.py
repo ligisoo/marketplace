@@ -46,7 +46,23 @@ class Tip(models.Model):
     # OCR processing
     ocr_processed = models.BooleanField(default=False)
     ocr_confidence = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    
+
+    # Background processing status
+    PROCESSING_STATUS_CHOICES = [
+        ('pending', 'Pending Processing'),
+        ('processing', 'Processing'),
+        ('completed', 'Processing Completed'),
+        ('failed', 'Processing Failed'),
+    ]
+    processing_status = models.CharField(
+        max_length=20,
+        choices=PROCESSING_STATUS_CHOICES,
+        default='completed',
+        help_text='Status of background processing'
+    )
+    processing_error = models.TextField(null=True, blank=True, help_text='Error message if processing failed')
+    enrichment_completed = models.BooleanField(default=False, help_text='Whether API-Football enrichment is complete')
+
     # Results tracking
     is_resulted = models.BooleanField(default=False)
     is_won = models.BooleanField(default=False)
@@ -88,9 +104,20 @@ class Tip(models.Model):
         )['total'] or 0
     
     def get_preview_matches(self):
-        """Get preview match information for buyers"""
+        """
+        Get preview match information for buyers.
+        Always hides at least one match to avoid giving away the entire tip.
+        """
         matches = self.preview_data.get('matches', [])
-        return matches[:2]  # Show only first 2 matches in preview
+        total_matches = self.preview_data.get('total_matches', len(matches))
+
+        # Smart preview logic: never show all matches
+        if total_matches == 1:
+            return []  # Hide the only match
+        elif total_matches == 2:
+            return matches[:1]  # Show only first match, hide the second
+        else:
+            return matches[:2]  # Show first 2 matches for 3+ match betslips
     
     def can_be_purchased(self):
         """Check if tip can be purchased"""

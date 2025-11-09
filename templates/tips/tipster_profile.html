@@ -107,16 +107,28 @@
 
                         <div class="space-y-3">
                             <!-- Preview Matches -->
-                            {% for match in tip.get_preview_matches %}
-                                <div class="mb-3 p-2 bg-secondary rounded">
-                                    <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
-                                    <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
-                                </div>
-                            {% endfor %}
-
-                            {% if tip.preview_data.total_matches > 2 %}
-                                <p class="text-xs text-muted-foreground">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }}</p>
-                            {% endif %}
+                            {% with preview_matches=tip.get_preview_matches %}
+                                {% if preview_matches %}
+                                    {% for match in preview_matches %}
+                                        <div class="mb-3 p-2 bg-secondary rounded">
+                                            <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                            <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
+                                        </div>
+                                    {% endfor %}
+                                    {% if tip.preview_data.total_matches == 2 %}
+                                        <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
+                                    {% elif tip.preview_data.total_matches > 2 %}
+                                        <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
+                                        <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
 
                             <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
                                 <div>

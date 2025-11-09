@@ -343,45 +343,34 @@ def create_tip(request):
     if request.method == 'POST':
         form = TipSubmissionForm(request.POST, request.FILES)
         if form.is_valid():
-            # Save the tip temporarily
+            # Save the tip with pending status
             tip = form.save(commit=False)
             tip.tipster = request.user
             tip.bet_code = 'TEMP_' + str(timezone.now().timestamp()).replace('.', '')
-            tip.odds = 0  # Will be updated in verification step
-            tip.expires_at = timezone.now()  # Will be updated in verification step
+            tip.odds = 0  # Will be updated by background processing
+            tip.expires_at = timezone.now()  # Will be updated by background processing
+            tip.processing_status = 'pending'
             tip.save()
 
-            # Get active OCR provider
-            from .models import OCRProviderSettings
-            ocr_provider = OCRProviderSettings.get_active_provider()
+            # Enqueue background processing task
+            from .task_queue import enqueue_task
+            from .background_tasks import process_betslip_async, processing_callback
 
-            # Process based on provider
-            ocr_service = BetslipOCR(provider=ocr_provider)
+            task_id = enqueue_task(
+                process_betslip_async,
+                tip.id,
+                callback=processing_callback
+            )
 
-            if ocr_provider == 'sportpesa' and tip.bet_sharing_link:
-                # Process SportPesa sharing link
-                ocr_result = ocr_service.process_sportpesa_link(tip.bet_sharing_link)
-            elif tip.screenshot:
-                # Process betslip screenshot with OCR
-                ocr_result = ocr_service.process_betslip_image(tip.screenshot)
-            else:
-                # Should not happen due to form validation
-                tip.delete()
-                messages.error(request, "No betslip screenshot or sharing link provided")
-                return render(request, 'tips/create_tip.html', {'form': form})
+            # Show success message
+            messages.success(
+                request,
+                'Your bet link has been captured for processing. '
+                'You will be notified once processing is complete.'
+            )
 
-            if ocr_result['success']:
-                # Store extracted data
-                tip.match_details = ocr_result['data']
-                tip.ocr_confidence = ocr_result['confidence']
-                tip.save()
-
-                # Redirect to verification step
-                return redirect('tips:verify_tip', tip_id=tip.id)
-            else:
-                # Processing failed, delete tip and show error
-                tip.delete()
-                messages.error(request, f"Failed to process betslip: {ocr_result.get('error', 'Unknown error')}")
+            # Redirect to processing status page
+            return redirect('tips:tip_processing_status', tip_id=tip.id)
     else:
         form = TipSubmissionForm()
 
@@ -480,6 +469,27 @@ def verify_tip(request, tip_id):
     }
     
     return render(request, 'tips/verify_tip.html', context)
+
+
+@login_required
+def tip_processing_status(request, tip_id):
+    """Show processing status of a tip"""
+    tip = get_object_or_404(Tip, id=tip_id)
+
+    # Only tipster who created the tip can view this
+    if tip.tipster != request.user:
+        messages.error(request, 'You do not have permission to view this tip.')
+        return redirect('tips:my_tips')
+
+    # If processing is complete, redirect to verify page
+    if tip.processing_status == 'completed' and tip.ocr_processed:
+        return redirect('tips:verify_tip', tip_id=tip.id)
+
+    context = {
+        'tip': tip,
+    }
+
+    return render(request, 'tips/processing_status.html', context)
 
 
 @login_required

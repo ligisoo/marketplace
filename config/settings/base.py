@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # Local apps
     'apps.users',
     'apps.tips',
+    'apps.fixtures',
     'apps.transactions',
     'apps.withdrawals',
     'apps.disputes',
@@ -164,3 +165,18 @@ ENVIRONMENT = config('ENVIRONMENT', default='development')
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_S3_REGION_NAME = config('AWS_REGION_NAME', default='us-east-1')
+
+# API-Football Configuration
+API_FOOTBALL_KEY = config('API_FOOTBALL_KEY', default='07346e2fbadbfc8c173d7cb2bca2921f')
+
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'api_cache_table',
+        'OPTIONS': {
+            'MAX_ENTRIES': 10000,
+            'CULL_FREQUENCY': 4,
+        }
+    }
+}

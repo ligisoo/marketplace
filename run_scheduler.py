@@ -33,7 +33,8 @@ from django.utils import timezone
 from django.core import management
 from apps.tips.services import ResultVerifier
 from apps.tips.models import Tip
-from datetime import timedelta
+from apps.fixtures.services import APIFootballService
+from datetime import timedelta, date as dt_date
 
 # Configure logging
 LOG_DIR = BASE_DIR / 'logs'
@@ -140,6 +141,107 @@ def cleanup_temp_tips():
     logger.info("")  # Blank line for readability
 
 
+def fetch_upcoming_fixtures():
+    """
+    Fetch upcoming fixtures for the next 3 days.
+    Runs once per day to minimize API usage.
+    """
+    logger.info("=" * 60)
+    logger.info("UPCOMING FIXTURES FETCH STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
+
+    try:
+        api_service = APIFootballService()
+
+        # Get API usage stats
+        stats = api_service.get_api_usage_stats()
+        logger.info(f"API Usage: {stats['api_requests']}/{stats['limit']} requests today")
+        logger.info(f"Remaining: {stats['remaining']} requests")
+
+        if stats['remaining'] < 10:
+            logger.warning("API limit nearly reached, skipping upcoming fixtures fetch")
+            return
+
+        # Fetch fixtures for next 3 days
+        total_created = 0
+        total_updated = 0
+
+        for days_ahead in range(3):
+            fetch_date = (datetime.now().date() + timedelta(days=days_ahead))
+
+            if not api_service._can_make_request():
+                logger.warning(f"API limit reached, stopped at day {days_ahead}")
+                break
+
+            logger.info(f"Fetching fixtures for {fetch_date}")
+            response = api_service.fetch_fixtures(date=fetch_date)
+
+            if response:
+                created, updated = api_service.save_fixtures(response)
+                total_created += created
+                total_updated += updated
+                logger.info(f"  {fetch_date}: {created} created, {updated} updated")
+
+        logger.info(f"✓ Total: {total_created} created, {total_updated} updated")
+
+    except Exception as e:
+        logger.error(f"Error fetching upcoming fixtures: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("UPCOMING FIXTURES FETCH COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")
+
+
+def fetch_live_fixtures():
+    """
+    Fetch currently live fixtures for real-time score updates.
+    Runs every 15 minutes during match times.
+    """
+    logger.info("=" * 60)
+    logger.info("LIVE FIXTURES FETCH STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
+
+    try:
+        api_service = APIFootballService()
+
+        # Check API usage
+        stats = api_service.get_api_usage_stats()
+        logger.info(f"API Usage: {stats['api_requests']}/{stats['limit']} requests today")
+
+        if stats['remaining'] < 5:
+            logger.warning("API limit nearly reached, skipping live fixtures fetch")
+            return
+
+        # Fetch live fixtures
+        logger.info("Fetching live fixtures...")
+        response = api_service.fetch_live_fixtures()
+
+        if response:
+            created, updated = api_service.save_fixtures(response)
+            logger.info(f"✓ Live fixtures: {created} created, {updated} updated")
+
+            # Log any live matches
+            from apps.fixtures.models import Fixture
+            live_matches = Fixture.objects.filter(status_short__in=['1H', '2H', 'HT', 'ET', 'P'])[:5]
+            if live_matches.exists():
+                logger.info("Currently live matches:")
+                for match in live_matches:
+                    logger.info(f"  {match.home_team.name} {match.home_goals}-{match.away_goals} {match.away_team.name} ({match.status_short})")
+        else:
+            logger.info("No live fixtures data returned")
+
+    except Exception as e:
+        logger.error(f"Error fetching live fixtures: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("LIVE FIXTURES FETCH COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")
+
+
 def schedule_jobs():
     """
     Configure all scheduled jobs here.
@@ -147,10 +249,16 @@ def schedule_jobs():
     You can customize the schedule by modifying the intervals below.
     """
 
-    # Job 1: Run result verification every 30 minutes
+    # Job 1: Fetch upcoming fixtures once per day at 3 AM
+    schedule.every().day.at("03:00").do(fetch_upcoming_fixtures)
+
+    # Job 2: Fetch live fixtures every 15 minutes
+    schedule.every(15).minutes.do(fetch_live_fixtures)
+
+    # Job 3: Run result verification every 30 minutes (without API fetch, use DB only)
     schedule.every(30).minutes.do(run_result_verification)
 
-    # Job 2: Clean up temporary tips every hour
+    # Job 4: Clean up temporary tips every hour
     schedule.every().hour.do(cleanup_temp_tips)
 
     # Alternative schedules for result verification (uncomment the one you prefer):

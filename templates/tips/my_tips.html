@@ -167,17 +167,38 @@
                 <!-- Preview Matches -->
                 <div class="space-y-2">
                     <h4 class="text-sm font-medium text-foreground mb-2">Preview Matches:</h4>
-                    {% for match in tip.get_preview_matches %}
-                        <div class="text-xs bg-secondary/50 p-2 rounded border">
-                            <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
-                            <div class="text-muted-foreground">{{ match.market }}</div>
-                        </div>
-                    {% endfor %}
-                    {% if tip.preview_data.total_matches > 2 %}
-                        <div class="text-xs text-center text-muted-foreground py-1">
-                            +{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }}
-                        </div>
-                    {% endif %}
+                    {% with preview_matches=tip.get_preview_matches %}
+                        {% if preview_matches %}
+                            {% for match in preview_matches %}
+                                <div class="text-xs bg-secondary/50 p-2 rounded border">
+                                    <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                    <div class="text-muted-foreground">{{ match.market }}</div>
+                                </div>
+                            {% endfor %}
+                            {% with hidden_count=tip.preview_data.total_matches|add:preview_matches|length|stringformat:"i"|add:"-"|add:tip.preview_data.total_matches|stringformat:"i" %}
+                                {% if tip.preview_data.total_matches == 1 %}
+                                    {# This shouldn't happen now, but just in case #}
+                                {% elif tip.preview_data.total_matches == 2 %}
+                                    <div class="text-xs text-center text-muted-foreground py-1">
+                                        +1 more match hidden
+                                    </div>
+                                {% elif tip.preview_data.total_matches > 2 %}
+                                    <div class="text-xs text-center text-muted-foreground py-1">
+                                        +{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            {# Single match betslip - show nothing in preview #}
+                            <div class="text-xs text-center text-muted-foreground py-3 bg-secondary/30 rounded border border-dashed">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
+                                <div class="text-muted-foreground/70 mt-1">Purchase to reveal</div>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
                 </div>
 
                 <!-- Action Button -->

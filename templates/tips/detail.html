@@ -158,22 +158,42 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for match in tip.get_preview_matches %}
-                                <tr class="border-b border-border/50">
-                                    <td class="py-2 px-2">
-                                        <span class="inline-flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-semibold">{{ forloop.counter }}</span>
-                                    </td>
-                                    <td class="py-2 px-2">
-                                        <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
-                                        <div class="text-xs text-muted-foreground">{{ match.league }}</div>
-                                    </td>
-                                    <td class="py-2 px-2 text-muted-foreground">{{ match.market }}</td>
-                                </tr>
-                                {% endfor %}
+                                {% with preview_matches=tip.get_preview_matches %}
+                                    {% if preview_matches %}
+                                        {% for match in preview_matches %}
+                                        <tr class="border-b border-border/50">
+                                            <td class="py-2 px-2">
+                                                <span class="inline-flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-semibold">{{ forloop.counter }}</span>
+                                            </td>
+                                            <td class="py-2 px-2">
+                                                <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                                <div class="text-xs text-muted-foreground">{{ match.league }}</div>
+                                            </td>
+                                            <td class="py-2 px-2 text-muted-foreground">{{ match.market }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="3" class="py-6 text-center">
+                                                <div class="text-muted-foreground">
+                                                    <svg class="w-10 h-10 mx-auto mb-2 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                                    </svg>
+                                                    <p class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</p>
+                                                    <p class="text-xs mt-1">Purchase to reveal all matches</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endwith %}
                             </tbody>
                         </table>
 
-                        {% if tip.preview_data.total_matches > 2 %}
+                        {% if tip.preview_data.total_matches == 2 and tip.get_preview_matches %}
+                            <div class="text-center p-3 bg-muted/30 border border-border rounded-lg mt-3">
+                                <p class="text-sm text-muted-foreground">🔒 +1 more match - Purchase to see full details</p>
+                            </div>
+                        {% elif tip.preview_data.total_matches > 2 %}
                             <div class="text-center p-3 bg-muted/30 border border-border rounded-lg mt-3">
                                 <p class="text-sm text-muted-foreground">🔒 +{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} - Purchase to see full details</p>
                             </div>

@@ -14,6 +14,7 @@ urlpatterns = [
     path('earnings/', views.earnings_dashboard, name='earnings'),
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
+    path('processing/<int:tip_id>/', views.tip_processing_status, name='tip_processing_status'),
 
     # Buyer views
     path('my-purchases/', views.my_purchases, name='my_purchases'),

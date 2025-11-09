@@ -1,7 +1,7 @@
 """
 Tip Result Verification Service
 
-Automatically verifies tip results by matching with livescore data
+Automatically verifies tip results by matching with API-Football fixture data
 and determining if each bet won or lost based on the market.
 """
 
@@ -10,30 +10,34 @@ import re
 from typing import Dict, List, Optional, Tuple
 from django.utils import timezone
 from django.db.models import Q
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
 
 class ResultVerifier:
     """
-    Service to verify tip results using livescore data.
+    Service to verify tip results using API-Football data.
     """
 
     def __init__(self):
-        from .livescore_scraper import LivescoreScraper
-        self.livescore_scraper = LivescoreScraper()
+        from apps.fixtures.models import Fixture
+        from apps.fixtures.services import APIFootballService
+        self.api_service = APIFootballService()
 
-    def verify_tips(self, date: str = None) -> Dict:
+    def verify_tips(self, date: str = None, fetch_from_api: bool = False) -> Dict:
         """
         Verify all unverified tips for a given date.
 
         Args:
             date: Date in format 'YYYY-MM-DD' (default: today)
+            fetch_from_api: Whether to fetch fresh fixtures from API (default: False, use DB only)
 
         Returns:
             Dictionary with verification statistics
         """
         from apps.tips.models import Tip, TipMatch
+        from apps.fixtures.models import Fixture
 
         # Get all active tips with unverified results
         tips_to_verify = Tip.objects.filter(
@@ -44,10 +48,25 @@ class ResultVerifier:
 
         logger.info(f"Found {tips_to_verify.count()} tips to verify")
 
-        # Scrape livescore
-        logger.info("Scraping livescore...")
-        livescore_matches = self.livescore_scraper.scrape_live_scores_sync(date)
-        logger.info(f"Scraped {len(livescore_matches)} matches from livescore")
+        # Optionally fetch fresh fixtures from API
+        if fetch_from_api:
+            # Fetch fixtures for today and yesterday (to catch late finishes)
+            if date:
+                dates_to_fetch = [datetime.strptime(date, '%Y-%m-%d').date()]
+            else:
+                today = datetime.now().date()
+                dates_to_fetch = [today, today - timedelta(days=1)]
+
+            for fetch_date in dates_to_fetch:
+                if self.api_service._can_make_request():
+                    logger.info(f"Fetching fixtures from API for {fetch_date}")
+                    response = self.api_service.fetch_fixtures(date=fetch_date)
+                    if response:
+                        created, updated = self.api_service.save_fixtures(response)
+                        logger.info(f"API fetch: {created} created, {updated} updated")
+                else:
+                    logger.warning("API limit reached, using database fixtures only")
+                    break
 
         stats = {
             'tips_checked': 0,
@@ -63,7 +82,7 @@ class ResultVerifier:
             stats['tips_checked'] += 1
 
             try:
-                result = self._verify_tip(tip, livescore_matches)
+                result = self._verify_tip(tip)
 
                 if result['status'] == 'verified':
                     stats['tips_verified'] += 1
@@ -85,14 +104,15 @@ class ResultVerifier:
 
         return stats
 
-    def _verify_tip(self, tip, livescore_matches: List[Dict]) -> Dict:
+    def _verify_tip(self, tip) -> Dict:
         """
-        Verify a single tip by checking all its matches.
+        Verify a single tip by checking all its matches against API-Football data.
 
         Returns:
             Dictionary with verification result
         """
         from apps.tips.models import TipMatch
+        from apps.fixtures.models import Fixture
 
         matches = tip.matches.all()
         total_matches = matches.count()
@@ -110,16 +130,22 @@ class ResultVerifier:
         not_found_matches = 0
 
         for tip_match in matches:
-            # Find matching livescore match
-            livescore_match = self.livescore_scraper.match_teams(
-                tip_match.home_team,
-                tip_match.away_team,
-                livescore_matches
-            )
+            # Try to find fixture by api_match_id first (if enriched)
+            fixture = None
 
-            if livescore_match:
+            if tip_match.api_match_id:
+                try:
+                    fixture = Fixture.objects.get(api_id=int(tip_match.api_match_id))
+                except (Fixture.DoesNotExist, ValueError):
+                    logger.warning(f"Fixture with api_id {tip_match.api_match_id} not found")
+
+            # If not found by API ID, try fuzzy matching
+            if not fixture:
+                fixture = self._find_matching_fixture(tip_match)
+
+            if fixture:
                 # Check if match is finished
-                if not livescore_match['is_finished']:
+                if not fixture.is_finished:
                     logger.info(f"Match {tip_match.home_team} vs {tip_match.away_team} not yet finished")
                     continue
 
@@ -127,14 +153,16 @@ class ResultVerifier:
                 match_won = self._check_market_result(
                     tip_match.market,
                     tip_match.selection,
-                    livescore_match['home_score'],
-                    livescore_match['away_score']
+                    fixture.home_goals,
+                    fixture.away_goals
                 )
 
                 # Update tip match
                 tip_match.is_resulted = True
                 tip_match.is_won = match_won
-                tip_match.actual_result = f"{livescore_match['home_score']}-{livescore_match['away_score']}"
+                tip_match.actual_result = fixture.get_result_string()
+                if not tip_match.api_match_id:
+                    tip_match.api_match_id = str(fixture.api_id)
                 tip_match.save()
 
                 verified_matches += 1
@@ -143,14 +171,14 @@ class ResultVerifier:
 
                 logger.info(
                     f"Match verified: {tip_match.home_team} vs {tip_match.away_team} "
-                    f"Result: {livescore_match['home_score']}-{livescore_match['away_score']} "
+                    f"Result: {fixture.home_goals}-{fixture.away_goals} "
                     f"Market: {tip_match.market} Selection: {tip_match.selection} "
                     f"Won: {match_won}"
                 )
             else:
                 not_found_matches += 1
                 logger.warning(
-                    f"No livescore match found for: {tip_match.home_team} vs {tip_match.away_team}"
+                    f"No fixture found for: {tip_match.home_team} vs {tip_match.away_team}"
                 )
 
         # Determine overall tip result
@@ -183,6 +211,63 @@ class ResultVerifier:
                 'matches_verified': verified_matches,
                 'matches_not_found': not_found_matches
             }
+
+    def _find_matching_fixture(self, tip_match) -> Optional['Fixture']:
+        """
+        Find matching fixture using fuzzy team name matching
+
+        Args:
+            tip_match: TipMatch instance
+
+        Returns:
+            Fixture if found, None otherwise
+        """
+        from apps.fixtures.models import Fixture
+        from fuzzywuzzy import fuzz
+
+        # Search within a reasonable date range
+        if tip_match.match_date:
+            start_date = tip_match.match_date.date() - timedelta(days=1)
+            end_date = tip_match.match_date.date() + timedelta(days=2)
+        else:
+            # Search last 7 days if no date specified
+            start_date = datetime.now().date() - timedelta(days=7)
+            end_date = datetime.now().date() + timedelta(days=1)
+
+        fixtures = Fixture.objects.filter(
+            date__date__gte=start_date,
+            date__date__lte=end_date
+        ).select_related('home_team', 'away_team')
+
+        best_match = None
+        best_score = 0
+        threshold = 75
+
+        for fixture in fixtures:
+            home_similarity = fuzz.ratio(
+                tip_match.home_team.lower(),
+                fixture.home_team.name.lower()
+            )
+            away_similarity = fuzz.ratio(
+                tip_match.away_team.lower(),
+                fixture.away_team.name.lower()
+            )
+
+            avg_score = (home_similarity + away_similarity) / 2
+
+            if (home_similarity >= threshold and
+                away_similarity >= threshold and
+                avg_score > best_score):
+                best_score = avg_score
+                best_match = fixture
+
+        if best_match:
+            logger.info(
+                f"Fuzzy matched '{tip_match.home_team} vs {tip_match.away_team}' to "
+                f"'{best_match.home_team.name} vs {best_match.away_team.name}' (score: {best_score:.1f})"
+            )
+
+        return best_match
 
     def _check_market_result(self, market: str, selection: str, home_score: int, away_score: int) -> bool:
         """
