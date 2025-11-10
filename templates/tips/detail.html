@@ -133,10 +133,11 @@
                                     <td class="py-2 px-2">
                                         {% if match.is_resulted %}
                                             {% if match.is_won %}
-                                                <span class="inline-flex items-center px-2 py-1 bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 rounded text-xs font-medium">Won <span class="font-mono ml-1">({{ match.actual_result }})</span></span>
+                                                <span class="inline-flex items-center px-2 py-1 bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 rounded text-xs font-medium">Won</span>
                                             {% else %}
-                                                <span class="inline-flex items-center px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 rounded text-xs font-medium">Lost <span class="font-mono ml-1">({{ match.actual_result }})</span></span>
+                                                <span class="inline-flex items-center px-2 py-1 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 rounded text-xs font-medium">Lost</span>
                                             {% endif %}
+                                            <div class="text-xs text-muted-foreground font-mono">{{ match.actual_result }}</div>
                                         {% else %}
                                             <span class="inline-flex items-center px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 rounded text-xs font-medium">Pending</span>
                                         {% endif %}
