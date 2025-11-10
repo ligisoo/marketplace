@@ -42,8 +42,7 @@ class ResultVerifier:
         # Get all active tips with unverified results
         tips_to_verify = Tip.objects.filter(
             status='active',
-            is_resulted=False,
-            expires_at__lt=timezone.now()  # Only verify expired tips
+            is_resulted=False
         ).prefetch_related('matches')
 
         logger.info(f"Found {tips_to_verify.count()} tips to verify")
@@ -302,7 +301,7 @@ class ResultVerifier:
                     return total_goals < goal_line
 
         # 1X2 / Match Result
-        if '1x2' in market_lower or 'match result' in market_lower or 'full time result' in market_lower:
+        if '1x2' in market_lower or 'match result' in market_lower or 'full time result' in market_lower or '3 way' in market_lower:
             if '1' in selection or 'home' in selection_lower:
                 return home_score > away_score
             elif 'x' in selection_lower or 'draw' in selection_lower:
