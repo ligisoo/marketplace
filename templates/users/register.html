@@ -116,6 +116,22 @@
                 {% endif %}
             </div>
 
+            <div class="form-group">
+                <div class="flex items-start space-x-3">
+                    <div class="flex items-center h-6">
+                        {{ form.terms_of_service }}
+                    </div>
+                    <div class="flex-1">
+                        <label for="{{ form.terms_of_service.id_for_label }}" class="text-sm font-medium text-foreground cursor-pointer">
+                            I agree to the <a href="{% url 'pages:terms_of_service' %}" class="text-primary hover:underline" target="_blank">Terms of Service</a>
+                        </label>
+                    </div>
+                </div>
+                {% if form.terms_of_service.errors %}
+                    <div class="text-red-400 text-sm mt-1">{{ form.terms_of_service.errors }}</div>
+                {% endif %}
+            </div>
+
             <button type="submit" class="w-full btn btn-primary">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>

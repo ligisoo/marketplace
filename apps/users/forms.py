@@ -43,6 +43,11 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Confirm Password'
         })
     )
+    terms_of_service = forms.BooleanField(
+        required=True,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+    )
     
     class Meta:
         model = User

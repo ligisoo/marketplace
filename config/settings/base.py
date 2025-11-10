@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'apps.leaderboard',
     'apps.analytics',
     'payments',
+    'apps.pages',
 ]
 
 MIDDLEWARE = [
