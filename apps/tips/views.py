@@ -108,68 +108,56 @@ def tip_detail(request, tip_id):
 
 @login_required
 def my_tips(request):
-    """Tipster's dashboard showing their tips"""
-    if not request.user.userprofile.is_tipster:
-        messages.error(request, 'Only tipsters can access this page.')
-        return redirect('tips:marketplace')
+    """Tipster's dashboard showing their tips and purchases"""
     
-    tips = Tip.objects.filter(tipster=request.user).order_by('-created_at')
+    # Data for "My Tips" (selling)
+    my_selling_tips = Tip.objects.filter(tipster=request.user).order_by('-created_at')
+    my_selling_tips = my_selling_tips.annotate(total_purchases=Count('purchases'))
     
-    # Add purchase counts
-    tips = tips.annotate(total_purchases=Count('purchases'))
-    
-    # Pagination
-    paginator = Paginator(tips, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Calculate stats
-    stats = {
-        'total_tips': tips.count(),
-        'active_tips': tips.filter(status='active').count(),
-        'pending_tips': tips.filter(status='pending_approval').count(),
-        'total_sales': sum(tip.revenue_generated for tip in tips),
-    }
-    
-    context = {
-        'page_obj': page_obj,
-        'tips': page_obj.object_list,
-        'stats': stats,
-    }
-    
-    return render(request, 'tips/my_tips.html', context)
+    # Pagination for selling tips
+    selling_paginator = Paginator(my_selling_tips, 10)
+    selling_page_number = request.GET.get('selling_page')
+    selling_page_obj = selling_paginator.get_page(selling_page_number)
 
+    # Stats for selling tips
+    selling_stats = {
+        'total_tips': my_selling_tips.count(),
+        'active_tips': my_selling_tips.filter(status='active').count(),
+        'pending_tips': my_selling_tips.filter(status='pending_approval').count(),
+        'total_sales': sum(tip.revenue_generated for tip in my_selling_tips),
+    }
 
-@login_required
-def my_purchases(request):
-    """Show user's purchased tips"""
-    # Get all purchased tips for this user
-    purchases = TipPurchase.objects.filter(
+    # Data for "My Purchases"
+    my_purchased_tips = TipPurchase.objects.filter(
         buyer=request.user,
         status='completed'
     ).select_related('tip', 'tip__tipster').order_by('-created_at')
 
-    # Pagination
-    paginator = Paginator(purchases, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Pagination for purchased tips
+    purchases_paginator = Paginator(my_purchased_tips, 10)
+    purchases_page_number = request.GET.get('purchases_page')
+    purchases_page_obj = purchases_paginator.get_page(purchases_page_number)
 
-    # Calculate stats
-    stats = {
-        'total_purchases': purchases.count(),
-        'total_spent': sum(p.amount for p in purchases),
-        'won_tips': purchases.filter(tip__is_resulted=True, tip__is_won=True).count(),
-        'lost_tips': purchases.filter(tip__is_resulted=True, tip__is_won=False).count(),
-        'pending_tips': purchases.filter(tip__is_resulted=False).count(),
+    # Stats for purchased tips
+    purchases_stats = {
+        'total_purchases': my_purchased_tips.count(),
+        'total_spent': sum(p.amount for p in my_purchased_tips),
+        'won_tips': my_purchased_tips.filter(tip__is_resulted=True, tip__is_won=True).count(),
+        'lost_tips': my_purchased_tips.filter(tip__is_resulted=True, tip__is_won=False).count(),
+        'pending_tips': my_purchased_tips.filter(tip__is_resulted=False).count(),
     }
 
     context = {
-        'page_obj': page_obj,
-        'purchases': page_obj.object_list,
-        'stats': stats,
+        'selling_page_obj': selling_page_obj,
+        'selling_tips': selling_page_obj.object_list,
+        'selling_stats': selling_stats,
+        'purchases_page_obj': purchases_page_obj,
+        'purchases': purchases_page_obj.object_list,
+        'purchases_stats': purchases_stats,
+        'is_tipster': request.user.userprofile.is_tipster,
     }
-
-    return render(request, 'tips/my_purchases.html', context)
+    
+    return render(request, 'tips/my_tips.html', context)
 
 
 @login_required

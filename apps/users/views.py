@@ -3,6 +3,9 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
+from django.db.models import Sum, Avg, Q
+from decimal import Decimal
+from apps.tips.models import Tip, TipPurchase
 from .forms import RegistrationForm, LoginForm, ProfileEditForm
 from .models import User, UserProfile
 
@@ -67,9 +70,33 @@ def user_logout(request):
 @login_required
 def profile(request):
     """User profile view"""
+    
+    tipster_stats = None
+    if request.user.userprofile.is_tipster:
+        all_tips = Tip.objects.filter(tipster=request.user)
+        resulted_tips = all_tips.filter(is_resulted=True)
+        
+        total_revenue = sum(tip.revenue_generated for tip in all_tips)
+        tipster_earnings = Decimal(str(total_revenue)) * Decimal('0.60') # Assuming 60% share
+        
+        won_tips_count = resulted_tips.filter(is_won=True).count()
+        resulted_count = resulted_tips.count()
+        win_rate = round((won_tips_count / resulted_count * 100), 1) if resulted_count > 0 else 0
+
+        total_sales = TipPurchase.objects.filter(tip__tipster=request.user, status='completed').count()
+
+        tipster_stats = {
+            'total_tips': all_tips.count(),
+            'total_revenue': total_revenue,
+            'total_earnings': tipster_earnings,
+            'win_rate': win_rate,
+            'total_sales': total_sales,
+        }
+
     return render(request, 'users/profile.html', {
         'user': request.user,
-        'profile': request.user.userprofile
+        'profile': request.user.userprofile,
+        'tipster_stats': tipster_stats,
     })
 
 

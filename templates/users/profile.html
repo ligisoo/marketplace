@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}Profile - Ligisoo{% endblock %}
 
@@ -113,7 +114,7 @@
                                 </p>
                             </div>
                             <div class="mt-6 space-y-2">
-                                <a href="{% url 'tips:my_purchases' %}" class="block w-full btn btn-primary text-center">
+                                <a href="{% url 'tips:my_tips' %}?tab=purchases" class="block w-full btn btn-primary text-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                     </svg>
@@ -138,7 +139,7 @@
                         </div>
                     </div>
 
-                    {% if profile.is_tipster %}
+                    {% if profile.is_tipster and tipster_stats %}
                     <div>
                         <h3 class="text-lg font-semibold text-foreground mb-3 flex items-center">
                             <svg class="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,25 +147,31 @@
                             </svg>
                             Tipster Stats
                         </h3>
-                        <div class="bg-gradient-to-br from-accent/10 to-primary/10 border border-accent/30 rounded-lg p-6">
-                            <div class="grid grid-cols-2 gap-4 text-center mb-4">
-                                <div class="bg-card/50 rounded-lg p-3 border border-border">
-                                    <p class="text-sm text-muted-foreground mb-1">Total Tips</p>
-                                    <p class="text-2xl font-bold text-primary">0</p>
-                                </div>
-                                <div class="bg-card/50 rounded-lg p-3 border border-border">
-                                    <p class="text-sm text-muted-foreground mb-1">Win Rate</p>
-                                    <p class="text-2xl font-bold text-accent">0%</p>
-                                </div>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory mb-4">
+                            <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+                                <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586l6.121 6.121V19a2 2 0 01-2 2z"/></svg></span>
+                                <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total Tips</div><div class="text-sm font-semibold text-foreground">{{ tipster_stats.total_tips }}</div></div>
                             </div>
-                            <div class="mt-4">
-                                <a href="{% url 'tips:my_tips' %}" class="block w-full btn btn-primary text-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                    </svg>
-                                    Manage Tips
-                                </a>
+                            <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+                                <span class="inline-flex items-center justify-center rounded-md bg-green-500/15 text-green-400 w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></span>
+                                <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Win Rate</div><div class="text-sm font-semibold text-green-400">{{ tipster_stats.win_rate }}%</div></div>
                             </div>
+                            <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+                                <span class="inline-flex items-center justify-center rounded-md bg-blue-500/15 text-blue-400 w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg></span>
+                                <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total Sales</div><div class="text-sm font-semibold text-blue-400">{{ tipster_stats.total_sales }}</div></div>
+                            </div>
+                            <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+                                <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg></span>
+                                <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Earnings</div><div class="text-sm font-semibold text-accent">KES {{ tipster_stats.total_earnings|floatformat:0|intcomma }}</div></div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <a href="{% url 'tips:my_tips' %}" class="block w-full btn btn-primary text-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                </svg>
+                                Manage My Activity
+                            </a>
                         </div>
                     </div>
                     {% endif %}
