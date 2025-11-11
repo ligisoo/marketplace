@@ -4,6 +4,7 @@ Service for interacting with the API-Football API with caching support
 import requests
 from datetime import datetime, date as dt_date, timedelta
 from django.conf import settings
+from django.conf import settings
 from django.core.cache import cache
 from .models import League, Team, Venue, Fixture, APIUsageLog
 
