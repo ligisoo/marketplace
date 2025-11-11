@@ -242,6 +242,37 @@ def fetch_live_fixtures():
     logger.info("")
 
 
+def run_tip_archiving():
+    """
+    Archives expired active tips.
+    """
+    logger.info("=" * 60)
+    logger.info("TIP ARCHIVING STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
+
+    try:
+        expired_tips = Tip.objects.filter(
+            status='active',
+            expires_at__lte=timezone.now()
+        )
+        
+        archived_count = 0
+        for tip in expired_tips:
+            tip.auto_archive_if_expired()
+            archived_count += 1
+        
+        logger.info(f"Archived {archived_count} expired tips.")
+
+    except Exception as e:
+        logger.error(f"Error during tip archiving: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("TIP ARCHIVING COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")
+
+
 def schedule_jobs():
     """
     Configure all scheduled jobs here.
@@ -260,6 +291,9 @@ def schedule_jobs():
 
     # Job 4: Clean up temporary tips every hour
     schedule.every().hour.do(cleanup_temp_tips)
+
+    # Job 5: Archive expired tips every hour
+    schedule.every().hour.do(run_tip_archiving)
 
     # Alternative schedules for result verification (uncomment the one you prefer):
 

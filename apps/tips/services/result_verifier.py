@@ -188,6 +188,7 @@ class ResultVerifier:
             tip.is_resulted = True
             tip.is_won = tip_won
             tip.result_verified_at = timezone.now()
+            tip.status = 'archived'  # Mark as archived after verification
             tip.save()
 
             logger.info(
