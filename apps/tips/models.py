@@ -90,6 +90,26 @@ class Tip(models.Model):
         if self.expires_at > timezone.now():
             return self.expires_at - timezone.now()
         return timedelta(0)
+
+    @property
+    def first_match_starts_at(self):
+        """Get the start time of the earliest match in the tip"""
+        first_match = self.matches.order_by('match_date').first()
+        return first_match.match_date if first_match else None
+
+    @property
+    def time_until_first_match(self):
+        """Get time remaining until the first match starts"""
+        starts_at = self.first_match_starts_at
+        if starts_at and starts_at > timezone.now():
+            return starts_at - timezone.now()
+        return timedelta(0)
+
+    @property
+    def is_live(self):
+        """Check if any match in the tip is live"""
+        now = timezone.now()
+        return self.matches.filter(match_date__lte=now, tip__expires_at__gte=now).exists()
     
     @property
     def purchase_count(self):

@@ -56,19 +56,18 @@
                         <p class="text-xl font-bold text-foreground">{{ tip.purchase_count }}</p>
                     </div>
                     <div class="text-center">
-                        <p class="text-sm text-muted-foreground">Time Left</p>
-                        {% if tip.is_active %}
-                            <p class="text-xl font-bold text-red-600">
-                                {% if tip.time_until_expiry.days > 0 %}
-                                    {{ tip.time_until_expiry.days }}d
-                                {% else %}
-                                    Soon
-                                {% endif %}
-                            </p>
-                        {% else %}
-                            <p class="text-xl font-bold text-muted-foreground">Expired</p>
-                        {% endif %}
-                    </div>
+                    {% load tip_extras %}
+                    <p class="text-sm text-muted-foreground">First Match Starts In</p>
+                    {% if tip.is_active and tip.time_until_first_match.total_seconds > 0 %}
+                        <p class="text-xl font-bold text-red-600">
+                            {{ tip.time_until_first_match|format_timedelta }}
+                        </p>
+                    {% elif tip.is_live %}
+                        <p class="text-xl font-bold text-green-600">Live</p>
+                    {% else %}
+                        <p class="text-xl font-bold text-muted-foreground">Started</p>
+                    {% endif %}
+                </div>
                 </div>
                 
                 <!-- Betslip Screenshot -->
