@@ -15,7 +15,7 @@ class APIFootballService:
     CACHE_TIMEOUT_UPCOMING = 86400  # 24 hours for upcoming fixtures
     CACHE_TIMEOUT_LIVE = 900  # 15 minutes for live matches
     CACHE_TIMEOUT_FINISHED = None  # Never expire finished matches
-    DAILY_LIMIT = 100  # API request limit per day
+    DAILY_LIMIT = 500  # API request limit per day
 
     def __init__(self):
         self.api_key = settings.API_FOOTBALL_KEY
