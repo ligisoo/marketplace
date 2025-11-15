@@ -177,6 +177,25 @@ select {
     background-color: hsl(227, 27%, 25%) !important;
 }
 
+.btn-accent {
+    background-color: hsl(39, 86%, 62%) !important; /* Gold/Yellow */
+    color: hsl(227, 27%, 14%) !important; /* Dark text for contrast */
+    font-weight: 700 !important; /* Extra bold for prominence */
+    border: 2px solid hsl(39, 86%, 72%) !important; /* Lighter gold border */
+}
+
+.btn-accent:hover {
+    background-color: hsl(39, 86%, 68%) !important; /* Lighter on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsla(39, 86%, 62%, 0.4) !important; /* Golden glow */
+    border-color: hsl(39, 86%, 75%) !important;
+}
+
+.btn-accent:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 6px hsla(39, 86%, 62%, 0.3) !important;
+}
+
 /* Form Group */
 .form-group {
     margin-bottom: 1.25rem !important;
