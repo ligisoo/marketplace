@@ -34,11 +34,13 @@ class AccountAdmin(admin.ModelAdmin):
     )
 
     def get_balance_display(self, obj):
+        from decimal import Decimal
         balance = obj.get_balance()
+        balance = Decimal(str(balance))
         color = 'green' if balance >= 0 else 'red'
         return format_html(
-            '<span style="color: {}; font-weight: bold;">KES {:,.2f}</span>',
-            color, balance
+            '<span style="color: {}; font-weight: bold;">KES {}</span>',
+            color, f'{balance:,.2f}'
         )
     get_balance_display.short_description = 'Current Balance'
 
@@ -103,7 +105,9 @@ class TransactionAdmin(admin.ModelAdmin):
     user_link.short_description = 'User'
 
     def amount_display(self, obj):
-        return format_html('<strong>KES {:,.2f}</strong>', obj.amount)
+        from decimal import Decimal
+        amount = Decimal(str(obj.amount))
+        return format_html('<strong>KES {}</strong>', f'{amount:,.2f}')
     amount_display.short_description = 'Amount'
 
     def get_entries_display(self, obj):
@@ -129,11 +133,11 @@ class TransactionAdmin(admin.ModelAdmin):
 
         from decimal import Decimal
         debits = obj.entries.filter(entry_type='debit', is_void=False).aggregate(
-            total=models.Sum('amount')
+            total=Sum('amount')
         )['total'] or Decimal('0')
 
         credits = obj.entries.filter(entry_type='credit', is_void=False).aggregate(
-            total=models.Sum('amount')
+            total=Sum('amount')
         )['total'] or Decimal('0')
 
         balanced = debits == credits
@@ -141,8 +145,8 @@ class TransactionAdmin(admin.ModelAdmin):
         icon = '✓' if balanced else '✗'
 
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{} Debits: KES {:,.2f} | Credits: KES {:,.2f}</span>',
-            color, icon, debits, credits
+            '<span style="color: {}; font-weight: bold;">{} Debits: KES {} | Credits: KES {}</span>',
+            color, icon, f'{Decimal(str(debits)):,.2f}', f'{Decimal(str(credits)):,.2f}'
         )
     get_balance_check.short_description = 'Balance Check'
 
@@ -186,10 +190,12 @@ class AccountingEntryAdmin(admin.ModelAdmin):
     account_link.short_description = 'Account'
 
     def amount_display(self, obj):
+        from decimal import Decimal
         color = 'green' if obj.entry_type == 'debit' else 'blue'
+        amount = Decimal(str(obj.amount))
         return format_html(
-            '<span style="color: {}; font-weight: bold;">KES {:,.2f}</span>',
-            color, obj.amount
+            '<span style="color: {}; font-weight: bold;">KES {}</span>',
+            color, f'{amount:,.2f}'
         )
     amount_display.short_description = 'Amount'
 
@@ -231,3 +237,4 @@ AccountAdmin.actions = [view_gl_statement, sync_wallet_balance]
 
 # Fix import for Sum
 from django.db import models
+from django.db.models import Sum

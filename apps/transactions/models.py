@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -48,11 +49,11 @@ class Account(models.Model):
     def get_balance(self):
         """Calculate current balance based on account type and entries"""
         debits = self.entries.filter(entry_type='debit', is_void=False).aggregate(
-            total=models.Sum('amount')
+            total=Sum('amount')
         )['total'] or Decimal('0')
 
         credits = self.entries.filter(entry_type='credit', is_void=False).aggregate(
-            total=models.Sum('amount')
+            total=Sum('amount')
         )['total'] or Decimal('0')
 
         # Asset accounts: Debit increases, Credit decreases
@@ -174,11 +175,11 @@ class Transaction(models.Model):
         """Validate that debits equal credits"""
         if self.pk:
             debits = self.entries.filter(entry_type='debit', is_void=False).aggregate(
-                total=models.Sum('amount')
+                total=Sum('amount')
             )['total'] or Decimal('0')
 
             credits = self.entries.filter(entry_type='credit', is_void=False).aggregate(
-                total=models.Sum('amount')
+                total=Sum('amount')
             )['total'] or Decimal('0')
 
             if debits != credits:
