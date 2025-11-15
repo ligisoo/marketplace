@@ -16,10 +16,10 @@ class APIFootballService:
     CACHE_TIMEOUT_UPCOMING = 86400  # 24 hours for upcoming fixtures
     CACHE_TIMEOUT_LIVE = 900  # 15 minutes for live matches
     CACHE_TIMEOUT_FINISHED = None  # Never expire finished matches
-    DAILY_LIMIT = 500  # API request limit per day
 
     def __init__(self):
         self.api_key = settings.API_FOOTBALL_KEY
+        self.daily_limit = settings.API_FOOTBALL_DAILY_LIMIT
         self.headers = {
             'x-rapidapi-host': 'v3.football.api-sports.io',
             'x-rapidapi-key': self.api_key
@@ -32,7 +32,7 @@ class APIFootballService:
 
     def _can_make_request(self):
         """Check if we can make another API request"""
-        return APIUsageLog.can_make_request(self.DAILY_LIMIT)
+        return APIUsageLog.can_make_request(self.daily_limit)
 
     def _log_request(self, endpoint, params, cached=False):
         """Log API request for tracking"""
@@ -266,7 +266,7 @@ class APIFootballService:
             'total_requests': today_count + cached_count,
             'api_requests': today_count,
             'cached_requests': cached_count,
-            'remaining': self.DAILY_LIMIT - today_count,
-            'limit': self.DAILY_LIMIT,
-            'percentage_used': (today_count / self.DAILY_LIMIT) * 100
+            'remaining': self.daily_limit - today_count,
+            'limit': self.daily_limit,
+            'percentage_used': (today_count / self.daily_limit) * 100 if self.daily_limit > 0 else 0
         }

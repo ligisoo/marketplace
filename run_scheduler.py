@@ -281,10 +281,13 @@ def schedule_jobs():
     """
 
     # Job 1: Fetch upcoming fixtures once per day at 3 AM
+    # API Usage: 3 calls per day (fetches 3 days ahead)
     schedule.every().day.at("03:00").do(fetch_upcoming_fixtures)
 
-    # Job 2: Fetch live fixtures every 15 minutes
-    schedule.every(15).minutes.do(fetch_live_fixtures)
+    # Job 2: Fetch live fixtures every 30 minutes
+    # API Usage: 48 calls per day (2 per hour × 24 hours)
+    # Total daily usage: 3 + 48 = 51 calls (leaving 49 calls buffer for 100 limit)
+    schedule.every(30).minutes.do(fetch_live_fixtures)
 
     # Job 3: Run result verification every 30 minutes (without API fetch, use DB only)
     schedule.every(30).minutes.do(run_result_verification)
