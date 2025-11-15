@@ -236,16 +236,46 @@ def withdraw(request):
     return redirect('users:profile')
 
 
+@login_required
+def transaction_history(request):
+    """
+    Display user's transaction history from the accounting system.
+    Shows banking-style statement with running balance.
+    """
+    # Get date filters from query params (optional)
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Get user's transaction statement
+    statement = AccountingService.get_user_statement(
+        user=request.user,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    # Get current balance
+    current_balance = request.user.userprofile.get_accounting_balance()
+
+    context = {
+        'statement': statement,
+        'current_balance': current_balance,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+
+    return render(request, 'users/transaction_history.html', context)
+
+
 def public_profile(request, user_id):
     """Public profile view for other users"""
     user = get_object_or_404(User, id=user_id)
     profile = user.userprofile
-    
+
     context = {
         'profile_user': user,
         'profile': profile,
     }
-    
+
     # Add additional context for tipsters
     if profile.is_tipster:
         # TODO: Add tipster stats when tips app is implemented
@@ -255,5 +285,5 @@ def public_profile(request, user_id):
             # 'win_rate': win_rate,
             # 'recent_tips': recent_tips,
         })
-    
+
     return render(request, 'users/public_profile.html', context)
