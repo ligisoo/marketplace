@@ -110,21 +110,43 @@ def tip_detail(request, tip_id):
 def my_tips(request):
     """Tipster's dashboard showing their tips and purchases"""
     
-    # Data for "My Tips" (selling)
-    my_selling_tips = Tip.objects.filter(tipster=request.user).order_by('-created_at')
-    my_selling_tips = my_selling_tips.annotate(total_purchases=Count('purchases'))
+    # Get filter parameter for My Tips section
+    tip_filter = request.GET.get('filter', 'all')  # all, active, archived
+    
+    # Base queryset for user's tips
+    base_tips = Tip.objects.filter(tipster=request.user).annotate(total_purchases=Count('purchases'))
+    
+    # Apply filter
+    if tip_filter == 'active':
+        my_selling_tips = base_tips.filter(status='active').order_by('-created_at')
+    elif tip_filter == 'archived':
+        my_selling_tips = base_tips.filter(status='archived').order_by('-created_at')
+    else:  # 'all'
+        # Show active tips first, then archived, then others
+        from django.db.models import Case, When, Value, IntegerField
+        my_selling_tips = base_tips.annotate(
+            status_order=Case(
+                When(status='active', then=Value(1)),
+                When(status='archived', then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField()
+            )
+        ).order_by('status_order', '-created_at')
     
     # Pagination for selling tips
-    selling_paginator = Paginator(my_selling_tips, 10)
+    selling_paginator = Paginator(my_selling_tips, 9)  # 9 tips per page for better grid layout
     selling_page_number = request.GET.get('selling_page')
     selling_page_obj = selling_paginator.get_page(selling_page_number)
 
-    # Stats for selling tips
+    # Stats for selling tips (always calculate from all tips)
+    all_tips = base_tips
     selling_stats = {
-        'total_tips': my_selling_tips.count(),
-        'active_tips': my_selling_tips.filter(status='active').count(),
-        'pending_tips': my_selling_tips.filter(status='pending_approval').count(),
-        'total_sales': sum(tip.revenue_generated for tip in my_selling_tips),
+        'total_tips': all_tips.count(),
+        'active_tips': all_tips.filter(status='active').count(),
+        'pending_tips': all_tips.filter(status='pending_approval').count(),
+        'archived_tips': all_tips.filter(status='archived').count(),
+        'total_sales': sum(tip.revenue_generated for tip in all_tips),
+        'current_filter': tip_filter,
     }
 
     # Data for "My Purchases"
@@ -573,10 +595,25 @@ def tipster_profile(request, tipster_id):
     )
     
     # Get tipster's active tips
-    tips = Tip.objects.filter(
+    active_tips = Tip.objects.filter(
         tipster=tipster,
         status='active'
-    ).order_by('-created_at')[:10]
+    ).order_by('-created_at')
+
+    # Get tipster's historical tips (archived, resulted, etc.)
+    historical_tips = Tip.objects.filter(
+        tipster=tipster
+    ).exclude(status='active').order_by('-created_at')
+
+    # Pagination for active tips
+    active_paginator = Paginator(active_tips, 6)  # 6 tips per page
+    active_page_number = request.GET.get('active_page')
+    active_page_obj = active_paginator.get_page(active_page_number)
+
+    # Pagination for historical tips
+    historical_paginator = Paginator(historical_tips, 10)  # 10 tips per page
+    historical_page_number = request.GET.get('historical_page')
+    historical_page_obj = historical_paginator.get_page(historical_page_number)
 
     # Calculate stats (matching leaderboard logic)
     all_tips = Tip.objects.filter(tipster=tipster)
@@ -588,7 +625,8 @@ def tipster_profile(request, tipster_id):
         'won_tips': resulted_tips.filter(is_won=True).count(),
         'win_rate': 0,
         'total_sales': sum(tip.revenue_generated for tip in all_tips),
-        'active_tips': all_tips.filter(status='active').count(),
+        'active_tips': active_tips.count(),
+        'historical_tips': historical_tips.count(),
         'total_purchases': sum(tip.purchase_count for tip in all_tips),
         'avg_odds': resulted_tips.aggregate(Avg('odds'))['odds__avg'] or 0,
     }
@@ -600,7 +638,10 @@ def tipster_profile(request, tipster_id):
     context = {
         'tipster': tipster,
         'profile': tipster.userprofile,
-        'tips': tips,
+        'active_page_obj': active_page_obj,
+        'active_tips': active_page_obj.object_list,
+        'historical_page_obj': historical_page_obj,
+        'historical_tips': historical_page_obj.object_list,
         'stats': stats,
     }
 

@@ -1,209 +1,365 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}{{ tipster.userprofile.display_name }} - Tipster Profile{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
-    <!-- Back Button -->
-    <div class="mb-4">
-        <a href="{% url 'tips:marketplace' %}" class="text-primary hover:opacity-80 transition-opacity">
-            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-            Back to Marketplace
-        </a>
-    </div>
+<style>
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  [x-cloak] { display: none !important; }
+</style>
 
-    <!-- Tipster Profile Header -->
-    <div class="bg-card border border-border rounded-lg p-8 mb-6">
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <!-- Profile Picture -->
-            <div class="flex-shrink-0">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="{{ profile.display_name }}"
-                         class="w-32 h-32 rounded-full object-cover border-4 border-primary/20">
-                {% else %}
-                    <div class="w-32 h-32 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center border-4 border-primary/20">
-                        <span class="text-4xl font-bold text-primary-foreground">{{ tipster.phone_number.0|upper }}</span>
-                    </div>
-                {% endif %}
-            </div>
+<div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'active' }">
+    <div class="max-w-6xl mx-auto">
+        <!-- Back Button -->
+        <div class="mb-4">
+            <a href="{% url 'tips:marketplace' %}" class="text-primary hover:opacity-80 transition-opacity">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Back to Marketplace
+            </a>
+        </div>
 
-            <!-- Tipster Info -->
-            <div class="flex-1 text-center md:text-left">
-                <div class="flex flex-col md:flex-row md:items-center gap-3 mb-3">
-                    <h1 class="text-3xl font-bold text-foreground">{{ profile.display_name }}</h1>
-                    {% if profile.is_verified %}
-                        <span class="inline-flex items-center px-3 py-1 bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            Verified Tipster
-                        </span>
+        <!-- Tipster Profile Header -->
+        <div class="bg-card border border-border rounded-lg p-8 mb-6">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                <!-- Profile Picture -->
+                <div class="flex-shrink-0">
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" alt="{{ profile.display_name }}"
+                             class="w-32 h-32 rounded-full object-cover border-4 border-primary/20">
+                    {% else %}
+                        <div class="w-32 h-32 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center border-4 border-primary/20">
+                            <span class="text-4xl font-bold text-primary-foreground">{{ tipster.phone_number.0|upper }}</span>
+                        </div>
                     {% endif %}
                 </div>
 
-                {% if profile.bio %}
-                    <p class="text-muted-foreground mb-4 max-w-2xl">{{ profile.bio }}</p>
-                {% else %}
-                    <p class="text-muted-foreground italic mb-4">No bio provided yet.</p>
-                {% endif %}
+                <!-- Tipster Info -->
+                <div class="flex-1 text-center md:text-left">
+                    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-3">
+                        <h1 class="text-3xl font-bold text-foreground">{{ profile.display_name }}</h1>
+                        {% if profile.is_verified %}
+                            <span class="inline-flex items-center px-3 py-1 bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Verified Tipster
+                            </span>
+                        {% endif %}
+                    </div>
 
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                    <div class="bg-muted/30 rounded-lg p-4 text-center">
-                        <div class="text-2xl font-bold text-primary">{{ stats.total_tips }}</div>
-                        <div class="text-xs text-muted-foreground mt-1">Total Tips</div>
-                        {% if stats.active_tips > 0 %}
-                        <div class="text-xs text-green-600 dark:text-green-400 mt-1">{{ stats.active_tips }} active</div>
-                        {% endif %}
-                    </div>
-                    <div class="bg-muted/30 rounded-lg p-4 text-center">
-                        <div class="text-2xl font-bold text-accent">{{ stats.won_tips }}</div>
-                        <div class="text-xs text-muted-foreground mt-1">Won Tips</div>
-                    </div>
-                    <div class="bg-muted/30 rounded-lg p-4 text-center">
-                        {% if stats.resulted_tips > 0 %}
-                            <div class="text-2xl font-bold {% if stats.win_rate >= 70 %}text-green-600{% elif stats.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
-                                {{ stats.win_rate }}%
-                            </div>
-                            <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
-                        {% else %}
-                            <div class="text-2xl font-bold text-muted-foreground">N/A</div>
-                            <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
-                            <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">No results yet</div>
-                        {% endif %}
-                    </div>
-                    <div class="bg-muted/30 rounded-lg p-4 text-center">
-                        <div class="text-2xl font-bold text-primary">KES {{ stats.total_sales|floatformat:0 }}</div>
-                        <div class="text-xs text-muted-foreground mt-1">Total Sales</div>
-                        {% if stats.total_purchases > 0 %}
-                        <div class="text-xs text-accent mt-1">{{ stats.total_purchases }} buyer{{ stats.total_purchases|pluralize }}</div>
-                        {% endif %}
+                    {% if profile.bio %}
+                        <p class="text-muted-foreground mb-4 max-w-2xl">{{ profile.bio }}</p>
+                    {% else %}
+                        <p class="text-muted-foreground italic mb-4">No bio provided yet.</p>
+                    {% endif %}
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                        <div class="bg-muted/30 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-primary">{{ stats.total_tips }}</div>
+                            <div class="text-xs text-muted-foreground mt-1">Total Tips</div>
+                            {% if stats.active_tips > 0 %}
+                            <div class="text-xs text-green-600 dark:text-green-400 mt-1">{{ stats.active_tips }} active</div>
+                            {% endif %}
+                            {% if stats.historical_tips > 0 %}
+                            <div class="text-xs text-muted-foreground mt-1">{{ stats.historical_tips }} historical</div>
+                            {% endif %}
+                        </div>
+                        <div class="bg-muted/30 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-accent">{{ stats.won_tips }}</div>
+                            <div class="text-xs text-muted-foreground mt-1">Won Tips</div>
+                        </div>
+                        <div class="bg-muted/30 rounded-lg p-4 text-center">
+                            {% if stats.resulted_tips > 0 %}
+                                <div class="text-2xl font-bold {% if stats.win_rate >= 70 %}text-green-600{% elif stats.win_rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ stats.win_rate }}%
+                                </div>
+                                <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
+                            {% else %}
+                                <div class="text-2xl font-bold text-muted-foreground">N/A</div>
+                                <div class="text-xs text-muted-foreground mt-1">Win Rate</div>
+                                <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">No results yet</div>
+                            {% endif %}
+                        </div>
+                        <div class="bg-muted/30 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-primary">KES {{ stats.total_sales|floatformat:0 }}</div>
+                            <div class="text-xs text-muted-foreground mt-1">Total Sales</div>
+                            {% if stats.total_purchases > 0 %}
+                            <div class="text-xs text-accent mt-1">{{ stats.total_purchases }} buyer{{ stats.total_purchases|pluralize }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Active Tips Section -->
-    <div class="mb-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-bold text-foreground">Active Tips</h2>
-            <span class="text-sm text-muted-foreground">{{ tips|length }} available</span>
+        <!-- Tips Section with Tabs -->
+        <div class="mb-6">
+            <!-- Tabs -->
+            <div class="mb-5 border-b border-border">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button @click="tab = 'active'"
+                            :class="{ 'border-primary text-primary': tab === 'active', 'border-transparent text-muted-foreground hover:text-foreground hover:border-border': tab !== 'active' }"
+                            class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Active Tips
+                        <span class="ml-2 text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">{{ stats.active_tips }}</span>
+                    </button>
+                    <button @click="tab = 'historical'"
+                            :class="{ 'border-primary text-primary': tab === 'historical', 'border-transparent text-muted-foreground hover:text-foreground hover:border-border': tab !== 'historical' }"
+                            class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Historical
+                        <span class="ml-2 text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">{{ stats.historical_tips }}</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Active Tips Tab -->
+            <div x-show="tab === 'active'" x-cloak>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-foreground">Active Tips</h2>
+                    <span class="text-sm text-muted-foreground">{{ active_tips|length }} available</span>
+                </div>
+
+                {% if active_tips %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for tip in active_tips %}
+                            <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
+                                        <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 🔒 Full code after purchase</p>
+                                    </div>
+                                    <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <!-- Preview Matches -->
+                                    {% with preview_matches=tip.get_preview_matches %}
+                                        {% if preview_matches %}
+                                            {% for match in preview_matches %}
+                                                <div class="mb-3 p-2 bg-secondary rounded">
+                                                    <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                                    <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
+                                                </div>
+                                            {% endfor %}
+                                            {% if tip.preview_data.total_matches == 2 %}
+                                                <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
+                                            {% elif tip.preview_data.total_matches > 2 %}
+                                                <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
+                                            {% endif %}
+                                        {% else %}
+                                            <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
+                                                <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                                </svg>
+                                                <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+
+                                    <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
+                                        <div>
+                                            <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
+                                            <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-muted-foreground">
+                                                {% if tip.time_until_expiry.days > 0 %}
+                                                    {{ tip.time_until_expiry.days }}d left
+                                                {% elif tip.time_until_expiry.seconds > 3600 %}
+                                                    {{ tip.time_until_expiry.seconds|floatformat:0|slice:":1" }}h left
+                                                {% else %}
+                                                    {{ tip.time_until_expiry.seconds|floatformat:0|slice:":2" }}m left
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <a href="{% url 'tips:detail' tip.id %}" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-center block">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if active_page_obj.has_other_pages %}
+                        <div class="mt-6 flex justify-center">
+                            <nav class="flex space-x-1">
+                                {% if active_page_obj.has_previous %}
+                                    <a href="?active_page=1&tab=active" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">First</a>
+                                    <a href="?active_page={{ active_page_obj.previous_page_number }}&tab=active" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Prev</a>
+                                {% endif %}
+                                <span class="px-3 py-2 text-xs bg-primary text-primary-foreground rounded font-medium">{{ active_page_obj.number }} / {{ active_page_obj.paginator.num_pages }}</span>
+                                {% if active_page_obj.has_next %}
+                                    <a href="?active_page={{ active_page_obj.next_page_number }}&tab=active" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Next</a>
+                                    <a href="?active_page={{ active_page_obj.paginator.num_pages }}&tab=active" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Last</a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="bg-card border border-border rounded-lg p-12 text-center">
+                        <svg class="mx-auto h-16 w-16 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-xl font-medium text-foreground mb-2">No Active Tips</h3>
+                        <p class="text-muted-foreground">This tipster doesn't have any active tips at the moment.</p>
+                        <p class="text-sm text-muted-foreground mt-2">Check back later for new betting insights!</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Historical Tips Tab -->
+            <div x-show="tab === 'historical'" x-cloak>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-foreground">Historical Tips</h2>
+                    <span class="text-sm text-muted-foreground">{{ historical_tips|length }} shown</span>
+                </div>
+
+                {% if historical_tips %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for tip in historical_tips %}
+                            <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        {% if tip.status == 'archived' %}
+                                            {% if tip.is_resulted %}
+                                                {% if tip.is_won %}
+                                                    <span class="bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium">WON</span>
+                                                {% else %}
+                                                    <span class="bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 px-3 py-1 rounded-full text-sm font-medium">LOST</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="bg-muted/30 border border-muted/50 text-muted-foreground px-3 py-1 rounded-full text-sm font-medium">EXPIRED</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium">{{ tip.get_status_display|upper }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
+                                </div>
+
+                                <div class="text-center mb-4">
+                                    <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
+                                    <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }}</p>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <!-- Preview Matches -->
+                                    {% with preview_matches=tip.get_preview_matches %}
+                                        {% if preview_matches %}
+                                            {% for match in preview_matches %}
+                                                <div class="mb-3 p-2 bg-secondary rounded">
+                                                    <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                                    <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
+                                                </div>
+                                            {% endfor %}
+                                            {% if tip.preview_data.total_matches == 2 %}
+                                                <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
+                                            {% elif tip.preview_data.total_matches > 2 %}
+                                                <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
+                                            {% endif %}
+                                        {% else %}
+                                            <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
+                                                <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                                </svg>
+                                                <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+
+                                    <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
+                                        <div>
+                                            <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
+                                            <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
+                                            <p class="text-xs text-muted-foreground">Revenue: KES {{ tip.revenue_generated|floatformat:0|intcomma }}</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs text-muted-foreground">
+                                                {{ tip.created_at|naturaltime }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <a href="{% url 'tips:detail' tip.id %}" class="w-full bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-center block">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if historical_page_obj.has_other_pages %}
+                        <div class="mt-6 flex justify-center">
+                            <nav class="flex space-x-1">
+                                {% if historical_page_obj.has_previous %}
+                                    <a href="?historical_page=1&tab=historical" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">First</a>
+                                    <a href="?historical_page={{ historical_page_obj.previous_page_number }}&tab=historical" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Prev</a>
+                                {% endif %}
+                                <span class="px-3 py-2 text-xs bg-primary text-primary-foreground rounded font-medium">{{ historical_page_obj.number }} / {{ historical_page_obj.paginator.num_pages }}</span>
+                                {% if historical_page_obj.has_next %}
+                                    <a href="?historical_page={{ historical_page_obj.next_page_number }}&tab=historical" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Next</a>
+                                    <a href="?historical_page={{ historical_page_obj.paginator.num_pages }}&tab=historical" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Last</a>
+                                {% endif %}
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="bg-card border border-border rounded-lg p-12 text-center">
+                        <svg class="mx-auto h-16 w-16 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-xl font-medium text-foreground mb-2">No Historical Tips</h3>
+                        <p class="text-muted-foreground">This tipster hasn't had any completed or archived tips yet.</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
 
-        {% if tips %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for tip in tips %}
-                    <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
-                                <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 🔒 Full code after purchase</p>
-                            </div>
-                            <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
-                        </div>
+        <!-- Performance Section (if has resulted tips) -->
+        {% if stats.total_tips > 0 %}
+        <div class="bg-card border border-border rounded-lg p-6">
+            <h2 class="text-xl font-bold text-foreground mb-4">Performance Overview</h2>
 
-                        <div class="space-y-3">
-                            <!-- Preview Matches -->
-                            {% with preview_matches=tip.get_preview_matches %}
-                                {% if preview_matches %}
-                                    {% for match in preview_matches %}
-                                        <div class="mb-3 p-2 bg-secondary rounded">
-                                            <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
-                                            <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
-                                        </div>
-                                    {% endfor %}
-                                    {% if tip.preview_data.total_matches == 2 %}
-                                        <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
-                                    {% elif tip.preview_data.total_matches > 2 %}
-                                        <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
-                                    {% endif %}
-                                {% else %}
-                                    <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
-                                        <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                        </svg>
-                                        <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
-                                    </div>
-                                {% endif %}
-                            {% endwith %}
-
-                            <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
-                                <div>
-                                    <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
-                                    <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-muted-foreground">
-                                        {% if tip.time_until_expiry.days > 0 %}
-                                            {{ tip.time_until_expiry.days }}d left
-                                        {% elif tip.time_until_expiry.seconds > 3600 %}
-                                            {{ tip.time_until_expiry.seconds|floatformat:0|slice:":1" }}h left
-                                        {% else %}
-                                            {{ tip.time_until_expiry.seconds|floatformat:0|slice:":2" }}m left
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-4">
-                            <a href="{% url 'tips:detail' tip.id %}" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-center block">
-                                View Details
-                            </a>
-                        </div>
+            <div class="space-y-4">
+                <!-- Win Rate Bar -->
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-muted-foreground">Win Rate</span>
+                        <span class="font-medium text-foreground">{{ stats.win_rate }}%</span>
                     </div>
-                {% endfor %}
+                    <div class="w-full bg-muted rounded-full h-3 overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300 {% if stats.win_rate >= 70 %}bg-green-500{% elif stats.win_rate >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
+                             style="width: {{ stats.win_rate }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Success Breakdown -->
+                <div class="grid grid-cols-3 gap-4 text-center pt-4 border-t border-border">
+                    <div>
+                        <div class="text-3xl font-bold text-green-600">{{ stats.won_tips }}</div>
+                        <div class="text-sm text-muted-foreground">Won</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-red-600">{{ stats.total_tips|add:"-stats.won_tips" }}</div>
+                        <div class="text-sm text-muted-foreground">Lost</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-primary">{{ stats.total_tips }}</div>
+                        <div class="text-sm text-muted-foreground">Total</div>
+                    </div>
+                </div>
             </div>
-        {% else %}
-            <div class="bg-card border border-border rounded-lg p-12 text-center">
-                <svg class="mx-auto h-16 w-16 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <h3 class="text-xl font-medium text-foreground mb-2">No Active Tips</h3>
-                <p class="text-muted-foreground">This tipster doesn't have any active tips at the moment.</p>
-                <p class="text-sm text-muted-foreground mt-2">Check back later for new betting insights!</p>
-            </div>
+        </div>
         {% endif %}
     </div>
-
-    <!-- Performance Section (if has resulted tips) -->
-    {% if stats.total_tips > 0 %}
-    <div class="bg-card border border-border rounded-lg p-6">
-        <h2 class="text-xl font-bold text-foreground mb-4">Performance Overview</h2>
-
-        <div class="space-y-4">
-            <!-- Win Rate Bar -->
-            <div>
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-muted-foreground">Win Rate</span>
-                    <span class="font-medium text-foreground">{{ stats.win_rate }}%</span>
-                </div>
-                <div class="w-full bg-muted rounded-full h-3 overflow-hidden">
-                    <div class="h-full rounded-full transition-all duration-300 {% if stats.win_rate >= 70 %}bg-green-500{% elif stats.win_rate >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
-                         style="width: {{ stats.win_rate }}%"></div>
-                </div>
-            </div>
-
-            <!-- Success Breakdown -->
-            <div class="grid grid-cols-3 gap-4 text-center pt-4 border-t border-border">
-                <div>
-                    <div class="text-3xl font-bold text-green-600">{{ stats.won_tips }}</div>
-                    <div class="text-sm text-muted-foreground">Won</div>
-                </div>
-                <div>
-                    <div class="text-3xl font-bold text-red-600">{{ stats.total_tips|add:"-stats.won_tips" }}</div>
-                    <div class="text-sm text-muted-foreground">Lost</div>
-                </div>
-                <div>
-                    <div class="text-3xl font-bold text-primary">{{ stats.total_tips }}</div>
-                    <div class="text-sm text-muted-foreground">Total</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

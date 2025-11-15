@@ -63,12 +63,12 @@
                   <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Total</div><div class="text-sm font-semibold text-foreground">{{ selling_stats.total_tips }}</div></div>
                 </div>
                 <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-                  <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></span>
-                  <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Active</div><div class="text-sm font-semibold text-foreground">{{ selling_stats.active_tips }}</div></div>
+                  <span class="inline-flex items-center justify-center rounded-md bg-green-500/15 text-green-600 w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></span>
+                  <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Active</div><div class="text-sm font-semibold text-green-600">{{ selling_stats.active_tips }}</div></div>
                 </div>
                 <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-                  <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                  <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Pending</div><div class="text-sm font-semibold text-foreground">{{ selling_stats.pending_tips }}</div></div>
+                  <span class="inline-flex items-center justify-center rounded-md bg-gray-500/15 text-gray-600 w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></span>
+                  <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Archived</div><div class="text-sm font-semibold text-gray-600">{{ selling_stats.archived_tips }}</div></div>
                 </div>
                 <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
                   <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg></span>
@@ -77,19 +77,86 @@
               </div>
             </div>
 
+            <!-- Filter Buttons -->
+            <div class="mb-6">
+              <div class="flex flex-wrap gap-2">
+                <a href="?filter=all&tab=selling" 
+                   class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                          {% if selling_stats.current_filter == 'all' %}bg-primary text-primary-foreground{% else %}bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground{% endif %}">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  All Tips ({{ selling_stats.total_tips }})
+                </a>
+                <a href="?filter=active&tab=selling" 
+                   class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                          {% if selling_stats.current_filter == 'active' %}bg-green-600 text-white{% else %}bg-secondary text-secondary-foreground hover:bg-green-50 hover:text-green-700{% endif %}">
+                  <span class="w-2 h-2 bg-green-500 rounded-full mr-2 {% if selling_stats.current_filter == 'active' %}animate-pulse{% endif %}"></span>
+                  Active ({{ selling_stats.active_tips }})
+                </a>
+                <a href="?filter=archived&tab=selling" 
+                   class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                          {% if selling_stats.current_filter == 'archived' %}bg-gray-600 text-white{% else %}bg-secondary text-secondary-foreground hover:bg-gray-50 hover:text-gray-700{% endif %}">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                  </svg>
+                  Archived ({{ selling_stats.archived_tips }})
+                </a>
+              </div>
+            </div>
+
             <!-- Selling Tips Cards -->
             {% if selling_tips %}
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {% for tip in selling_tips %}
+                  {% if tip.status == 'active' %}
+                  <!-- Active Tip Card with Enhanced Styling -->
+                  <div class="relative bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-2 border-green-200 dark:border-green-700 rounded-lg p-5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] transform">
+                    <!-- Live Ribbon -->
+                    <div class="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg z-10 animate-pulse">
+                      🔴 LIVE
+                    </div>
+                    
+                    <div class="flex justify-between items-start mb-3">
+                      <div>
+                        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-green-600 text-white border-2 border-green-500 shadow-sm">
+                          <span class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>ACTIVE
+                        </span>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-xl font-bold text-green-700 dark:text-green-400">KES {{ tip.revenue_generated|floatformat:0|intcomma }}</p>
+                        <p class="text-xs text-green-600 dark:text-green-500 font-medium uppercase tracking-wide">Revenue</p>
+                      </div>
+                    </div>
+                  {% elif tip.status == 'archived' %}
+                  <!-- Archived Tip Card with Muted Styling -->
+                  <div class="relative bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] opacity-90">
+                    <!-- Archive Icon -->
+                    <div class="absolute -top-2 -right-2 bg-gray-500 text-white text-xs px-2 py-1 rounded-full shadow-sm z-10">
+                      📦
+                    </div>
+                    
+                    <div class="flex justify-between items-start mb-3">
+                      <div>
+                        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600">
+                          <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                          </svg>
+                          ARCHIVED
+                        </span>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-lg font-bold text-gray-600 dark:text-gray-400">KES {{ tip.revenue_generated|floatformat:0|intcomma }}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500 font-medium uppercase tracking-wide">Revenue</p>
+                      </div>
+                    </div>
+                  {% else %}
+                  <!-- Other Status Tip Card -->
                   <div class="bg-card border border-border rounded-lg p-5 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
                     <div class="flex justify-between items-start mb-3">
                       <div>
-                        {% if tip.status == 'active' %}
-                          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30"><span class="w-2 h-2 bg-primary rounded-full mr-1 animate-pulse"></span>Active</span>
-                        {% elif tip.status == 'pending_approval' %}
+                        {% if tip.status == 'pending_approval' %}
                           <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent/20 text-accent border border-accent/30">Pending Review</span>
-                        {% elif tip.status == 'archived' %}
-                          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-muted/20 text-muted-foreground border border-muted/30">Archived</span>
                         {% else %}
                           <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/20 text-destructive border border-destructive/30">{{ tip.get_status_display }}</span>
                         {% endif %}
@@ -99,45 +166,142 @@
                         <p class="text-xs text-muted-foreground font-medium">Revenue</p>
                       </div>
                     </div>
+                  {% endif %}
                     <div class="text-center mb-3">
-                      <h3 class="text-base font-bold text-primary"><a href="{% url 'tips:detail' tip.id %}" class="hover:text-primary/80 transition-colors">{{ tip.bet_code }}</a></h3>
-                      <p class="text-xs text-muted-foreground">{{ tip.get_bookmaker_display }}</p>
+                      <h3 class="text-base font-bold {% if tip.status == 'active' %}text-green-700 dark:text-green-400{% elif tip.status == 'archived' %}text-gray-600 dark:text-gray-400{% else %}text-primary{% endif %}">
+                        <a href="{% url 'tips:detail' tip.id %}" class="{% if tip.status == 'active' %}hover:text-green-600{% elif tip.status == 'archived' %}hover:text-gray-500{% else %}hover:text-primary/80{% endif %} transition-colors">{{ tip.bet_code }}</a>
+                      </h3>
+                      <p class="text-xs {% if tip.status == 'archived' %}text-gray-500{% else %}text-muted-foreground{% endif %}">{{ tip.get_bookmaker_display }}</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-3">
-                      <div class="text-center p-2 bg-primary/5 rounded-lg"><div class="text-base font-bold text-primary">{{ tip.odds }}x</div><div class="text-[11px] text-muted-foreground">Odds</div></div>
-                      <div class="text-center p-2 bg-accent/5 rounded-lg"><div class="text-base font-bold text-accent">KES {{ tip.price|floatformat:0|intcomma }}</div><div class="text-[11px] text-muted-foreground">Price</div></div>
+                      {% if tip.status == 'active' %}
+                        <div class="text-center p-3 bg-green-100 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700">
+                          <div class="text-lg font-bold text-green-700 dark:text-green-400">{{ tip.odds }}x</div>
+                          <div class="text-[11px] text-green-600 dark:text-green-500 uppercase tracking-wide">Odds</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-100 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700">
+                          <div class="text-lg font-bold text-green-700 dark:text-green-400">KES {{ tip.price|floatformat:0|intcomma }}</div>
+                          <div class="text-[11px] text-green-600 dark:text-green-500 uppercase tracking-wide">Price</div>
+                        </div>
+                      {% elif tip.status == 'archived' %}
+                        <div class="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <div class="text-lg font-bold text-gray-600 dark:text-gray-400">{{ tip.odds }}x</div>
+                          <div class="text-[11px] text-gray-500 uppercase tracking-wide">Odds</div>
+                        </div>
+                        <div class="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                          <div class="text-lg font-bold text-gray-600 dark:text-gray-400">KES {{ tip.price|floatformat:0|intcomma }}</div>
+                          <div class="text-[11px] text-gray-500 uppercase tracking-wide">Price</div>
+                        </div>
+                      {% else %}
+                        <div class="text-center p-2 bg-primary/5 rounded-lg"><div class="text-base font-bold text-primary">{{ tip.odds }}x</div><div class="text-[11px] text-muted-foreground">Odds</div></div>
+                        <div class="text-center p-2 bg-accent/5 rounded-lg"><div class="text-base font-bold text-accent">KES {{ tip.price|floatformat:0|intcomma }}</div><div class="text-[11px] text-muted-foreground">Price</div></div>
+                      {% endif %}
                     </div>
-                    <div class="text-center mb-3"><div class="flex justify-center items-center space-x-3 text-xs text-muted-foreground"><span>👥 {{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</span><span>⏰ {{ tip.created_at|naturaltime }}</span></div></div>
+                    <div class="text-center mb-3">
+                      <div class="flex justify-center items-center space-x-3 text-xs {% if tip.status == 'archived' %}text-gray-500{% else %}text-muted-foreground{% endif %}">
+                        <span>👥 {{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</span>
+                        <span>⏰ {{ tip.created_at|naturaltime }}</span>
+                      </div>
+                    </div>
                     {% if tip.status == 'active' %}
-                      <div class="text-center mb-3"><div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">⏱️ {% if tip.time_until_expiry.days > 0 %}{{ tip.time_until_expiry.days }} day{{ tip.time_until_expiry.days|pluralize }} left{% else %}Few hours left{% endif %}</div></div>
+                      <div class="text-center mb-3">
+                        <div class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700 animate-pulse">
+                          ⏱️ {% if tip.time_until_expiry.days > 0 %}{{ tip.time_until_expiry.days }} day{{ tip.time_until_expiry.days|pluralize }} left{% else %}Few hours left{% endif %}
+                        </div>
+                      </div>
                     {% endif %}
                     <div class="space-y-2">
-                      <h4 class="text-sm font-medium text-foreground mb-1">Preview Matches:</h4>
+                      <h4 class="text-sm font-medium {% if tip.status == 'archived' %}text-gray-600 dark:text-gray-400{% else %}text-foreground{% endif %} mb-1">Preview Matches:</h4>
                       {% with preview_matches=tip.get_preview_matches %}
                         {% if preview_matches %}
                           {% for match in preview_matches %}
-                            <div class="text-xs bg-secondary/50 p-2 rounded border"><div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div><div class="text-muted-foreground">{{ match.market }}</div></div>
+                            {% if tip.status == 'active' %}
+                              <div class="text-xs bg-green-50 dark:bg-green-900 p-2.5 rounded border border-green-200 dark:border-green-700">
+                                <div class="font-medium text-green-800 dark:text-green-300">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                <div class="text-green-600 dark:text-green-400">{{ match.market }}</div>
+                              </div>
+                            {% elif tip.status == 'archived' %}
+                              <div class="text-xs bg-gray-50 dark:bg-gray-800 p-2.5 rounded border border-gray-200 dark:border-gray-600">
+                                <div class="font-medium text-gray-700 dark:text-gray-400">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                <div class="text-gray-600 dark:text-gray-500">{{ match.market }}</div>
+                              </div>
+                            {% else %}
+                              <div class="text-xs bg-secondary/50 p-2 rounded border">
+                                <div class="font-medium text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
+                                <div class="text-muted-foreground">{{ match.market }}</div>
+                              </div>
+                            {% endif %}
                           {% endfor %}
                           {% with total=tip.preview_data.total_matches %}
-                            {% if total > 2 %}<div class="text-xs text-center text-muted-foreground py-1">+{{ total|add:'-2' }} more match{{ total|add:'-2'|pluralize:'es' }} hidden</div>
-                            {% elif total == 2 %}<div class="text-xs text-center text-muted-foreground py-1">+1 more match hidden</div>
+                            {% if total > 2 %}
+                              <div class="text-xs text-center {% if tip.status == 'archived' %}text-gray-500{% else %}text-muted-foreground{% endif %} py-1">
+                                +{{ total|add:'-2' }} more match{{ total|add:'-2'|pluralize:'es' }} hidden
+                              </div>
+                            {% elif total == 2 %}
+                              <div class="text-xs text-center {% if tip.status == 'archived' %}text-gray-500{% else %}text-muted-foreground{% endif %} py-1">
+                                +1 more match hidden
+                              </div>
                             {% endif %}
                           {% endwith %}
                         {% else %}
-                          <div class="text-xs text-center text-muted-foreground py-3 bg-secondary/30 rounded border border-dashed"><svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg><div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:'es' }} hidden</div></div>
+                          {% if tip.status == 'active' %}
+                            <div class="text-xs text-center text-green-600 dark:text-green-400 py-3 bg-green-50 dark:bg-green-900 rounded border border-green-200 dark:border-green-700 border-dashed">
+                              <svg class="w-6 h-6 mx-auto mb-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                              </svg>
+                              <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:'es' }} hidden</div>
+                            </div>
+                          {% elif tip.status == 'archived' %}
+                            <div class="text-xs text-center text-gray-600 dark:text-gray-500 py-3 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 border-dashed">
+                              <svg class="w-6 h-6 mx-auto mb-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                              </svg>
+                              <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:'es' }} hidden</div>
+                            </div>
+                          {% else %}
+                            <div class="text-xs text-center text-muted-foreground py-3 bg-secondary/30 rounded border border-dashed">
+                              <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                              </svg>
+                              <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:'es' }} hidden</div>
+                            </div>
+                          {% endif %}
                         {% endif %}
                       {% endwith %}
                     </div>
-                    <div class="mt-3 pt-3 border-t border-border"><a href="{% url 'tips:detail' tip.id %}" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm">View Details<svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></a></div>
+                    <div class="mt-3 pt-3 {% if tip.status == 'archived' %}border-t border-gray-200 dark:border-gray-600{% else %}border-t border-border{% endif %}">
+                      {% if tip.status == 'active' %}
+                        <a href="{% url 'tips:detail' tip.id %}" class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors text-sm shadow-lg">
+                          View Live Tip
+                          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        </a>
+                      {% elif tip.status == 'archived' %}
+                        <a href="{% url 'tips:detail' tip.id %}" class="w-full inline-flex items-center justify-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors text-sm">
+                          View Archived Tip
+                          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        </a>
+                      {% else %}
+                        <a href="{% url 'tips:detail' tip.id %}" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors text-sm">
+                          View Details
+                          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                          </svg>
+                        </a>
+                      {% endif %}
+                    </div>
                   </div>
                 {% endfor %}
               </div>
               {% if selling_page_obj.has_other_pages %}
                 <div class="mt-6 flex justify-center">
                   <nav class="flex space-x-1">
-                    {% if selling_page_obj.has_previous %}<a href="?selling_page=1" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">First</a><a href="?selling_page={{ selling_page_obj.previous_page_number }}" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Prev</a>{% endif %}
+                    {% if selling_page_obj.has_previous %}<a href="?selling_page=1&filter={{ selling_stats.current_filter }}&tab=selling" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">First</a><a href="?selling_page={{ selling_page_obj.previous_page_number }}&filter={{ selling_stats.current_filter }}&tab=selling" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Prev</a>{% endif %}
                     <span class="px-3 py-2 text-xs bg-primary text-primary-foreground rounded font-medium">{{ selling_page_obj.number }} / {{ selling_page_obj.paginator.num_pages }}</span>
-                    {% if selling_page_obj.has_next %}<a href="?selling_page={{ selling_page_obj.next_page_number }}" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Next</a><a href="?selling_page={{ selling_page_obj.paginator.num_pages }}" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Last</a>{% endif %}
+                    {% if selling_page_obj.has_next %}<a href="?selling_page={{ selling_page_obj.next_page_number }}&filter={{ selling_stats.current_filter }}&tab=selling" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Next</a><a href="?selling_page={{ selling_page_obj.paginator.num_pages }}&filter={{ selling_stats.current_filter }}&tab=selling" class="px-3 py-2 text-xs bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground rounded transition-colors">Last</a>{% endif %}
                   </nav>
                 </div>
               {% endif %}

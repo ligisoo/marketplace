@@ -290,10 +290,14 @@ class ResultVerifier:
 
         total_goals = home_score + away_score
 
-        # Over/Under Goals
-        if 'over' in market_lower or 'under' in market_lower:
-            # Extract goal line (e.g., "2.5", "1.5", "3.5")
+        # Over/Under Goals (including "Total Goals" market)
+        if ('over' in market_lower or 'under' in market_lower or 
+            'total goals' in market_lower or 'goals total' in market_lower):
+            
+            # Extract goal line from market or selection
             goal_line = self._extract_goal_line(market)
+            if not goal_line:
+                goal_line = self._extract_goal_line(selection)
 
             if goal_line:
                 if 'over' in selection_lower:

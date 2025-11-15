@@ -273,6 +273,53 @@ def run_tip_archiving():
     logger.info("")
 
 
+def run_stuck_match_recovery():
+    """
+    Detect and recover matches that appear to be stuck in live status.
+    """
+    logger.info("=" * 60)
+    logger.info("STUCK MATCH RECOVERY STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
+
+    try:
+        api_service = APIFootballService()
+        
+        # Get API usage stats first
+        stats = api_service.get_api_usage_stats()
+        logger.info(f"API Usage: {stats['api_requests']}/{stats['limit']} requests today")
+        logger.info(f"Remaining: {stats['remaining']} requests")
+
+        # Only run if we have sufficient API quota
+        if stats['remaining'] < 10:
+            logger.warning("Insufficient API quota for stuck match recovery (need at least 10)")
+            return
+            
+        # Run stuck match recovery
+        recovery_stats = api_service.run_stuck_match_recovery()
+        
+        logger.info("RECOVERY STATS:")
+        logger.info(f"  Stuck matches found: {recovery_stats['stuck_matches_found']}")
+        logger.info(f"  Successfully recovered: {recovery_stats['recovered_successfully']}")
+        logger.info(f"  Recovery failed: {recovery_stats['recovery_failed']}")
+        logger.info(f"  API requests used: {recovery_stats['api_requests_used']}")
+        
+        if recovery_stats['recovered_successfully'] > 0:
+            logger.info(f"✓ Successfully recovered {recovery_stats['recovered_successfully']} stuck matches")
+        elif recovery_stats['stuck_matches_found'] == 0:
+            logger.info("No stuck matches found - all good!")
+        else:
+            logger.warning(f"Found {recovery_stats['stuck_matches_found']} stuck matches but recovery failed")
+
+    except Exception as e:
+        logger.error(f"Error during stuck match recovery: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("STUCK MATCH RECOVERY COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")
+
+
 def schedule_jobs():
     """
     Configure all scheduled jobs here.
@@ -297,6 +344,9 @@ def schedule_jobs():
 
     # Job 5: Archive expired tips every hour
     schedule.every().hour.do(run_tip_archiving)
+
+    # Job 6: Detect and recover stuck matches every 30 minutes (offset from live fixtures)
+    schedule.every(30).minutes.do(run_stuck_match_recovery)
 
     # Alternative schedules for result verification (uncomment the one you prefer):
 

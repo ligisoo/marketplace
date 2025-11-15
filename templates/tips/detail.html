@@ -29,8 +29,20 @@
                         {% endif %}
                         <p class="text-muted-foreground">{{ tip.get_bookmaker_display }} Betslip</p>
                     </div>
-                    <div class="text-right">
-                        {% if tip.status == 'active' %}
+                    <div class="text-right space-y-2">
+                        {% if tip.is_resulted %}
+                            <!-- Show final result badge for completed tips -->
+                            <div>
+                                {% if tip.is_won %}
+                                    <span class="inline-block bg-green-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">✓ WON</span>
+                                {% else %}
+                                    <span class="inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">✗ LOST</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="inline-block bg-gray-500 text-white px-2 py-1 rounded-full text-xs">Completed</span>
+                            </div>
+                        {% elif tip.status == 'active' %}
                             <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Active</span>
                         {% elif tip.status == 'pending_approval' %}
                             <span class="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs">Pending Approval</span>
@@ -57,14 +69,24 @@
                     </div>
                     <div class="text-center">
                     {% load tip_extras %}
-                    <p class="text-sm text-muted-foreground">First Match Starts In</p>
-                    {% if tip.is_active and tip.time_until_first_match.total_seconds > 0 %}
+                    {% if tip.is_resulted %}
+                        <!-- Show final result for completed tips -->
+                        <p class="text-sm text-muted-foreground">Final Result</p>
+                        {% if tip.is_won %}
+                            <p class="text-xl font-bold text-green-600">WON</p>
+                        {% else %}
+                            <p class="text-xl font-bold text-red-600">LOST</p>
+                        {% endif %}
+                    {% elif tip.is_active and tip.time_until_first_match.total_seconds > 0 %}
+                        <p class="text-sm text-muted-foreground">First Match Starts In</p>
                         <p class="text-xl font-bold text-red-600">
                             {{ tip.time_until_first_match|format_timedelta }}
                         </p>
                     {% elif tip.is_live %}
+                        <p class="text-sm text-muted-foreground">Status</p>
                         <p class="text-xl font-bold text-green-600">Live</p>
                     {% else %}
+                        <p class="text-sm text-muted-foreground">Status</p>
                         <p class="text-xl font-bold text-muted-foreground">Started</p>
                     {% endif %}
                 </div>
@@ -138,7 +160,29 @@
                                             {% endif %}
                                             <div class="text-xs text-muted-foreground font-mono">{{ match.actual_result }}</div>
                                         {% else %}
-                                            <span class="inline-flex items-center px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 rounded text-xs font-medium">Pending</span>
+                                            {% load tip_extras %}
+                                            {% get_match_status match as match_status %}
+                                            {% if match_status.is_live %}
+                                                <span class="inline-flex items-center px-2 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-400 rounded text-xs font-medium">
+                                                    🔴 Live
+                                                </span>
+                                                <div class="text-xs text-muted-foreground font-mono">
+                                                    {% if match_status.score %}{{ match_status.score }}{% endif %}
+                                                    {% if match_status.elapsed %} · {{ match_status.elapsed }}'{% endif %}
+                                                </div>
+                                            {% elif match_status.is_finished %}
+                                                <span class="inline-flex items-center px-2 py-1 bg-gray-500/10 border border-gray-500/30 text-gray-700 dark:text-gray-400 rounded text-xs font-medium">Finished</span>
+                                                {% if match_status.score %}
+                                                    <div class="text-xs text-muted-foreground font-mono">{{ match_status.score }}</div>
+                                                {% endif %}
+                                            {% elif match_status.has_started %}
+                                                <span class="inline-flex items-center px-2 py-1 bg-orange-500/10 border border-orange-500/30 text-orange-700 dark:text-orange-400 rounded text-xs font-medium">Started</span>
+                                                {% if match_status.score %}
+                                                    <div class="text-xs text-muted-foreground font-mono">{{ match_status.score }}</div>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 rounded text-xs font-medium">Pending</span>
+                                            {% endif %}
                                         {% endif %}
                                     </td>
                                 </tr>

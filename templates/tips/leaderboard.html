@@ -25,19 +25,31 @@
       <div class="hidden md:flex items-center">
         <div class="inline-flex rounded-lg border border-border bg-card p-1">
           <a href="?sort=win_rate"
-             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'win_rate' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {% if sort_by == 'win_rate' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
             Win Rate
           </a>
           <a href="?sort=total_tips"
-             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_tips' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {% if sort_by == 'total_tips' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+            </svg>
             Total Tips
           </a>
           <a href="?sort=total_sales"
-             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_sales' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {% if sort_by == 'total_sales' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
             Sales
           </a>
           <a href="?sort=total_purchases"
-             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {% if sort_by == 'total_purchases' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {% if sort_by == 'total_purchases' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
             Popularity
           </a>
         </div>
@@ -52,10 +64,10 @@
       <label for="sortSelect" class="sr-only">Sort by</label>
       <select id="sortSelect" onchange="window.location.href=this.value"
               class="w-full h-9 rounded-md border border-border bg-card text-foreground text-sm">
-        <option value="?sort=win_rate" {% if sort_by == 'win_rate' %}selected{% endif %}>Sort by: Win Rate</option>
-        <option value="?sort=total_tips" {% if sort_by == 'total_tips' %}selected{% endif %}>Sort by: Total Tips</option>
-        <option value="?sort=total_sales" {% if sort_by == 'total_sales' %}selected{% endif %}>Sort by: Sales</option>
-        <option value="?sort=total_purchases" {% if sort_by == 'total_purchases' %}selected{% endif %}>Sort by: Popularity</option>
+        <option value="?sort=win_rate" {% if sort_by == 'win_rate' %}selected{% endif %}>📊 Sort by: Win Rate</option>
+        <option value="?sort=total_tips" {% if sort_by == 'total_tips' %}selected{% endif %}>📝 Sort by: Total Tips</option>
+        <option value="?sort=total_sales" {% if sort_by == 'total_sales' %}selected{% endif %}>💰 Sort by: Sales</option>
+        <option value="?sort=total_purchases" {% if sort_by == 'total_purchases' %}selected{% endif %}>❤️ Sort by: Popularity</option>
       </select>
     </div>
   </div>
@@ -69,7 +81,7 @@
              class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
           <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
           </span>
           <div class="leading-tight">
@@ -83,7 +95,7 @@
              class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
           <span class="inline-flex items-center justify-center rounded-md bg-foreground/10 text-foreground w-7 h-7">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10l4-4 4 4M18 14l-4 4-4-4"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
             </svg>
           </span>
           <div class="leading-tight">
@@ -141,15 +153,78 @@
         <table class="w-full min-w-[720px]">
           <thead class="bg-muted/50">
             <tr>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rank</th>
-              <th class="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipster</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tips</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Won</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg Odds</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sales</th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">Popularity</th>
-              <th class="px-5 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Action</th>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
+                  </svg>
+                  Rank
+                </div>
+              </th>
+              <th class="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                  Tipster
+                </div>
+              </th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Win Rate
+                </div>
+              </th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                  Tips
+                </div>
+              </th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Won
+                </div>
+              </th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                  </svg>
+                  Avg Odds
+                </div>
+              </th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Sales
+                </div>
+              </th>
+              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                  </svg>
+                  Popularity
+                </div>
+              </th>
+              <th class="px-5 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div class="flex items-center justify-end gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                  Action
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
@@ -235,19 +310,32 @@
 
               <!-- Sales -->
               <td class="px-5 py-3 whitespace-nowrap text-center">
-                <span class="text-sm font-bold text-primary">KES {{ tipster_data.total_sales|default:0 }}</span>
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="text-sm font-bold text-primary">{{ tipster_data.total_sales|default:0 }}</span>
+                </div>
               </td>
 
               <!-- Popularity -->
               <td class="px-5 py-3 whitespace-nowrap text-center">
-                <span class="text-sm font-semibold text-accent">{{ tipster_data.total_purchases }}</span>
+                <div class="flex items-center justify-center gap-1">
+                  <svg class="w-4 h-4 text-red-500" fill="currentColor" stroke="none" viewBox="0 0 24 24">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                  <span class="text-sm font-semibold text-accent">{{ tipster_data.total_purchases }}</span>
+                </div>
               </td>
 
               <!-- Action -->
               <td class="px-5 py-3 whitespace-nowrap text-right">
                 <a href="{% url 'tips:tipster_profile' tipster_data.tipster.id %}"
-                   class="text-primary hover:text-primary/80 text-sm font-semibold">
-                  View →
+                   class="text-primary hover:text-primary/80 text-sm font-semibold inline-flex items-center gap-1">
+                  View
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
                 </a>
               </td>
             </tr>
@@ -263,17 +351,16 @@
       <div class="bg-primary/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
         <svg class="h-10 w-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806"/>
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
         </svg>
       </div>
-      <h3 class="text-xl font-bold text-foreground mb-2">Leaderboard Coming Soon</h3>
-      <p class="text-muted-foreground mb-5 max-w-md mx-auto">The leaderboard will showcase top-performing tipsters once tips are created and matches complete. Be the first to claim your spot!</p>
+      <h3 class="text-xl font-bold text-foreground mb-2">No Tipsters Yet</h3>
 
       <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
         <a href="{% url 'tips:marketplace' %}" class="inline-flex items-center bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           Browse Marketplace
         </a>

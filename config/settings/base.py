@@ -170,7 +170,7 @@ AWS_S3_REGION_NAME = config('AWS_REGION_NAME', default='us-east-1')
 
 # API-Football Configuration
 API_FOOTBALL_KEY = config('API_FOOTBALL_KEY', default='07346e2fbadbfc8c173d7cb2bca2921f')
-API_FOOTBALL_DAILY_LIMIT = config('API_FOOTBALL_DAILY_LIMIT', default=500, cast=int)
+API_FOOTBALL_DAILY_LIMIT = config('API_FOOTBALL_DAILY_LIMIT', default=100, cast=int)
 
 # Cache Configuration
 CACHES = {
