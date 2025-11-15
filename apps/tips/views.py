@@ -519,37 +519,40 @@ def purchase_tip(request, tip_id):
             'error': 'Insufficient wallet balance. Please add funds.'
         })
     
-    # Create purchase record
+    # Create purchase record with accounting entries
     try:
-        transaction_id = f"TIP_{tip.id}_{request.user.id}_{timezone.now().timestamp()}"
-        
-        purchase = TipPurchase.objects.create(
-            tip=tip,
-            buyer=request.user,
-            amount=tip.price,
-            transaction_id=transaction_id,
-            status='completed'  # Simplified for now
-        )
-        
-        # Deduct from buyer's wallet
-        request.user.userprofile.wallet_balance -= tip.price
-        request.user.userprofile.save()
-        
-        # Add to tipster's pending balance (would be handled by escrow system)
-        # For now, directly add to tipster wallet
-        tipster_earning = tip.price * 0.6  # 60% to tipster
-        tip.tipster.userprofile.wallet_balance += tipster_earning
-        tip.tipster.userprofile.save()
-        
-        purchase.completed_at = timezone.now()
-        purchase.save()
-        
+        from apps.transactions.services import AccountingService
+        from django.db import transaction as db_transaction
+
+        with db_transaction.atomic():
+            # Create accounting entries for the purchase
+            accounting_txn = AccountingService.record_tip_purchase(
+                buyer=request.user,
+                tipster=tip.tipster,
+                tip=tip,
+                amount=tip.price
+            )
+
+            # Create TipPurchase record
+            purchase = TipPurchase.objects.create(
+                tip=tip,
+                buyer=request.user,
+                amount=tip.price,
+                transaction_id=accounting_txn.reference,
+                status='completed',
+                completed_at=timezone.now()
+            )
+
+            # Sync wallet balances with accounting
+            AccountingService.sync_wallet_balance(request.user)
+            AccountingService.sync_wallet_balance(tip.tipster)
+
         return JsonResponse({
             'success': True,
             'message': 'Tip purchased successfully!',
             'redirect_url': f'/tips/{tip.id}/'
         })
-        
+
     except Exception as e:
         return JsonResponse({
             'success': False,

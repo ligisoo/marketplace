@@ -178,24 +178,34 @@ class TipPaymentCallbackView(APIView):
                 payment.callback_data = callback_data
                 payment.completed_at = timezone.now()
                 payment.save()
-                
-                # Create TipPurchase record
-                transaction_id = f"MPESA_{payment.tip.id}_{payment.user.id}_{timezone.now().timestamp()}"
-                
-                tip_purchase = TipPurchase.objects.create(
-                    tip=payment.tip,
-                    buyer=payment.user,
-                    amount=payment.amount,
-                    transaction_id=transaction_id,
-                    status='completed',
-                    completed_at=timezone.now()
-                )
-                
-                # Add to tipster's earnings (simplified for now)
-                from decimal import Decimal
-                tipster_earning = payment.amount * Decimal('0.6')  # 60% to tipster
-                payment.tip.tipster.userprofile.wallet_balance += tipster_earning
-                payment.tip.tipster.userprofile.save()
+
+                # Create accounting entries for M-Pesa purchase
+                from apps.transactions.services import AccountingService
+                from django.db import transaction as db_txn
+
+                with db_txn.atomic():
+                    # Record tip purchase with M-Pesa
+                    accounting_txn = AccountingService.record_tip_purchase_with_mpesa(
+                        buyer=payment.user,
+                        tipster=payment.tip.tipster,
+                        tip=payment.tip,
+                        amount=payment.amount,
+                        mpesa_receipt_number=mpesa_receipt_number
+                    )
+
+                    # Create TipPurchase record
+                    tip_purchase = TipPurchase.objects.create(
+                        tip=payment.tip,
+                        buyer=payment.user,
+                        amount=payment.amount,
+                        transaction_id=accounting_txn.reference,
+                        mpesa_receipt=mpesa_receipt_number or '',
+                        status='completed',
+                        completed_at=timezone.now()
+                    )
+
+                    # Sync tipster's wallet balance with accounting
+                    AccountingService.sync_wallet_balance(payment.tip.tipster)
                 
             else:  # Failed
                 payment.status = 'failed'
@@ -235,29 +245,40 @@ class TipPaymentStatusView(APIView):
                     if result_code == '0':
                         # Update payment to completed
                         payment.status = 'completed'
-                        payment.mpesa_receipt_number = f"QUERY_{timezone.now().timestamp()}"
+                        mpesa_receipt = f"QUERY_{timezone.now().timestamp()}"
+                        payment.mpesa_receipt_number = mpesa_receipt
                         payment.completed_at = timezone.now()
                         payment.save()
 
-                        # Create TipPurchase record
-                        transaction_id = f"MPESA_{payment.tip.id}_{payment.user.id}_{timezone.now().timestamp()}"
+                        # Create accounting entries for M-Pesa purchase
+                        from apps.transactions.services import AccountingService
+                        from django.db import transaction as db_txn
 
-                        TipPurchase.objects.get_or_create(
-                            tip=payment.tip,
-                            buyer=payment.user,
-                            defaults={
-                                'amount': payment.amount,
-                                'transaction_id': transaction_id,
-                                'status': 'completed',
-                                'completed_at': timezone.now()
-                            }
-                        )
+                        with db_txn.atomic():
+                            # Record tip purchase with M-Pesa
+                            accounting_txn = AccountingService.record_tip_purchase_with_mpesa(
+                                buyer=payment.user,
+                                tipster=payment.tip.tipster,
+                                tip=payment.tip,
+                                amount=payment.amount,
+                                mpesa_receipt_number=mpesa_receipt
+                            )
 
-                        # Add to tipster's earnings
-                        from decimal import Decimal
-                        tipster_earning = payment.amount * Decimal('0.6')
-                        payment.tip.tipster.userprofile.wallet_balance += tipster_earning
-                        payment.tip.tipster.userprofile.save()
+                            # Create TipPurchase record
+                            TipPurchase.objects.get_or_create(
+                                tip=payment.tip,
+                                buyer=payment.user,
+                                defaults={
+                                    'amount': payment.amount,
+                                    'transaction_id': accounting_txn.reference,
+                                    'mpesa_receipt': mpesa_receipt,
+                                    'status': 'completed',
+                                    'completed_at': timezone.now()
+                                }
+                            )
+
+                            # Sync tipster's wallet balance with accounting
+                            AccountingService.sync_wallet_balance(payment.tip.tipster)
 
                     # ResultCode '1032' means user cancelled
                     # ResultCode '1037' means timeout (user didn't enter PIN)

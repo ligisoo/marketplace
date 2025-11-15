@@ -9,7 +9,8 @@ User=walter
 Group=walter
 WorkingDirectory=/home/walter/marketplace
 Environment="PATH=/home/walter/marketplace/venv/bin:/usr/local/bin:/usr/bin:/bin"
-Environment="DJANGO_SETTINGS_MODULE=config.settings.base"
+Environment="DJANGO_SETTINGS_MODULE=config.settings.production"
+EnvironmentFile=/home/walter/marketplace/.env
 ExecStart=/home/walter/marketplace/venv/bin/python3 /home/walter/marketplace/run_scheduler.py
 
 # Restart policy

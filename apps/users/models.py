@@ -66,6 +66,21 @@ class UserProfile(models.Model):
             roles.append('tipster')
         return roles
 
+    def get_accounting_balance(self):
+        """
+        Get the user's wallet balance from the accounting system.
+        This is the source of truth for the user's balance.
+        """
+        try:
+            from apps.transactions.models import Account
+            wallet_account = Account.objects.filter(user=self.user).first()
+            if wallet_account:
+                return wallet_account.get_balance()
+            return 0
+        except Exception:
+            # Fallback to the legacy field if accounting system is not available
+            return self.wallet_balance
+
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
