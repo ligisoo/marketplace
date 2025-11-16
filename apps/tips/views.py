@@ -380,7 +380,7 @@ def download_earnings_statement(request):
     for purchase in all_purchases.order_by('-completed_at')[:20]:  # Last 20 transactions
         recent_transactions.append({
             'date': purchase.completed_at or purchase.created_at,
-            'tip_title': purchase.tip.get_display_title(),
+            'tip_title': f"{purchase.tip.bookmaker.title()} Tip ({purchase.tip.bet_code})",
             'amount': purchase.amount,
             'tipster_share': Decimal(str(purchase.amount)) * tipster_share_rate,
         })

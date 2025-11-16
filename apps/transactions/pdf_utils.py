@@ -39,7 +39,8 @@ class StatementPDFGenerator:
             fontSize=14,
             textColor=colors.HexColor('#374151'),
             spaceAfter=10,
-            spaceBefore=15
+            spaceBefore=15,
+            alignment=TA_LEFT
         ))
 
         self.styles.add(ParagraphStyle(
@@ -420,7 +421,8 @@ class StatementPDFGenerator:
             ('FONTSIZE', (0, 0), (1, 1), 10),
             ('FONTSIZE', (0, 2), (1, 2), 12),  # Larger font for total earnings
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#374151')),
-            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),   # Explicitly left-align labels
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),  # Right-align amounts
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
@@ -447,7 +449,8 @@ class StatementPDFGenerator:
             ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#374151')),
-            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),   # Explicitly left-align labels
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),  # Right-align values
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
@@ -483,7 +486,8 @@ class StatementPDFGenerator:
                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
                 ('FONTSIZE', (0, 1), (-1, -1), 8),
                 ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#374151')),
-                ('ALIGN', (2, 1), (3, -1), 'RIGHT'),
+                ('ALIGN', (0, 0), (1, -1), 'LEFT'),    # Left-align headers and first two columns
+                ('ALIGN', (2, 1), (3, -1), 'RIGHT'),   # Right-align amount columns
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
                 ('TOPPADDING', (0, 1), (-1, -1), 5),
