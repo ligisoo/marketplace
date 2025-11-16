@@ -1,14 +1,18 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Ligisoo - Football Tips Marketplace{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
     <!-- Google Fonts - PT Sans -->
     <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN (temporary fallback) -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
         tailwind.config = {
@@ -16,17 +20,16 @@
             theme: {
                 extend: {
                     colors: {
-                        // Ligisooke color system
-                        background: 'hsl(227, 27%, 14%)', // Dark Blue/Indigo
+                        background: 'hsl(227, 27%, 14%)',
                         foreground: 'hsl(0, 0%, 98%)',
                         card: 'hsl(227, 27%, 18%)',
                         'card-foreground': 'hsl(0, 0%, 98%)',
                         border: 'hsl(227, 27%, 22%)',
-                        primary: 'hsl(120, 50%, 60%)', // Bright Green
+                        primary: 'hsl(120, 50%, 60%)',
                         'primary-foreground': 'hsl(227, 27%, 14%)',
                         secondary: 'hsl(227, 27%, 20%)',
                         'secondary-foreground': 'hsl(0, 0%, 98%)',
-                        accent: 'hsl(39, 86%, 62%)', // Gold/Yellow
+                        accent: 'hsl(39, 86%, 62%)',
                         'accent-foreground': 'hsl(227, 27%, 14%)',
                         muted: 'hsl(227, 27%, 25%)',
                         'muted-foreground': 'hsl(0, 0%, 65%)'
@@ -40,16 +43,15 @@
             }
         }
     </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js"></script>
-
-    <!-- Custom styles -->
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
 
     {% block extra_head %}{% endblock %}
 </head>
