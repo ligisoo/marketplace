@@ -8,4 +8,9 @@ urlpatterns = [
     path('api/initiate-tip-payment/', views.InitiateTipPaymentView.as_view(), name='initiate_tip_payment'),
     path('api/callback/', views.TipPaymentCallbackView.as_view(), name='tip_payment_callback'),
     path('api/status/<str:checkout_request_id>/', views.TipPaymentStatusView.as_view(), name='tip_payment_status'),
+
+    # API endpoints for wallet deposits
+    path('api/initiate-deposit/', views.InitiateDepositView.as_view(), name='initiate_deposit'),
+    path('api/deposit-callback/', views.DepositCallbackView.as_view(), name='deposit_callback'),
+    path('api/deposit-status/<str:checkout_request_id>/', views.DepositStatusView.as_view(), name='deposit_status'),
 ]
