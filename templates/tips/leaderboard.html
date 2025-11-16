@@ -38,19 +38,12 @@
             </svg>
             Total Tips
           </a>
-          <a href="?sort=total_sales"
-             class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {% if sort_by == 'total_sales' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Sales
-          </a>
           <a href="?sort=total_purchases"
              class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {% if sort_by == 'total_purchases' %}bg-primary text-primary-foreground{% else %}text-muted-foreground hover:text-foreground{% endif %}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            Popularity
+            Tips Sold
           </a>
         </div>
       </div>
@@ -66,8 +59,7 @@
               class="w-full h-9 rounded-md border border-border bg-card text-foreground text-sm">
         <option value="?sort=win_rate" {% if sort_by == 'win_rate' %}selected{% endif %}>📊 Sort by: Win Rate</option>
         <option value="?sort=total_tips" {% if sort_by == 'total_tips' %}selected{% endif %}>📝 Sort by: Total Tips</option>
-        <option value="?sort=total_sales" {% if sort_by == 'total_sales' %}selected{% endif %}>💰 Sort by: Sales</option>
-        <option value="?sort=total_purchases" {% if sort_by == 'total_purchases' %}selected{% endif %}>❤️ Sort by: Popularity</option>
+        <option value="?sort=total_purchases" {% if sort_by == 'total_purchases' %}selected{% endif %}>🛒 Sort by: Tips Sold</option>
       </select>
     </div>
   </div>
@@ -101,7 +93,7 @@
           <div class="leading-tight">
             <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Sorted</div>
             <div class="text-sm font-semibold text-foreground">
-              {% if sort_by == 'win_rate' %}Win Rate{% elif sort_by == 'total_tips' %}Total Tips{% elif sort_by == 'total_sales' %}Sales{% elif sort_by == 'total_purchases' %}Popularity{% else %}Default{% endif %}
+              {% if sort_by == 'win_rate' %}Win Rate{% elif sort_by == 'total_tips' %}Total Tips{% elif sort_by == 'total_purchases' %}Tips Sold{% else %}Default{% endif %}
             </div>
           </div>
         </div>
@@ -204,17 +196,9 @@
               <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <div class="flex items-center justify-center gap-1">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                   </svg>
-                  Sales
-                </div>
-              </th>
-              <th class="px-5 py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                <div class="flex items-center justify-center gap-1">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                  </svg>
-                  Popularity
+                  Tips Sold
                 </div>
               </th>
               <th class="px-5 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -308,23 +292,13 @@
                 {% endif %}
               </td>
 
-              <!-- Sales -->
+              <!-- Tips Sold -->
               <td class="px-5 py-3 whitespace-nowrap text-center">
                 <div class="flex items-center justify-center gap-1">
-                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                   </svg>
-                  <span class="text-sm font-bold text-primary">{{ tipster_data.total_sales|default:0 }}</span>
-                </div>
-              </td>
-
-              <!-- Popularity -->
-              <td class="px-5 py-3 whitespace-nowrap text-center">
-                <div class="flex items-center justify-center gap-1">
-                  <svg class="w-4 h-4 text-red-500" fill="currentColor" stroke="none" viewBox="0 0 24 24">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                  </svg>
-                  <span class="text-sm font-semibold text-accent">{{ tipster_data.total_purchases }}</span>
+                  <span class="text-sm font-semibold text-primary">{{ tipster_data.total_purchases }}</span>
                 </div>
               </td>
 
