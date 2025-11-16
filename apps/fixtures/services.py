@@ -476,7 +476,7 @@ class APIFootballService:
         print(f"Found {stats['stuck_matches_found']} potentially stuck matches")
         
         # Limit recovery attempts to preserve API quota
-        max_recoveries = min(20, self.DAILY_LIMIT - APIUsageLog.get_daily_count())
+        max_recoveries = min(20, self.daily_limit - APIUsageLog.get_daily_count())
         
         for fixture in stuck_matches[:max_recoveries]:
             if self.recover_stuck_match(fixture):
