@@ -5,10 +5,12 @@ from django.contrib import messages
 from django.urls import reverse
 from django.db.models import Sum, Avg, Q
 from decimal import Decimal
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import re
+from datetime import datetime
 from apps.tips.models import Tip, TipPurchase
 from apps.transactions.services import AccountingService
+from apps.transactions.pdf_utils import StatementPDFGenerator
 from .forms import RegistrationForm, LoginForm, ProfileEditForm
 from .models import User, UserProfile
 
@@ -264,6 +266,57 @@ def transaction_history(request):
     }
 
     return render(request, 'users/transaction_history.html', context)
+
+
+@login_required
+def download_transaction_statement(request):
+    """
+    Generate and download PDF statement for buyer's transaction history.
+    """
+    # Get date filters from query params (optional)
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    start_date = None
+    end_date = None
+
+    # Parse dates if provided
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        except ValueError:
+            pass
+
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        except ValueError:
+            pass
+
+    # Get user's transaction statement
+    statement = AccountingService.get_user_statement(
+        user=request.user,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    # Generate PDF
+    pdf_generator = StatementPDFGenerator()
+    pdf_buffer = pdf_generator.generate_buyer_statement(
+        user=request.user,
+        statement_data=statement,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    # Create response with PDF
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+
+    # Generate filename with date
+    filename = f"transaction_statement_{request.user.phone_number}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
 
 
 def public_profile(request, user_id):

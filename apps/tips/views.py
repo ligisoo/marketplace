@@ -3,12 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import Tip, TipMatch, TipPurchase, TipView
 from .forms import TipSubmissionForm, TipVerificationForm, TipSearchForm
 from .ocr import BetslipOCR
+from apps.transactions.pdf_utils import StatementPDFGenerator
+from datetime import datetime
+from decimal import Decimal
 import json
 
 
@@ -333,6 +336,82 @@ def earnings_dashboard(request):
     }
 
     return render(request, 'tips/earnings_dashboard.html', context)
+
+
+@login_required
+def download_earnings_statement(request):
+    """
+    Generate and download PDF earnings statement for sellers/tipsters.
+    """
+    if not request.user.userprofile.is_tipster:
+        messages.error(request, 'Only tipsters can access this page.')
+        return redirect('tips:marketplace')
+
+    # Get all tipster's tips
+    all_tips = Tip.objects.filter(tipster=request.user)
+
+    # Calculate total revenue
+    total_revenue = sum(tip.revenue_generated for tip in all_tips)
+
+    # Calculate earnings split (60/40)
+    platform_commission_rate = Decimal('0.40')
+    tipster_share_rate = Decimal('0.60')
+
+    tipster_earnings = Decimal(str(total_revenue)) * tipster_share_rate
+    platform_commission = Decimal(str(total_revenue)) * platform_commission_rate
+
+    # Get completed purchases
+    all_purchases = TipPurchase.objects.filter(
+        tip__tipster=request.user,
+        status='completed'
+    ).select_related('tip', 'buyer')
+
+    # Anonymous buyer statistics
+    unique_buyers_count = all_purchases.values('buyer').distinct().count()
+
+    # Repeat customers (buyers who purchased more than once)
+    buyer_purchase_counts = all_purchases.values('buyer').annotate(
+        purchase_count=Count('id')
+    )
+    repeat_customers = sum(1 for b in buyer_purchase_counts if b['purchase_count'] > 1)
+
+    # Recent transactions for PDF
+    recent_transactions = []
+    for purchase in all_purchases.order_by('-completed_at')[:20]:  # Last 20 transactions
+        recent_transactions.append({
+            'date': purchase.completed_at or purchase.created_at,
+            'tip_title': purchase.tip.get_display_title(),
+            'amount': purchase.amount,
+            'tipster_share': Decimal(str(purchase.amount)) * tipster_share_rate,
+        })
+
+    # Prepare earnings data for PDF
+    earnings_data = {
+        'total_revenue': total_revenue,
+        'platform_commission': platform_commission,
+        'tipster_earnings': tipster_earnings,
+        'total_purchases': all_purchases.count(),
+        'unique_buyers': unique_buyers_count,
+        'repeat_customers': repeat_customers,
+        'tips_count': all_tips.count(),
+        'recent_transactions': recent_transactions,
+    }
+
+    # Generate PDF
+    pdf_generator = StatementPDFGenerator()
+    pdf_buffer = pdf_generator.generate_seller_statement(
+        user=request.user,
+        earnings_data=earnings_data
+    )
+
+    # Create response with PDF
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+
+    # Generate filename with date
+    filename = f"earnings_statement_{request.user.phone_number}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
 
 
 @login_required

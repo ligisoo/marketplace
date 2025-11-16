@@ -38,8 +38,17 @@
 
     <!-- Transactions Table -->
     <div class="bg-card border border-border shadow-lg rounded-lg overflow-hidden">
-        <div class="px-6 py-4 border-b border-border">
+        <div class="px-6 py-4 border-b border-border flex items-center justify-between">
             <h2 class="text-xl font-semibold text-foreground">All Transactions</h2>
+            {% if statement %}
+            <a href="{% url 'users:download_transaction_statement' %}{% if start_date or end_date %}?{% endif %}{% if start_date %}start_date={{ start_date }}{% endif %}{% if start_date and end_date %}&{% endif %}{% if end_date %}end_date={{ end_date }}{% endif %}"
+               class="btn btn-primary inline-flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Download PDF
+            </a>
+            {% endif %}
         </div>
 
         {% if statement %}
