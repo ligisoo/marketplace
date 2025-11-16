@@ -281,24 +281,56 @@
                             <p class="text-3xl font-bold text-primary">KES {{ tip.price }}</p>
                             <p class="text-sm text-muted-foreground">One-time payment</p>
                         </div>
-                        
+
                         {% if user.is_authenticated %}
-                            {% if user.phone_number %}
-                                <button onclick="purchaseTipWithMpesa({{ tip.id }})" class="w-full btn btn-primary" id="purchase-btn">
-                                    Pay with M-Pesa
-                                </button>
-                                <p class="text-xs text-muted-foreground mt-2">
-                                    Pay to: {{ user.phone_number }}
-                                </p>
-                            {% else %}
-                                <div class="text-center">
-                                    <p class="text-red-600 mb-4">Phone number required for M-Pesa payment</p>
-                                    <a href="{% url 'users:profile' %}" class="w-full btn btn-secondary">Update Profile</a>
-                                    <p class="text-xs text-muted-foreground mt-2">
-                                        Please add your phone number to make payments
+                            <!-- Wallet Balance Display -->
+                            <div class="bg-secondary/50 border border-border rounded-lg p-3 mb-4">
+                                <p class="text-xs text-muted-foreground">Your Wallet Balance</p>
+                                <p class="text-lg font-bold text-accent">KES {{ user.userprofile.wallet_balance|floatformat:0 }}</p>
+                            </div>
+
+                            <!-- Payment Options -->
+                            <div class="space-y-2">
+                                {% if user.userprofile.wallet_balance >= tip.price %}
+                                    <!-- Wallet Payment (Primary if sufficient balance) -->
+                                    <button onclick="purchaseTipWithWallet({{ tip.id }})" class="w-full btn btn-primary" id="wallet-purchase-btn">
+                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        Pay with Wallet
+                                    </button>
+                                {% else %}
+                                    <!-- Insufficient balance - show disabled wallet button -->
+                                    <button disabled class="w-full btn btn-secondary opacity-50 cursor-not-allowed">
+                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        Insufficient Wallet Balance
+                                    </button>
+                                    <p class="text-xs text-yellow-400">
+                                        Need KES {{ tip.price|floatformat:0 }} more.
+                                        <a href="{% url 'users:profile' %}" class="underline">Add funds</a>
                                     </p>
-                                </div>
-                            {% endif %}
+                                {% endif %}
+
+                                {% if user.phone_number %}
+                                    <!-- M-Pesa Payment -->
+                                    <button onclick="purchaseTipWithMpesa({{ tip.id }})"
+                                            class="w-full btn {% if user.userprofile.wallet_balance >= tip.price %}btn-secondary{% else %}btn-primary{% endif %}"
+                                            id="mpesa-purchase-btn">
+                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Pay with M-Pesa
+                                    </button>
+                                {% else %}
+                                    <div class="text-center mt-2">
+                                        <p class="text-xs text-muted-foreground">
+                                            <a href="{% url 'users:profile' %}" class="text-primary underline">Add phone number</a> for M-Pesa payments
+                                        </p>
+                                    </div>
+                                {% endif %}
+                            </div>
                         {% else %}
                             <a href="{% url 'users:login' %}?next={{ request.path }}" class="w-full btn btn-primary">
                                 Login to Purchase
@@ -352,15 +384,67 @@
     </div>
 </div>
 
-{% if can_purchase and user.is_authenticated and user.phone_number %}
+{% if can_purchase and user.is_authenticated %}
 <script>
 let paymentCheckInterval;
 
+// Wallet Purchase Function
+function purchaseTipWithWallet(tipId) {
+    const btn = document.getElementById('wallet-purchase-btn');
+
+    if (!confirm('Purchase this tip for KES {{ tip.price }} from your wallet?')) {
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+    fetch(`/tips/purchase/${tipId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message || 'Tip purchased successfully!', 'success');
+
+            // Redirect to tip detail page after short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showToast(data.error || 'Purchase failed', 'error');
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Pay with Wallet
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Purchase error:', error);
+        showToast('An error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            Pay with Wallet
+        `;
+    });
+}
+
+// M-Pesa Purchase Function
 function purchaseTipWithMpesa(tipId) {
-    const btn = document.getElementById('purchase-btn');
+    const btn = document.getElementById('mpesa-purchase-btn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Initiating payment...';
-    
+
     fetch('/payments/api/initiate-tip-payment/', {
         method: 'POST',
         headers: {
@@ -382,13 +466,23 @@ function purchaseTipWithMpesa(tipId) {
         } else {
             showToast(data.error || 'Payment initiation failed', 'error');
             btn.disabled = false;
-            btn.innerHTML = 'Pay with M-Pesa';
+            btn.innerHTML = `
+                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                Pay with M-Pesa
+            `;
         }
     })
     .catch(error => {
         showToast('An error occurred. Please try again.', 'error');
         btn.disabled = false;
-        btn.innerHTML = 'Pay with M-Pesa';
+        btn.innerHTML = `
+            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            Pay with M-Pesa
+        `;
     });
 }
 
