@@ -285,6 +285,7 @@ class AccountingService:
     def get_user_statement(user, start_date=None, end_date=None):
         """
         Get a banking-style statement for a user's wallet.
+        Includes both wallet transactions and M-Pesa direct purchases for complete history.
 
         Args:
             user: User to get statement for
@@ -296,37 +297,89 @@ class AccountingService:
         """
         user_wallet = Account.get_or_create_user_wallet(user)
 
-        # Get all entries for this account
+        # Get all wallet entries for this account
         entries = AccountingEntry.objects.filter(
             account=user_wallet,
             is_void=False
         ).select_related('transaction').order_by('created_at')
 
+        # Get M-Pesa direct purchases (where buyer's wallet wasn't involved)
+        mpesa_purchases = Transaction.objects.filter(
+            user=user,
+            transaction_type='purchase',
+            metadata__payment_method='mpesa'
+        ).exclude(
+            # Exclude if there's already a wallet entry for this transaction
+            id__in=entries.values_list('transaction_id', flat=True)
+        )
+
         # Apply date filters if provided
         if start_date:
             entries = entries.filter(created_at__gte=start_date)
+            mpesa_purchases = mpesa_purchases.filter(created_at__gte=start_date)
         if end_date:
             entries = entries.filter(created_at__lte=end_date)
+            mpesa_purchases = mpesa_purchases.filter(created_at__lte=end_date)
 
-        # Calculate running balance
+        # Build statement with running balance
         statement = []
         balance = Decimal('0')
 
-        for entry in entries:
-            if entry.entry_type == 'debit':
-                balance += entry.amount
-            else:  # credit
-                balance -= entry.amount
+        # Create combined list of entries and M-Pesa purchases
+        items = []
 
-            statement.append({
+        # Add wallet entries
+        for entry in entries:
+            items.append({
+                'type': 'wallet_entry',
                 'date': entry.created_at,
-                'reference': entry.transaction.reference,
-                'description': entry.description,
-                'debit': entry.amount if entry.entry_type == 'debit' else None,
-                'credit': entry.amount if entry.entry_type == 'credit' else None,
-                'balance': balance,
-                'transaction_type': entry.transaction.get_transaction_type_display()
+                'entry': entry
             })
+
+        # Add M-Pesa purchases
+        for txn in mpesa_purchases:
+            items.append({
+                'type': 'mpesa_purchase',
+                'date': txn.created_at,
+                'transaction': txn
+            })
+
+        # Sort by date
+        items.sort(key=lambda x: x['date'])
+
+        # Process items chronologically
+        for item in items:
+            if item['type'] == 'wallet_entry':
+                entry = item['entry']
+                # Update balance for wallet entries
+                if entry.entry_type == 'debit':
+                    balance += entry.amount
+                else:  # credit
+                    balance -= entry.amount
+
+                statement.append({
+                    'date': entry.created_at,
+                    'reference': entry.transaction.reference,
+                    'description': entry.description,
+                    'debit': entry.amount if entry.entry_type == 'debit' else None,
+                    'credit': entry.amount if entry.entry_type == 'credit' else None,
+                    'balance': balance,
+                    'transaction_type': entry.transaction.get_transaction_type_display()
+                })
+            else:  # mpesa_purchase
+                txn = item['transaction']
+                # M-Pesa purchases don't affect wallet balance, but shown for records
+                statement.append({
+                    'date': txn.created_at,
+                    'reference': txn.reference,
+                    'description': f"{txn.description} (Paid via M-Pesa)",
+                    'debit': None,
+                    'credit': None,  # No wallet impact
+                    'balance': balance,  # Balance unchanged
+                    'transaction_type': txn.get_transaction_type_display(),
+                    'paid_amount': txn.amount,  # Store actual amount paid for display
+                    'payment_method': 'M-Pesa'
+                })
 
         return statement
 
