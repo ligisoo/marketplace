@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -14,6 +15,8 @@ from django.utils.decorators import method_decorator
 
 from .models import TipPayment, WalletDeposit
 from .services import MpesaService
+from .security import mpesa_security_required
+from .throttles import PaymentInitiationThrottle, CallbackThrottle
 from apps.tips.models import Tip, TipPurchase
 
 User = get_user_model()
@@ -21,6 +24,7 @@ User = get_user_model()
 
 class InitiateTipPaymentView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PaymentInitiationThrottle]
     
     def post(self, request):
         """Initiate M-Pesa STK Push payment for tip purchase"""
@@ -35,9 +39,17 @@ class InitiateTipPaymentView(APIView):
         
         # Validate required fields
         tip_id = data.get('tip_id')
+        idempotency_key = data.get('idempotency_key')
+        
         if not tip_id:
             return Response(
                 {'error': 'tip_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if not idempotency_key:
+            return Response(
+                {'error': 'idempotency_key is required to prevent duplicate payments'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -56,6 +68,22 @@ class InitiateTipPaymentView(APIView):
                 {'error': 'This tip cannot be purchased at the moment.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        # Check for idempotency - return existing payment if same key used
+        try:
+            existing_payment = TipPayment.objects.get(
+                user=request.user, 
+                tip=tip, 
+                idempotency_key=idempotency_key
+            )
+            return Response({
+                'message': 'Payment already initiated with this idempotency key',
+                'checkout_request_id': existing_payment.checkout_request_id,
+                'status': existing_payment.status,
+                'merchant_request_id': existing_payment.merchant_request_id
+            })
+        except TipPayment.DoesNotExist:
+            pass
         
         # Check if user has already purchased this tip
         if TipPurchase.objects.filter(tip=tip, buyer=request.user, status='completed').exists():
@@ -83,7 +111,8 @@ class InitiateTipPaymentView(APIView):
                 merchant_request_id='',  # Will be updated after M-Pesa response
                 phone_number=request.user.phone_number,
                 amount=tip.price,
-                status='pending'
+                status='pending',
+                idempotency_key=idempotency_key
             )
             
             # Initialize M-Pesa service
@@ -135,7 +164,9 @@ class InitiateTipPaymentView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class TipPaymentCallbackView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [CallbackThrottle]
 
+    @mpesa_security_required
     def post(self, request):
         """Handle M-Pesa payment callback for tip purchases"""
         import logging
@@ -308,6 +339,7 @@ class TipPaymentStatusView(APIView):
 
 class InitiateDepositView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PaymentInitiationThrottle]
     
     def post(self, request):
         """Initiate M-Pesa STK Push payment for wallet deposit"""
@@ -322,9 +354,17 @@ class InitiateDepositView(APIView):
         
         # Validate required fields
         amount = data.get('amount')
+        idempotency_key = data.get('idempotency_key')
+        
         if not amount:
             return Response(
                 {'error': 'amount is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if not idempotency_key:
+            return Response(
+                {'error': 'idempotency_key is required to prevent duplicate deposits'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -347,6 +387,23 @@ class InitiateDepositView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Check for idempotency - return existing deposit if same key used
+        try:
+            existing_deposit = WalletDeposit.objects.get(
+                user=request.user, 
+                amount=amount, 
+                idempotency_key=idempotency_key
+            )
+            return Response({
+                'message': 'Deposit already initiated with this idempotency key',
+                'checkout_request_id': existing_deposit.checkout_request_id,
+                'status': existing_deposit.status,
+                'merchant_request_id': existing_deposit.merchant_request_id,
+                'amount': existing_deposit.amount
+            })
+        except WalletDeposit.DoesNotExist:
+            pass
+        
         try:
             # Generate unique checkout request ID
             checkout_request_id = str(uuid.uuid4())
@@ -358,7 +415,8 @@ class InitiateDepositView(APIView):
                 merchant_request_id='',  # Will be updated after M-Pesa response
                 phone_number=request.user.phone_number,
                 amount=amount,
-                status='pending'
+                status='pending',
+                idempotency_key=idempotency_key
             )
             
             # Initialize M-Pesa service
@@ -409,7 +467,9 @@ class InitiateDepositView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class DepositCallbackView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [CallbackThrottle]
 
+    @mpesa_security_required
     def post(self, request):
         """Handle M-Pesa payment callback for wallet deposits"""
         import logging

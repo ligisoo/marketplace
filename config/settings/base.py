@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-89+m-=5izuu#ep%_!=gbx+9=+q6+p^5)_gf0cbe()8f&$hdl1j')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
@@ -161,6 +161,7 @@ MPESA_TILL_NUMBER = config('MPESA_TILL_NUMBER', default='')
 MPESA_HONO = config('MPESA_HONO', default='')
 MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://ligisoo.co.ke/api/callback')
+MPESA_CALLBACK_SECRET = config('MPESA_CALLBACK_SECRET', default='')
 ENVIRONMENT = config('ENVIRONMENT', default='development')
 
 # AWS Configuration for Textract OCR
@@ -169,7 +170,7 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_S3_REGION_NAME = config('AWS_REGION_NAME', default='us-east-1')
 
 # API-Football Configuration
-API_FOOTBALL_KEY = config('API_FOOTBALL_KEY', default='07346e2fbadbfc8c173d7cb2bca2921f')
+API_FOOTBALL_KEY = config('API_FOOTBALL_KEY', default='')
 API_FOOTBALL_DAILY_LIMIT = config('API_FOOTBALL_DAILY_LIMIT', default=100, cast=int)
 
 # Cache Configuration
@@ -182,4 +183,24 @@ CACHES = {
             'CULL_FREQUENCY': 4,
         }
     }
+}
+
+# Django REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',  # Anonymous users: 100 requests per hour
+        'user': '1000/hour',  # Authenticated users: 1000 requests per hour
+        'payment_initiation': '10/hour',  # Payment initiation: 10 per hour per user
+        'callback': '1000/hour',  # M-Pesa callbacks: high limit but still protected
+    },
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
 }
