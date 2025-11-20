@@ -8,11 +8,7 @@
   <!-- Header (compact) -->
   <div class="text-center mb-5">
     <h1 class="text-2xl md:text-3xl font-bold text-foreground leading-tight">Create New Tip</h1>
-    {% if ocr_provider == 'sportpesa' %}
-      <p class="text-sm md:text-base text-muted-foreground">Share your SportPesa bet using the referral link</p>
-    {% else %}
-      <p class="text-sm md:text-base text-muted-foreground">Upload your betslip screenshot to share your winning insights</p>
-    {% endif %}
+    <p class="text-sm md:text-base text-muted-foreground">Upload your betslip screenshot to share your winning insights</p>
   </div>
 
   <!-- Progress Steps (compact) -->
@@ -71,6 +67,29 @@
         <p class="text-xs text-muted-foreground">Select the bookmaker for your betslip.</p>
       </div>
 
+      <!-- Bet Code -->
+      <div class="space-y-1.5">
+        <label for="{{ form.bet_code.id_for_label }}" class="text-sm font-medium text-foreground flex items-center">
+          <svg class="w-4 h-4 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+          </svg>
+          Bet Code *
+        </label>
+        <input type="text"
+               name="bet_code"
+               id="{{ form.bet_code.id_for_label }}"
+               class="form-input"
+               style="text-transform: uppercase;"
+               required
+               placeholder="e.g., JYRCAV"
+               maxlength="50">
+        {% if form.bet_code.errors %}
+          <div class="text-destructive text-xs">{{ form.bet_code.errors }}</div>
+        {% endif %}
+        <p class="text-xs text-muted-foreground">Enter the bet code from your betslip. This will be shared with buyers.</p>
+      </div>
+
       <!-- Price (with quick chips) -->
       <div class="space-y-1.5">
         <label for="{{ form.price.id_for_label }}" class="text-sm font-medium text-foreground flex items-center">
@@ -101,53 +120,8 @@
         <p class="text-xs text-muted-foreground">Min: KES 1, Max: KES 1,000.</p>
       </div>
 
-      <!-- Conditional Input -->
-      {% if ocr_provider == 'sportpesa' %}
-        <!-- SportPesa Link -->
-        <div class="space-y-1.5">
-          <label for="{{ form.bet_sharing_link.id_for_label }}" class="text-sm font-medium text-foreground flex items-center">
-            <svg class="w-4 h-4 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-            </svg>
-            SportPesa Bet Sharing Link *
-          </label>
-
-          <div class="border-2 border-border hover:border-primary/50 rounded-md p-4 transition-colors">
-            <div class="space-y-3 text-center">
-              <svg class="mx-auto h-12 w-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-              </svg>
-              <input type="url"
-                     name="bet_sharing_link"
-                     id="{{ form.bet_sharing_link.id_for_label }}"
-                     class="form-input w-full"
-                     placeholder="https://www.ke.sportpesa.com/referral/YOUR_CODE"
-                     required>
-              <p class="text-[11px] text-muted-foreground">
-                Copy the referral link from your SportPesa bet and paste it here.
-              </p>
-            </div>
-          </div>
-
-          {% if form.bet_sharing_link.errors %}
-            <div class="text-destructive text-xs">{{ form.bet_sharing_link.errors }}</div>
-          {% endif %}
-
-          <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
-            <p class="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1.5">📋 How to get your sharing link</p>
-            <ol class="text-xs text-blue-800 dark:text-blue-200 space-y-0.5 ml-4 list-decimal text-left">
-              <li>Place your bet on SportPesa</li>
-              <li>Open your betslip</li>
-              <li>Tap “Share/Referral”</li>
-              <li>Paste the link above</li>
-            </ol>
-          </div>
-        </div>
-      {% else %}
-        <!-- Screenshot Upload -->
-        <div class="space-y-1.5">
+      <!-- Screenshot Upload -->
+      <div class="space-y-1.5">
           <label for="{{ form.screenshot.id_for_label }}" class="text-sm font-medium text-foreground flex items-center">
             <svg class="w-4 h-4 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -181,7 +155,6 @@
             <div class="text-destructive text-xs">{{ form.screenshot.errors }}</div>
           {% endif %}
         </div>
-      {% endif %}
 
       <!-- Guidelines (icon retained) -->
       <div class="bg-accent/10 border border-accent/20 rounded-md p-4">
@@ -194,17 +167,10 @@
           <div class="ml-3">
             <h3 class="text-sm font-medium text-foreground mb-1.5">📋 Important Guidelines</h3>
             <div class="text-xs md:text-sm text-muted-foreground space-y-0.5">
-              {% if ocr_provider == 'sportpesa' %}
-                <p>• Ensure your URL is a valid SportPesa referral link.</p>
-                <p>• Link must contain an active betslip (not empty).</p>
-                <p>• Share only unplayed betslips.</p>
-                <p>• Tips may be reviewed before going live (if unverified).</p>
-              {% else %}
-                <p>• Upload a clear, readable screenshot.</p>
-                <p>• Ensure bet code, odds, and match details are visible.</p>
-                <p>• Share only unplayed betslips.</p>
-                <p>• Tips may be reviewed before going live (if unverified).</p>
-              {% endif %}
+              <p>• Upload a clear, readable screenshot.</p>
+              <p>• Ensure bet code, odds, and match details are visible.</p>
+              <p>• Share only unplayed betslips.</p>
+              <p>• Tips may be reviewed before going live (if unverified).</p>
             </div>
           </div>
         </div>
@@ -214,21 +180,12 @@
       <div class="flex flex-col sm:flex-row gap-2 pt-1">
         <button type="submit"
                 class="w-full sm:flex-1 inline-flex items-center justify-center px-5 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-colors">
-          {% if ocr_provider == 'sportpesa' %}
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-            </svg>
-            <span class="hidden sm:inline">Process Link & Create Tip</span>
-            <span class="sm:hidden">Create Tip</span>
-          {% else %}
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-            </svg>
-            <span class="hidden sm:inline">Upload & Create Tip</span>
-            <span class="sm:hidden">Create Tip</span>
-          {% endif %}
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          <span class="hidden sm:inline">Upload & Create Tip</span>
+          <span class="sm:hidden">Create Tip</span>
         </button>
 
         <a href="{% url 'tips:my_tips' %}"
@@ -247,51 +204,27 @@
   <div class="bg-card border border-border rounded-lg p-5 mt-6">
     <h3 class="text-lg font-semibold text-foreground mb-4 text-center">🚀 How It Works</h3>
     <div class="space-y-3">
-      {% if ocr_provider == 'sportpesa' %}
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">1</div>
-          <div>
-            <h4 class="text-sm font-medium text-foreground">Share Your Bet Link</h4>
-            <p class="text-sm text-muted-foreground">Paste your SportPesa bet sharing link and set your tip price.</p>
-          </div>
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">1</div>
+        <div>
+          <h4 class="text-sm font-medium text-foreground">Upload Your Betslip</h4>
+          <p class="text-sm text-muted-foreground">Enter your bet code, set price, and upload screenshot.</p>
         </div>
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-9 h-9 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold">2</div>
-          <div>
-            <h4 class="text-sm font-medium text-foreground">Smart Processing</h4>
-            <p class="text-sm text-muted-foreground">Our AI fetches match details, odds, and selections.</p>
-          </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-9 h-9 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold">2</div>
+        <div>
+          <h4 class="text-sm font-medium text-foreground">Instant Processing (5-9 seconds)</h4>
+          <p class="text-sm text-muted-foreground">AI extracts match details, odds, and selections automatically.</p>
         </div>
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">3</div>
-          <div>
-            <h4 class="text-sm font-medium text-foreground">Verify & Publish</h4>
-            <p class="text-sm text-muted-foreground">Review the data and publish your tip to start earning.</p>
-          </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">3</div>
+        <div>
+          <h4 class="text-sm font-medium text-foreground">Go Live & Earn</h4>
+          <p class="text-sm text-muted-foreground">Your tip is published and you start earning immediately!</p>
         </div>
-      {% else %}
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">1</div>
-          <div>
-            <h4 class="text-sm font-medium text-foreground">Upload Your Betslip</h4>
-            <p class="text-sm text-muted-foreground">Take a screenshot of your betslip and set your tip price.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-9 h-9 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold">2</div>
-          <div>
-            <h4 class="text-sm font-medium text-foreground">AI-Powered Analysis</h4>
-            <p class="text-sm text-muted-foreground">We read your betslip to capture odds and selections.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">3</div>
-          <div>
-            <h4 class="text-sm font-medium text-foreground">Verify & Publish</h4>
-            <p class="text-sm text-muted-foreground">Review the data and publish your tip to start earning.</p>
-          </div>
-        </div>
-      {% endif %}
+      </div>
     </div>
 
     <div class="mt-5 pt-4 border-t border-border">
