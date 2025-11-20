@@ -637,7 +637,7 @@ def verify_tip(request, tip_id):
 
 @login_required
 def tip_processing_status(request, tip_id):
-    """Show processing status of a tip"""
+    """Show processing status (legacy page for old background-processed tips)"""
     tip = get_object_or_404(Tip, id=tip_id)
 
     # Only tipster who created the tip can view this
@@ -645,15 +645,48 @@ def tip_processing_status(request, tip_id):
         messages.error(request, 'You do not have permission to view this tip.')
         return redirect('tips:my_tips')
 
-    # If processing is complete, redirect to verify page
+    # If tip was processed synchronously (new flow), redirect immediately
+    if tip.ocr_processed and tip.matches.exists():
+        messages.success(request, 'Your tip is ready!')
+        return redirect('tips:my_tips')
+
+    # If processing failed, show error and options
+    if tip.processing_status == 'failed':
+        context = {
+            'tip': tip,
+            'error': getattr(tip, 'processing_error', 'Unknown error occurred during processing'),
+            'failed': True
+        }
+        return render(request, 'tips/processing_status.html', context)
+
+    # If processing is complete from old background task, redirect to verify
     if tip.processing_status == 'completed' and tip.ocr_processed:
         return redirect('tips:verify_tip', tip_id=tip.id)
 
+    # Still processing (old background tasks) or pending
     context = {
         'tip': tip,
+        'failed': False
     }
 
     return render(request, 'tips/processing_status.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_failed_tip(request, tip_id):
+    """Delete a failed tip"""
+    tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
+
+    # Only allow deletion of failed or temporary tips
+    if tip.processing_status == 'failed' or tip.bet_code.startswith('TEMP_'):
+        bet_code = tip.bet_code
+        tip.delete()
+        messages.success(request, f'Failed tip ({bet_code}) has been deleted.')
+    else:
+        messages.error(request, 'Only failed tips can be deleted this way.')
+
+    return redirect('tips:my_tips')
 
 
 @login_required

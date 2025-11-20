@@ -17,6 +17,7 @@ urlpatterns = [
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
     path('processing/<int:tip_id>/', views.tip_processing_status, name='tip_processing_status'),
+    path('delete/<int:tip_id>/', views.delete_failed_tip, name='delete_failed_tip'),
 
     # Purchase
     path('purchase/<int:tip_id>/', views.purchase_tip, name='purchase_tip'),
