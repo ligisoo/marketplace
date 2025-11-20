@@ -10,9 +10,12 @@ from .models import Tip, TipMatch, TipPurchase, TipView
 from .forms import TipSubmissionForm, TipVerificationForm, TipSearchForm
 from .ocr import BetslipOCR
 from apps.transactions.pdf_utils import StatementPDFGenerator
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def marketplace(request):
@@ -416,60 +419,132 @@ def download_earnings_statement(request):
 
 @login_required
 def create_tip(request):
-    """Create a new tip - Step 1: Upload betslip"""
+    """Create a new tip - Process betslip synchronously"""
     if not request.user.userprofile.is_tipster:
         messages.error(request, 'Only tipsters can create tips.')
         return redirect('tips:marketplace')
 
-    # Clean up old temporary tips (older than 1 hour)
-    from datetime import timedelta
-    one_hour_ago = timezone.now() - timedelta(hours=1)
-    Tip.objects.filter(
-        bet_code__startswith='TEMP_',
-        created_at__lt=one_hour_ago
-    ).delete()
-
     if request.method == 'POST':
         form = TipSubmissionForm(request.POST, request.FILES)
         if form.is_valid():
-            # Save the tip with pending status
-            tip = form.save(commit=False)
-            tip.tipster = request.user
-            tip.bet_code = 'TEMP_' + str(timezone.now().timestamp()).replace('.', '')
-            tip.odds = 0  # Will be updated by background processing
-            tip.expires_at = timezone.now()  # Will be updated by background processing
-            tip.processing_status = 'pending'
-            tip.save()
+            try:
+                # Process betslip synchronously
+                from .betslip_extractor import process_betslip_image
+                from .utils import parse_match_date
+                from django.core.cache import cache
+                import hashlib
+                import copy
 
-            # Enqueue background processing task
-            from .task_queue import enqueue_task
-            from .background_tasks import process_betslip_async, processing_callback
+                screenshot = form.cleaned_data['screenshot']
+                bet_code = form.cleaned_data['bet_code']  # From user input
 
-            task_id = enqueue_task(
-                process_betslip_async,
-                tip.id,
-                callback=processing_callback
-            )
+                # Check cache first (MD5 hash-based caching)
+                screenshot.seek(0)
+                file_data = screenshot.read()
+                screenshot.seek(0)
 
-            # Show success message
-            messages.success(
-                request,
-                'Your bet link has been captured for processing. '
-                'You will be notified once processing is complete.'
-            )
+                file_hash = hashlib.md5(file_data).hexdigest()
+                cache_key = f'betslip_{file_hash}'
 
-            # Redirect to processing status page
-            return redirect('tips:tip_processing_status', tip_id=tip.id)
+                cached_result = cache.get(cache_key)
+                if cached_result:
+                    logger.info(f"✓ Cache hit! Using cached extraction result.")
+                    extraction_result = copy.deepcopy(cached_result)
+                else:
+                    logger.info(f"Cache miss. Processing with Gemini...")
+                    extraction_result = process_betslip_image(screenshot)
+
+                    # Cache successful results for 24 hours
+                    if extraction_result.get('success'):
+                        cache.set(cache_key, extraction_result, 86400)
+
+                if not extraction_result.get('success'):
+                    error_msg = extraction_result.get('error', 'Failed to extract betslip data')
+                    messages.error(request, f'Error: {error_msg}')
+                    return render(request, 'tips/create_tip.html', {'form': form})
+
+                # Extract data
+                betslip_data = extraction_result['data']
+                matches = betslip_data.get('matches', [])
+
+                if not matches:
+                    messages.error(request, 'No matches found in the betslip. Please upload a clear image.')
+                    return render(request, 'tips/create_tip.html', {'form': form})
+
+                # Create tip with extracted data
+                tip = form.save(commit=False)
+                tip.tipster = request.user
+                tip.bet_code = bet_code  # Use user-provided bet code
+                tip.odds = betslip_data.get('total_odds', 1.0)
+                tip.match_details = betslip_data
+                tip.ocr_processed = True
+                tip.ocr_confidence = extraction_result.get('confidence', 95.0)
+
+                # Calculate expires_at from latest match date
+                latest_match_date = timezone.now() + timedelta(days=1)
+                for match_data in matches:
+                    match_date = parse_match_date(
+                        match_data.get('match_date'),
+                        match_data.get('match_time')
+                    )
+                    if match_date > latest_match_date:
+                        latest_match_date = match_date
+
+                tip.expires_at = latest_match_date
+                tip.status = 'pending_approval' if not request.user.userprofile.is_verified else 'active'
+                tip.save()
+
+                # Create TipMatch records
+                for match_data in matches:
+                    match_date = parse_match_date(
+                        match_data.get('match_date'),
+                        match_data.get('match_time')
+                    )
+
+                    TipMatch.objects.create(
+                        tip=tip,
+                        home_team=match_data.get('home_team', 'Unknown'),
+                        away_team=match_data.get('away_team', 'Unknown'),
+                        league='Unknown League',
+                        match_date=match_date,
+                        market=match_data.get('market', 'Unknown'),
+                        selection=match_data.get('selection', 'Unknown'),
+                        odds=float(match_data.get('odds', 1.0))
+                    )
+
+                # Create preview data
+                preview_matches = matches[:2]
+                tip.preview_data = {
+                    'matches': [
+                        {
+                            'home_team': match.get('home_team'),
+                            'away_team': match.get('away_team'),
+                            'league': 'Unknown League',
+                            'market': match.get('market'),
+                        }
+                        for match in preview_matches
+                    ],
+                    'total_matches': len(matches)
+                }
+                tip.save()
+
+                # Success message
+                if tip.status == 'active':
+                    messages.success(request, f'Tip created successfully! Bet code: {bet_code}')
+                else:
+                    messages.success(request, f'Tip submitted for approval. Bet code: {bet_code}')
+
+                return redirect('tips:my_tips')
+
+            except Exception as e:
+                logger.error(f"Error creating tip: {str(e)}", exc_info=True)
+                messages.error(request, f'Error creating tip: {str(e)}')
+                return render(request, 'tips/create_tip.html', {'form': form})
     else:
         form = TipSubmissionForm()
 
-    # Get active provider to pass to template
-    from .models import OCRProviderSettings
-    ocr_provider = OCRProviderSettings.get_active_provider()
-
     return render(request, 'tips/create_tip.html', {
-        'form': form,
-        'ocr_provider': ocr_provider
+        'form': form
     })
 
 

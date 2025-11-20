@@ -21,9 +21,20 @@ class TipSubmissionForm(forms.ModelForm):
         # ('other', 'Other'),        # Coming soon
     ]
 
+    bet_code = forms.CharField(
+        max_length=50,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter your bet code (e.g., JYRCAV)',
+            'style': 'text-transform: uppercase;'
+        }),
+        help_text='Enter the bet code from your betslip'
+    )
+
     class Meta:
         model = Tip
-        fields = ['bookmaker', 'price', 'screenshot', 'bet_sharing_link']
+        fields = ['bookmaker', 'bet_code', 'price', 'screenshot', 'bet_sharing_link']
         widgets = {
             'bookmaker': forms.Select(attrs={
                 'class': 'form-select',
@@ -52,6 +63,14 @@ class TipSubmissionForm(forms.ModelForm):
         # Override bookmaker choices to only show available ones
         self.fields['bookmaker'].choices = self.AVAILABLE_BOOKMAKERS
     
+    def clean_bet_code(self):
+        bet_code = self.cleaned_data.get('bet_code', '').strip().upper()
+        if bet_code:
+            # Check if bet code already exists
+            if Tip.objects.filter(bet_code=bet_code).exists():
+                raise ValidationError("A tip with this bet code already exists. Please check your bet code.")
+        return bet_code
+
     def clean_price(self):
         price = self.cleaned_data.get('price')
         if price and price < 1:
@@ -84,35 +103,12 @@ class TipSubmissionForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         screenshot = cleaned_data.get('screenshot')
-        bet_sharing_link = cleaned_data.get('bet_sharing_link')
 
-        # Get active OCR provider
-        from .models import OCRProviderSettings
-        ocr_provider = OCRProviderSettings.get_active_provider()
-
-        if ocr_provider == 'sportpesa':
-            # SportPesa scraper requires bet sharing link
-            if not bet_sharing_link:
-                raise ValidationError({
-                    'bet_sharing_link': 'SportPesa scraper is active. Please provide a bet sharing link.'
-                })
-        else:
-            # OCR providers require screenshot
-            if not screenshot:
-                raise ValidationError({
-                    'screenshot': f'{ocr_provider.upper()} is active. Please upload a betslip screenshot.'
-                })
-
-        # Ensure only one input method is used
-        if screenshot and bet_sharing_link:
-            raise ValidationError(
-                'Please provide either a screenshot OR a bet sharing link, not both.'
-            )
-
-        if not screenshot and not bet_sharing_link:
-            raise ValidationError(
-                'Please provide either a betslip screenshot or a bet sharing link.'
-            )
+        # Screenshot is required for synchronous processing
+        if not screenshot:
+            raise ValidationError({
+                'screenshot': 'Please upload a betslip screenshot.'
+            })
 
         return cleaned_data
 
