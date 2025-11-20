@@ -103,6 +103,8 @@ class BetslipOCR:
             return self._extract_text_textract(image_bytes)
         elif self.provider == 'easyocr':
             return self._extract_text_easyocr(image_bytes)
+        elif self.provider == 'gemini':
+            return self._extract_with_gemini(image_bytes)
         else:
             logger.error(f"Unknown OCR provider: {self.provider}")
             return {
@@ -219,6 +221,125 @@ class BetslipOCR:
             return {
                 'success': False,
                 'error': f'Failed to extract text from image: {str(e)}',
+                'text_blocks': []
+            }
+
+    def _extract_with_gemini(self, image_bytes):
+        """
+        Fast betslip extraction using Gemini API.
+        Combines OCR + structured extraction in one API call.
+        Returns data in a format compatible with existing parsing logic.
+        """
+        try:
+            logger.info("Starting Gemini extraction")
+
+            import google.genai as genai
+            from google.genai import types
+
+            # Get API key from settings
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                logger.error("GEMINI_API_KEY not found in environment")
+                return {
+                    'success': False,
+                    'error': 'Gemini API key not configured',
+                    'text_blocks': []
+                }
+
+            # Configure API client
+            client = genai.Client(api_key=api_key)
+
+            # Single prompt that does OCR + structured extraction
+            prompt = """Analyze this betting slip image and extract all match information as JSON.
+
+Output ONLY valid JSON in this exact format:
+{
+  "bet_code": "JYRCAV",
+  "matches": [
+    {
+      "teams": "Team A - Team B",
+      "home_team": "Team A",
+      "away_team": "Team B",
+      "bet_type": "3 Way",
+      "pick": "Home",
+      "odds": "1.50"
+    }
+  ],
+  "summary": {
+    "total_odds": "10.50",
+    "bet_amount": "100.00",
+    "currency": "KSH",
+    "possible_win": "1,050.00"
+  }
+}
+
+Rules:
+1. Extract ONLY actual matches (teams vs teams with odds)
+2. Do NOT extract footer text (TOTAL ODDS, BET AMOUNT are summary, not matches)
+3. Use EXACT team names from the image
+4. Each match must have: teams, home_team, away_team, bet_type, pick, odds
+5. Extract the bet code/ID from the image
+6. Extract total odds, bet amount, and possible win from the summary section
+7. Output ONLY the JSON, no other text
+"""
+
+            # Make API call using gemini-2.5-flash (stable model with better quotas)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[
+                    prompt,
+                    types.Part.from_bytes(
+                        data=image_bytes,
+                        mime_type='image/png'
+                    )
+                ],
+                config=types.GenerateContentConfig(
+                    temperature=0.1,
+                    response_mime_type='application/json'
+                )
+            )
+
+            # Parse JSON response
+            try:
+                result = json.loads(response.text)
+                logger.info(f"Successfully extracted data using Gemini: {len(result.get('matches', []))} matches")
+
+                # Return in a format that bypasses traditional parsing
+                # We'll handle this specially in process_betslip_image
+                return {
+                    'success': True,
+                    'gemini_structured_data': result,
+                    'text_blocks': []  # Not used for Gemini
+                }
+
+            except json.JSONDecodeError as e:
+                # Fallback: try to extract JSON from response
+                import re
+                json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
+                if json_match:
+                    result = json.loads(json_match.group())
+                    logger.info(f"Successfully extracted data using Gemini (with regex): {len(result.get('matches', []))} matches")
+                    return {
+                        'success': True,
+                        'gemini_structured_data': result,
+                        'text_blocks': []
+                    }
+                else:
+                    logger.error(f"Could not parse JSON from Gemini response: {response.text[:200]}")
+                    raise ValueError(f"Could not parse JSON from response: {response.text[:200]}")
+
+        except ImportError:
+            logger.error("google-genai is not installed")
+            return {
+                'success': False,
+                'error': 'Gemini API library is not installed. Please contact the administrator.',
+                'text_blocks': []
+            }
+        except Exception as e:
+            logger.error(f"Gemini extraction failed: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': f'Failed to extract text from image using Gemini: {str(e)}',
                 'text_blocks': []
             }
 
@@ -836,16 +957,56 @@ class BetslipOCR:
                     'error': extraction_result['error']
                 }
             
-            # Parse the extracted text
-            parsed_data = self.parse_betslip(extraction_result['text_blocks'])
-            
+            # --- Gemini Specific Handling ---
+            if 'gemini_structured_data' in extraction_result and extraction_result['gemini_structured_data']:
+                gemini_data = extraction_result['gemini_structured_data']
+                logger.info("Processing betslip using Gemini structured data.")
+
+                # Map Gemini data to existing parsed_data structure
+                parsed_matches = []
+                for gm in gemini_data.get('matches', []):
+                    parsed_matches.append({
+                        'home_team': gm.get('home_team'),
+                        'away_team': gm.get('away_team'),
+                        'league': 'Unknown League',  # Default for now
+                        'market': gm.get('bet_type', 'Unknown'),
+                        'selection': gm.get('pick', 'Unknown'),
+                        'odds': float(gm.get('odds', 0.0)) if gm.get('odds') else 0.0,
+                        'match_date': self._estimate_match_date().isoformat()
+                    })
+
+                total_odds = float(gemini_data['summary']['total_odds'].replace(',', '')) if gemini_data.get('summary') and gemini_data['summary'].get('total_odds') else 0.0
+                possible_win = float(gemini_data['summary']['possible_win'].replace(',', '')) if gemini_data.get('summary') and gemini_data['summary'].get('possible_win') else 0.0
+                bet_code = gemini_data.get('bet_code', 'UNKNOWN')
+
+                # Validate cumulative odds using the Gemini-extracted matches and total odds
+                odds_validation = self._validate_cumulative_odds(parsed_matches, total_odds)
+
+                parsed_data = {
+                    'bet_code': bet_code,
+                    'total_odds': total_odds,
+                    'possible_win': possible_win,
+                    'matches': parsed_matches,
+                    'confidence': 99.0,  # High confidence for Gemini structured extraction
+                    'expires_at': self._estimate_expiry_time([]).isoformat(),
+                    'odds_validation': odds_validation
+                }
+                logger.info(f"Gemini parsed results - Bet code: {bet_code}, Odds: {total_odds}, "
+                            f"Possible Win: {possible_win}, Matches found: {len(parsed_matches)}, "
+                            f"Confidence: 99.00%")
+            else:
+                # Original parsing logic for other OCR providers
+                parsed_data = self.parse_betslip(extraction_result['text_blocks'])
+                logger.info("Processing betslip using traditional OCR text parsing.")
+
             return {
                 'success': True,
                 'data': parsed_data,
                 'confidence': parsed_data['confidence']
             }
-            
+
         except Exception as e:
+            logger.error(f"Error in process_betslip_image: {str(e)}", exc_info=True)
             return {
                 'success': False,
                 'error': f'Failed to process image: {str(e)}'

@@ -353,13 +353,14 @@ class OCRProviderSettings(models.Model):
         ('textract', 'AWS Textract'),
         ('easyocr', 'EasyOCR'),
         ('sportpesa', 'SportPesa Scraper'),
+        ('gemini', 'Gemini AI (Fast & Accurate)'),
     ]
 
     provider = models.CharField(
         max_length=20,
         choices=OCR_PROVIDER_CHOICES,
-        default='textract',
-        help_text='Select which OCR provider to use for processing betslips'
+        default='gemini',
+        help_text='Select which OCR provider to use for processing betslips. Gemini AI is recommended for best performance.'
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
@@ -382,16 +383,25 @@ class OCRProviderSettings(models.Model):
         """Get the currently active OCR provider"""
         settings_obj = cls.objects.first()
         if settings_obj:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"Active OCR provider from settings: {settings_obj.provider}")
             return settings_obj.provider
-        return 'textract'  # Default to Textract
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("No OCR provider settings found, defaulting to 'gemini'")
+        return 'gemini'  # Default to Gemini AI
 
     def save(self, *args, **kwargs):
         # Ensure only one settings record exists
-        if not self.pk and OCRProviderSettings.objects.exists():
-            # Update the existing record instead
-            existing = OCRProviderSettings.objects.first()
-            existing.provider = self.provider
-            existing.updated_by = self.updated_by
-            super(OCRProviderSettings, existing).save(*args, **kwargs)
-        else:
-            super().save(*args, **kwargs)
+        existing_settings = OCRProviderSettings.objects.first()
+
+        if existing_settings and self.pk != existing_settings.pk:
+            # If an instance already exists and it's not the current instance being updated,
+            # update the existing one instead of creating a new one.
+            existing_settings.provider = self.provider
+            existing_settings.updated_by = self.updated_by
+            existing_settings.save(update_fields=['provider', 'updated_by'])
+            self.pk = existing_settings.pk # Set PK to simulate saving this instance
+            return
+        super().save(*args, **kwargs)
