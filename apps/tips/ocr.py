@@ -105,6 +105,8 @@ class BetslipOCR:
             return self._extract_text_easyocr(image_bytes)
         elif self.provider == 'gemini':
             return self._extract_with_gemini(image_bytes)
+        elif self.provider == 'gemini_langextract':
+            return self._extract_with_gemini_langextract(image_bytes)
         else:
             logger.error(f"Unknown OCR provider: {self.provider}")
             return {
@@ -340,6 +342,202 @@ Rules:
             return {
                 'success': False,
                 'error': f'Failed to extract text from image using Gemini: {str(e)}',
+                'text_blocks': []
+            }
+
+    def _extract_with_gemini_langextract(self, image_bytes):
+        """
+        Extract betslip data using Gemini Vision OCR + LangExtract (EXACT langextract approach).
+
+        This is the two-step process from /home/walter/langextract/betslip_gemini_ocr.py:
+        1. Step 1: Use Gemini Vision API to extract raw OCR text
+        2. Step 2: Pass OCR text to LangExtract for structured extraction
+
+        Returns structured extraction result with matches and bet_summary.
+        """
+        try:
+            logger.info("Starting Gemini Vision OCR + LangExtract extraction")
+            import langextract as lx
+            import textwrap
+            import tempfile
+            import google.genai as genai
+            from google.genai import types
+
+            # Get API key
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                logger.error("GEMINI_API_KEY not found in environment")
+                return {
+                    'success': False,
+                    'error': 'Gemini API key not configured',
+                    'text_blocks': []
+                }
+
+            # ====== STEP 1: Gemini Vision API for OCR ======
+            logger.info("Step 1: Extracting raw text using Gemini Vision API...")
+
+            client = genai.Client(api_key=api_key)
+
+            # OCR-focused prompt (from langextract)
+            ocr_prompt = """Extract ALL text from this betting slip image.
+
+IMPORTANT:
+- Extract EVERY piece of text you can see
+- Preserve the exact spelling and formatting
+- Include team names, odds, amounts, and all labels
+- Output only the raw text, line by line
+- Do NOT interpret or structure the data
+- Do NOT skip any text
+
+Extract the text now:"""
+
+            # Call Gemini Vision API for OCR
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=[
+                    ocr_prompt,
+                    types.Part.from_bytes(
+                        data=image_bytes,
+                        mime_type='image/png'
+                    )
+                ]
+            )
+
+            if not response.text:
+                raise ValueError("No text extracted from image by Gemini Vision API")
+
+            ocr_text = response.text.strip()
+            logger.info(f"Gemini OCR extracted {len(ocr_text)} characters of text")
+            logger.debug(f"OCR Text Preview: {ocr_text[:200]}...")
+
+            # ====== STEP 2: LangExtract for Structured Extraction ======
+            logger.info("Step 2: Extracting structured data using LangExtract...")
+
+            # Define extraction prompt (from langextract)
+            prompt = textwrap.dedent("""\
+                Extract all match information and betting details from the betslip text.
+
+                For each match, extract:
+                - Team names EXACTLY as shown in the text
+                - Bet type (e.g., 3 Way, Over/Under, etc.)
+                - Pick/Selection (e.g., Home, Away, Draw)
+                - Odds value (decimal format)
+
+                Also extract overall bet details:
+                - Total odds / Accumulator odds
+                - Bet amount and currency
+                - Possible win / Potential payout
+                - Any taxes, bonuses, or boosts
+
+                IMPORTANT: Use EXACT text from the input. Do not substitute or invent team names.
+                Extract entities in the order they appear.""")
+
+            # Define examples for few-shot learning (from langextract)
+            examples = [
+                lx.data.ExampleData(
+                    text=textwrap.dedent("""\
+                        Pisa - Lazio
+                        3 Way
+                        Your Pick: Home
+                        3.69"""),
+                    extractions=[
+                        lx.data.Extraction(
+                            extraction_class="match",
+                            extraction_text="Pisa - Lazio",
+                            attributes={
+                                "home_team": "Pisa",
+                                "away_team": "Lazio",
+                                "bet_type": "3 Way",
+                                "pick": "Home",
+                                "odds": "3.69"
+                            }
+                        ),
+                    ]
+                ),
+                lx.data.ExampleData(
+                    text=textwrap.dedent("""\
+                        RB Salzburg - WSG Wattens
+                        3 Way
+                        Your Pick: Home
+                        1.34"""),
+                    extractions=[
+                        lx.data.Extraction(
+                            extraction_class="match",
+                            extraction_text="RB Salzburg - WSG Wattens",
+                            attributes={
+                                "home_team": "RB Salzburg",
+                                "away_team": "WSG Wattens",
+                                "bet_type": "3 Way",
+                                "pick": "Home",
+                                "odds": "1.34"
+                            }
+                        ),
+                    ]
+                ),
+                lx.data.ExampleData(
+                    text=textwrap.dedent("""\
+                        TOTAL ODDS: 32.83
+                        BET AMOUNT (KSH): 100.00
+                        POSSIBLE WIN KSH 3,411.18"""),
+                    extractions=[
+                        lx.data.Extraction(
+                            extraction_class="bet_summary",
+                            extraction_text="TOTAL ODDS: 32.83",
+                            attributes={
+                                "total_odds": "32.83",
+                                "bet_amount": "100.00",
+                                "currency": "KSH",
+                                "possible_win": "3,411.18"
+                            }
+                        ),
+                    ]
+                )
+            ]
+
+            # Extract structured data using LangExtract
+            result = lx.extract(
+                text_or_documents=ocr_text,
+                prompt_description=prompt,
+                examples=examples,
+                model_id="gemini-2.5-flash",
+                extraction_passes=1,      # Single pass - OCR text is clean
+                max_workers=5,
+                max_char_buffer=5000
+            )
+
+            logger.info(f"LangExtract extracted {len(result.extractions)} entities")
+
+            # Filter matches and summaries
+            matches = [e for e in result.extractions
+                      if e.extraction_class == "match"
+                      and e.extraction_text
+                      and e.extraction_text != "null"]
+            bet_summaries = [e for e in result.extractions
+                            if e.extraction_class == "bet_summary"]
+
+            logger.info(f"Found {len(matches)} valid matches and {len(bet_summaries)} bet summaries")
+
+            return {
+                'success': True,
+                'langextract_result': result,
+                'matches': matches,
+                'bet_summaries': bet_summaries,
+                'ocr_text': ocr_text,
+                'text_blocks': []  # Not used for langextract
+            }
+
+        except ImportError as e:
+            logger.error(f"Missing library for Gemini+LangExtract: {str(e)}")
+            return {
+                'success': False,
+                'error': 'LangExtract or google-genai is not installed. Please contact administrator.',
+                'text_blocks': []
+            }
+        except Exception as e:
+            logger.error(f"Gemini+LangExtract extraction failed: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'error': f'Failed to extract using Gemini+LangExtract: {str(e)}',
                 'text_blocks': []
             }
 
@@ -941,6 +1139,98 @@ Rules:
             )
         }
 
+    def _process_langextract_result(self, extraction_result):
+        """
+        Process LangExtract extraction result and convert to expected format.
+
+        Args:
+            extraction_result: Dictionary containing langextract_result, matches, and bet_summaries
+
+        Returns:
+            Dictionary in expected parsed_data format
+        """
+        matches = extraction_result.get('matches', [])
+        bet_summaries = extraction_result.get('bet_summaries', [])
+
+        # Extract bet code from OCR text (look for common patterns)
+        ocr_text = extraction_result.get('ocr_text', '')
+        bet_code = self._extract_bet_code(ocr_text) or 'UNKNOWN'
+
+        # Process matches
+        parsed_matches = []
+        for match in matches:
+            attrs = match.attributes or {}
+
+            # Parse odds
+            odds_str = attrs.get('odds', '0.0')
+            try:
+                odds = float(str(odds_str).replace(',', ''))
+            except (ValueError, AttributeError):
+                odds = 0.0
+
+            parsed_matches.append({
+                'home_team': attrs.get('home_team', 'Unknown'),
+                'away_team': attrs.get('away_team', 'Unknown'),
+                'league': 'Unknown League',
+                'market': attrs.get('bet_type', 'Unknown'),
+                'selection': attrs.get('pick', 'Unknown'),
+                'odds': odds,
+                'match_date': self._estimate_match_date().isoformat()
+            })
+
+        # Extract summary data
+        total_odds = 0.0
+        possible_win = 0.0
+        bet_amount = 0.0
+        currency = 'KSH'
+
+        for summary in bet_summaries:
+            attrs = summary.attributes or {}
+
+            if 'total_odds' in attrs:
+                try:
+                    total_odds = float(str(attrs['total_odds']).replace(',', ''))
+                except (ValueError, AttributeError):
+                    pass
+
+            if 'possible_win' in attrs:
+                try:
+                    possible_win = float(str(attrs['possible_win']).replace(',', ''))
+                except (ValueError, AttributeError):
+                    pass
+
+            if 'bet_amount' in attrs:
+                try:
+                    bet_amount = float(str(attrs['bet_amount']).replace(',', ''))
+                except (ValueError, AttributeError):
+                    pass
+
+            if 'currency' in attrs:
+                currency = attrs['currency']
+
+        # Validate cumulative odds
+        odds_validation = self._validate_cumulative_odds(parsed_matches, total_odds)
+
+        # Build result
+        parsed_data = {
+            'bet_code': bet_code,
+            'total_odds': total_odds,
+            'possible_win': possible_win,
+            'bet_amount': bet_amount,
+            'currency': currency,
+            'matches': parsed_matches,
+            'confidence': 97.0,  # High confidence for LangExtract
+            'expires_at': self._estimate_expiry_time([]).isoformat(),
+            'odds_validation': odds_validation,
+            'ocr_text': ocr_text  # Save OCR text for debugging
+        }
+
+        logger.info(f"LangExtract parsed results - Bet code: {bet_code}, Odds: {total_odds}, "
+                   f"Possible Win: {possible_win}, Matches found: {len(parsed_matches)}, "
+                   f"Confidence: 97.00%")
+
+        return parsed_data
+
     def process_betslip_image(self, image_file):
         """Main method to process a betslip image"""
         try:
@@ -957,8 +1247,13 @@ Rules:
                     'error': extraction_result['error']
                 }
             
-            # --- Gemini Specific Handling ---
-            if 'gemini_structured_data' in extraction_result and extraction_result['gemini_structured_data']:
+            # --- LangExtract Handling (PRIORITY) ---
+            if 'langextract_result' in extraction_result and extraction_result['langextract_result']:
+                logger.info("Processing betslip using LangExtract structured data.")
+                parsed_data = self._process_langextract_result(extraction_result)
+
+            # --- Gemini Structured Data Handling ---
+            elif 'gemini_structured_data' in extraction_result and extraction_result['gemini_structured_data']:
                 gemini_data = extraction_result['gemini_structured_data']
                 logger.info("Processing betslip using Gemini structured data.")
 

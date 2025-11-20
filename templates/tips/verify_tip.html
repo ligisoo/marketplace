@@ -1,347 +1,170 @@
 {% extends 'base.html' %}
 
-{% block title %}Verify Tip Details - Ligisoo{% endblock %}
+{% block title %}Verify Tip - Ligisoo{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 py-8">
-    <!-- Page Header -->
-    <div class="text-center mb-8">
-        <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-2">Verify Tip Details</h1>
-        <p class="text-lg text-muted-foreground">Review and correct the extracted information from your betslip</p>
+<div class="w-full max-w-4xl mx-auto px-4 py-6">
+
+  <!-- Header -->
+  <div class="text-center mb-5">
+    <h1 class="text-2xl md:text-3xl font-bold text-foreground leading-tight">Verify Your Tip</h1>
+    <p class="text-sm md:text-base text-muted-foreground">Review the extracted betslip details before publishing</p>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="mb-6">
+    <div class="flex items-center justify-center text-xs md:text-sm">
+      <div class="flex items-center text-primary">
+        <span class="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-primary text-primary-foreground rounded-full font-semibold shadow-sm">✓</span>
+        <span class="ml-2 hidden sm:inline">Upload</span>
+      </div>
+      <div class="flex-1 mx-2 md:mx-4 h-1.5 bg-primary rounded-full max-w-24"></div>
+      <div class="flex items-center text-primary">
+        <span class="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-primary text-primary-foreground rounded-full font-semibold shadow-sm">2</span>
+        <span class="ml-2 hidden sm:inline">Verify</span>
+      </div>
+      <div class="flex-1 mx-2 md:mx-4 h-1.5 bg-muted rounded-full max-w-24">
+        <div class="h-full bg-primary/40 rounded-full w-2/3"></div>
+      </div>
+      <div class="flex items-center text-muted-foreground">
+        <span class="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-muted text-muted-foreground rounded-full font-medium">3</span>
+        <span class="ml-2 hidden sm:inline">Go Live</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Betslip Details Card -->
+  <div class="bg-card border border-border rounded-lg p-5 shadow-sm mb-5">
+    <h2 class="text-lg font-semibold text-foreground mb-4">Betslip Details</h2>
+
+    <!-- Total Odds - Prominent Display -->
+    <div class="bg-accent/10 border-2 border-accent/30 rounded-lg p-4 mb-4 text-center">
+      <label class="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Total Odds</label>
+      <p class="text-3xl font-bold text-accent">{{ tip.odds }}</p>
     </div>
 
-    <!-- Progress Steps -->
-    <div class="mb-8">
-        <div class="flex items-center justify-center">
-            <div class="flex items-center text-primary">
-                <span class="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold shadow-lg">
-                    <svg class="w-4 h-4 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </span>
-                <span class="ml-2 md:ml-3 text-xs md:text-sm font-medium hidden sm:inline">Upload Betslip</span>
-            </div>
-            <div class="flex-1 mx-2 md:mx-4 h-2 bg-primary rounded-full max-w-20"></div>
-            <div class="flex items-center text-primary">
-                <span class="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-full text-xs md:text-sm font-bold shadow-lg">2</span>
-                <span class="ml-2 md:ml-3 text-xs md:text-sm font-medium hidden sm:inline">Verify Details</span>
-            </div>
-            <div class="flex-1 mx-2 md:mx-4 h-2 bg-muted rounded-full max-w-20">
-                <div class="h-full bg-primary/30 rounded-full w-1/2"></div>
-            </div>
-            <div class="flex items-center text-muted-foreground">
-                <span class="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-muted text-muted-foreground rounded-full text-xs md:text-sm font-medium">3</span>
-                <span class="ml-2 md:ml-3 text-xs md:text-sm font-medium hidden sm:inline">Go Live</span>
-            </div>
-        </div>
-    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="space-y-1">
+        <label class="text-xs text-muted-foreground">Bookmaker</label>
+        <p class="text-sm font-medium text-foreground">{{ tip.get_bookmaker_display }}</p>
+      </div>
 
-    <!-- OCR Confidence Badge -->
-    {% if ocr_data.confidence %}
-    <div class="mb-6 text-center">
-        {% if ocr_data.confidence > 90 %}
-        <div class="inline-flex items-center px-4 py-2 bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 rounded-lg">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="text-sm font-medium">OCR Confidence: {{ ocr_data.confidence|floatformat:1 }}%</span>
+      <div class="space-y-1">
+        <label class="text-xs text-muted-foreground">Bet Code</label>
+        <p class="text-sm font-medium text-foreground font-mono bg-muted px-2 py-1 rounded inline-block">{{ tip.bet_code }}</p>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs text-muted-foreground">Price</label>
+        <p class="text-sm font-medium text-foreground">KES {{ tip.price }}</p>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs text-muted-foreground">Expires At</label>
+        <p class="text-sm font-medium text-foreground">{{ tip.expires_at|date:"D, d M Y - g:i A" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matches Card -->
+  <div class="bg-card border border-border rounded-lg p-5 shadow-sm mb-5">
+    <h2 class="text-lg font-semibold text-foreground mb-4">Matches ({{ matches|length }})</h2>
+
+    <div class="space-y-4">
+      {% for match in matches %}
+        <div class="border border-border rounded-md p-4 hover:border-primary/50 transition-colors">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+              <h3 class="text-sm font-semibold text-foreground">
+                {{ match.home_team }} vs {{ match.away_team }}
+              </h3>
+              <p class="text-xs text-muted-foreground mt-1">
+                {% if match.league %}{{ match.league }} • {% endif %}{{ match.match_date|date:"D, d M Y - g:i A" }}
+              </p>
+            </div>
+            <span class="flex-shrink-0 bg-accent/10 text-accent px-2 py-1 rounded text-xs font-semibold ml-2">
+              {{ match.odds }}
+            </span>
+          </div>
+
+          <div class="mt-3 pt-3 border-t border-border">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-muted-foreground">Market:</span>
+              <span class="font-medium text-foreground">{{ match.market }}</span>
+              <span class="text-muted-foreground">•</span>
+              <span class="text-muted-foreground">Selection:</span>
+              <span class="font-medium text-foreground">{{ match.selection }}</span>
+            </div>
+          </div>
         </div>
-        {% elif ocr_data.confidence > 70 %}
-        <div class="inline-flex items-center px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 rounded-lg">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-            <span class="text-sm font-medium">OCR Confidence: {{ ocr_data.confidence|floatformat:1 }}%</span>
+      {% empty %}
+        <div class="text-center py-8 text-muted-foreground">
+          <p class="text-sm">No matches found</p>
         </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="bg-accent/10 border border-accent/20 rounded-md p-4 mb-5">
+    <div class="flex">
+      <svg class="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"></path>
+      </svg>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-foreground mb-1">Review Carefully</h3>
+        <p class="text-xs text-muted-foreground">
+          Please verify that all match details, odds, and selections are correct. Once you accept,
+          {% if user.userprofile.is_verified %}
+            your tip will go live immediately.
+          {% else %}
+            your tip will be submitted for review before going live.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex flex-col sm:flex-row gap-3">
+    <form method="post" action="{% url 'tips:approve_tip' tip.id %}" class="flex-1">
+      {% csrf_token %}
+      <button type="submit"
+              class="w-full inline-flex items-center justify-center px-5 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        {% if user.userprofile.is_verified %}
+          Accept & Publish
         {% else %}
-        <div class="inline-flex items-center px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400 rounded-lg">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="text-sm font-medium">OCR Confidence: {{ ocr_data.confidence|floatformat:1 }}%</span>
-        </div>
+          Accept & Submit for Review
         {% endif %}
-
-        <!-- Odds Validation -->
-        {% if ocr_data.odds_validation %}
-        <div class="mt-4 p-3 rounded-lg border {% if ocr_data.odds_validation.is_valid %}bg-green-500/10 border-green-500/30{% else %}bg-yellow-500/10 border-yellow-500/30{% endif %}">
-            <div class="flex items-start">
-                <svg class="w-5 h-5 mr-2 flex-shrink-0 {% if ocr_data.odds_validation.is_valid %}text-green-600{% else %}text-yellow-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {% if ocr_data.odds_validation.is_valid %}
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    {% else %}
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    {% endif %}
-                </svg>
-                <div class="flex-1">
-                    <p class="text-sm font-medium {% if ocr_data.odds_validation.is_valid %}text-green-700 dark:text-green-400{% else %}text-yellow-700 dark:text-yellow-400{% endif %}">
-                        {{ ocr_data.odds_validation.message }}
-                    </p>
-                    {% if not ocr_data.odds_validation.is_valid and ocr_data.odds_validation.calculated_odds %}
-                    <div class="mt-2 text-xs {% if ocr_data.odds_validation.is_valid %}text-green-600 dark:text-green-400{% else %}text-yellow-600 dark:text-yellow-400{% endif %}">
-                        <p>Calculated (Match Odds ✕): <strong>{{ ocr_data.odds_validation.calculated_odds }}</strong></p>
-                        <p>Extracted (Total Odds): <strong>{{ ocr_data.odds_validation.extracted_odds }}</strong></p>
-                        <p>Difference: <strong>{{ ocr_data.odds_validation.difference }} ({{ ocr_data.odds_validation.difference_percentage }}%)</strong></p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <p class="text-xs text-muted-foreground mt-2">Please review and correct any errors below</p>
-    </div>
-    {% endif %}
-
-    <form method="post" class="space-y-8">
-        {% csrf_token %}
-
-        {% if form.non_field_errors %}
-            <div class="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
-                {{ form.non_field_errors }}
-            </div>
-        {% endif %}
-
-        <!-- Betslip Preview (if image exists) -->
-        {% if tip.screenshot %}
-        <div class="bg-card border border-border rounded-lg p-6">
-            <h2 class="text-lg font-semibold text-foreground mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                Your Betslip Screenshot
-            </h2>
-            <img src="{{ tip.screenshot.url }}" alt="Betslip" class="max-w-md mx-auto rounded-lg border border-border shadow-sm">
-        </div>
-        {% endif %}
-
-        <!-- General Bet Information -->
-        <div class="bg-card border border-border rounded-lg p-4 md:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
-                <!-- Bet Code -->
-                <div>
-                    <label for="{{ form.bet_code.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
-                        Bet Code *
-                    </label>
-                    {{ form.bet_code }}
-                    {% if form.bet_code.errors %}
-                        <p class="text-xs text-destructive mt-1">{{ form.bet_code.errors.0 }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Total Odds -->
-                <div>
-                    <label for="{{ form.total_odds.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
-                        Total Odds *
-                    </label>
-                    {{ form.total_odds }}
-                    {% if form.total_odds.errors %}
-                        <p class="text-xs text-destructive mt-1">{{ form.total_odds.errors.0 }}</p>
-                    {% endif %}
-                </div>
-
-                <!-- Expires At -->
-                <div>
-                    <label for="{{ form.expires_at.id_for_label }}" class="text-xs font-medium text-foreground block mb-1">
-                        Expires At *
-                    </label>
-                    {{ form.expires_at }}
-                    {% if form.expires_at.errors %}
-                        <p class="text-xs text-destructive mt-1">{{ form.expires_at.errors.0 }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Matches Information -->
-        <div class="space-y-4">
-            <h2 class="text-lg font-semibold text-foreground flex items-center">
-                <svg class="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                Match Details
-            </h2>
-
-            <!-- Editable Table for Matches -->
-            <div class="bg-card border border-border rounded-lg overflow-hidden">
-                <!-- Mobile: Scroll Hint -->
-                <div class="md:hidden bg-muted/30 px-4 py-2 text-xs text-muted-foreground text-center border-b border-border">
-                    👉 Swipe left to see all match details
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="matches-table min-w-[800px] md:min-w-full">
-                        <thead>
-                            <tr>
-                                <th class="table-header">#</th>
-                                <th class="table-header">Home Team</th>
-                                <th class="table-header">Away Team</th>
-                                <th class="table-header">Market</th>
-                                <th class="table-header">Pick</th>
-                                <th class="table-header">Odds</th>
-                                <th class="table-header">Date & Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for field in form %}
-                                {% if 'home_team' in field.name and 'match_' in field.name %}
-                                    {% with match_num=field.name|slice:"6:"|cut:"_home_team" %}
-                                    <tr class="table-row">
-                                        <td class="table-cell text-center">
-                                            <span class="match-number">{{ match_num|add:"1" }}</span>
-                                        </td>
-                                        <td class="table-cell">
-                                            {{ field }}
-                                            {% if field.errors %}
-                                                <p class="text-xs text-destructive mt-1">{{ field.errors.0 }}</p>
-                                            {% endif %}
-                                        </td>
-                                        {% for other_field in form %}
-                                            {% with other_match_num=other_field.name|slice:"6:"|cut:"_away_team"|cut:"_market"|cut:"_selection"|cut:"_odds"|cut:"_match_date" %}
-                                                {% if other_match_num == match_num and other_field.name != field.name %}
-                                                    <td class="table-cell">
-                                                        {{ other_field }}
-                                                        {% if other_field.errors %}
-                                                            <p class="text-xs text-destructive mt-1">{{ other_field.errors.0 }}</p>
-                                                        {% endif %}
-                                                    </td>
-                                                {% endif %}
-                                            {% endwith %}
-                                        {% endfor %}
-                                    </tr>
-                                    {% endwith %}
-                                {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-6 border-t border-border">
-            <a href="{% url 'tips:marketplace' %}" class="w-full sm:w-auto px-6 py-3.5 border border-border text-foreground rounded-lg hover:bg-muted transition-colors text-center font-medium">
-                Cancel
-            </a>
-            <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg flex items-center justify-center text-base">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Submit Tip
-            </button>
-        </div>
+      </button>
     </form>
+
+    <form method="post" action="{% url 'tips:cancel_tip' tip.id %}" class="flex-1">
+      {% csrf_token %}
+      <button type="submit"
+              onclick="return confirm('Are you sure you want to cancel this tip? All data will be deleted.')"
+              class="w-full inline-flex items-center justify-center px-5 py-3 bg-destructive text-destructive-foreground rounded-md font-semibold hover:bg-destructive/90 transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        Cancel
+      </button>
+    </form>
+  </div>
+
+  <!-- Screenshot Preview (Optional) -->
+  {% if tip.screenshot %}
+  <div class="bg-card border border-border rounded-lg p-5 shadow-sm mt-5">
+    <h3 class="text-sm font-semibold text-foreground mb-3">Original Screenshot</h3>
+    <img src="{{ tip.screenshot.url }}"
+         alt="Betslip screenshot"
+         class="max-w-full h-auto rounded border border-border">
+  </div>
+  {% endif %}
 </div>
-
-<style>
-    /* Ensure form inputs have proper styling */
-    input[type="text"],
-    input[type="number"],
-    input[type="datetime-local"] {
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        background-color: var(--background);
-        border: 1px solid var(--border);
-        border-radius: 0.375rem;
-        color: var(--foreground);
-        font-size: 0.875rem;
-    }
-
-    input[type="text"]:focus,
-    input[type="number"]:focus,
-    input[type="datetime-local"]:focus {
-        outline: none;
-        border-color: var(--primary);
-        ring: 2px;
-        ring-color: var(--primary);
-    }
-
-    /* Matches Table Styling */
-    .matches-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.875rem;
-    }
-
-    .table-header {
-        background-color: var(--muted);
-        color: var(--foreground);
-        font-weight: 600;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-        padding: 0.75rem 0.5rem;
-        text-align: left;
-        border-bottom: 2px solid var(--border);
-        white-space: nowrap;
-    }
-
-    .table-header:first-child {
-        width: 50px;
-        text-align: center;
-    }
-
-    .table-row {
-        border-bottom: 1px solid var(--border);
-        transition: background-color 0.2s;
-    }
-
-    .table-row:hover {
-        background-color: var(--muted) / 30%;
-    }
-
-    .table-row:last-child {
-        border-bottom: none;
-    }
-
-    .table-cell {
-        padding: 0.75rem 0.5rem;
-        vertical-align: middle;
-    }
-
-    .table-cell input {
-        font-size: 0.8125rem;
-        padding: 0.4rem 0.5rem;
-        width: 100%;
-    }
-
-    .match-number {
-        display: inline-flex;
-        align-items: center;
-        justify-center: center;
-        width: 1.75rem;
-        height: 1.75rem;
-        background-color: var(--primary);
-        color: var(--primary-foreground);
-        border-radius: 50%;
-        font-weight: 600;
-        font-size: 0.75rem;
-    }
-
-    /* Responsive table for mobile */
-    @media (max-width: 768px) {
-        .matches-table {
-            font-size: 0.75rem;
-        }
-
-        .table-header {
-            padding: 0.5rem 0.25rem;
-            font-size: 0.65rem;
-        }
-
-        .table-cell {
-            padding: 0.5rem 0.25rem;
-        }
-
-        .table-cell input {
-            font-size: 0.75rem;
-            padding: 0.35rem 0.4rem;
-        }
-
-        .match-number {
-            width: 1.5rem;
-            height: 1.5rem;
-            font-size: 0.7rem;
-        }
-    }
-</style>
 {% endblock %}

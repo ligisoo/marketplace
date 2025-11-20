@@ -491,7 +491,7 @@ def create_tip(request):
                         latest_match_date = match_date
 
                 tip.expires_at = latest_match_date
-                tip.status = 'pending_approval' if not request.user.userprofile.is_verified else 'active'
+                tip.status = 'draft'  # Draft status for verification step
                 tip.save()
 
                 # Create TipMatch records
@@ -528,13 +528,9 @@ def create_tip(request):
                 }
                 tip.save()
 
-                # Success message
-                if tip.status == 'active':
-                    messages.success(request, f'Tip created successfully! Bet code: {bet_code}')
-                else:
-                    messages.success(request, f'Tip submitted for approval. Bet code: {bet_code}')
-
-                return redirect('tips:my_tips')
+                # Redirect to verification step
+                messages.success(request, 'Betslip processed successfully! Please verify the extracted data.')
+                return redirect('tips:verify_tip', tip_id=tip.id)
 
             except Exception as e:
                 logger.error(f"Error creating tip: {str(e)}", exc_info=True)
@@ -550,89 +546,84 @@ def create_tip(request):
 
 @login_required
 def verify_tip(request, tip_id):
-    """Verify and edit OCR-extracted data - Step 2"""
-    import logging
-    logger = logging.getLogger(__name__)
-
+    """Verify extracted betslip data - Step 2"""
     tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
 
-    if tip.ocr_processed:
-        messages.info(request, 'This tip has already been processed.')
+    # Only allow verification of draft tips
+    if tip.status != 'draft':
+        messages.info(request, 'This tip has already been published.')
         return redirect('tips:my_tips')
 
-    ocr_data = tip.match_details
-    matches_data = ocr_data.get('matches', [])
+    # Get extracted matches
+    matches = TipMatch.objects.filter(tip=tip).order_by('id')
 
-    # Debug logging
-    logger.info(f"=== VERIFY TIP DEBUG ===")
-    logger.info(f"OCR Data: {json.dumps(ocr_data, indent=2)}")
-    logger.info(f"Number of matches: {len(matches_data)}")
-    for i, match in enumerate(matches_data):
-        logger.info(f"Match {i+1}: {match}")
-    
-    if request.method == 'POST':
-        form = TipVerificationForm(
-            request.POST,
-            ocr_data=ocr_data,
-            matches_data=matches_data
-        )
-        
-        if form.is_valid():
-            # Update tip with verified data
-            tip.bet_code = form.cleaned_data['bet_code']
-            tip.odds = form.cleaned_data['total_odds']
-            tip.expires_at = form.cleaned_data['expires_at']
-            tip.ocr_processed = True
-            
-            # Set status based on tipster verification level
-            if request.user.userprofile.is_verified:
-                tip.status = 'active'
-                messages.success(request, 'Tip created and is now live!')
-            else:
-                tip.status = 'pending_approval'
-                messages.success(request, 'Tip submitted for approval. It will be reviewed by our team.')
-            
-            tip.save()
-            
-            # Create match objects
-            matches_data = form.get_matches_data()
-            for match_data in matches_data:
-                TipMatch.objects.create(
-                    tip=tip,
-                    **match_data
-                )
-            
-            # Create preview data for buyers
-            preview_matches = matches_data[:2]  # Show first 2 matches
-            tip.preview_data = {
-                'matches': [
-                    {
-                        'home_team': match['home_team'],
-                        'away_team': match['away_team'],
-                        'league': match['league'],
-                        'market': match['market'],
-                    }
-                    for match in preview_matches
-                ],
-                'total_matches': len(matches_data)
-            }
-            tip.save()
-            
-            return redirect('tips:my_tips')
-    else:
-        form = TipVerificationForm(
-            ocr_data=ocr_data,
-            matches_data=matches_data
-        )
-    
     context = {
         'tip': tip,
-        'form': form,
-        'ocr_data': ocr_data,
-        'matches_data': matches_data,
+        'matches': matches,
+        'num_matches': matches.count(),
     }
-    
+
     return render(request, 'tips/verify_tip.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def approve_tip(request, tip_id):
+    """Approve and publish a verified tip - Step 3"""
+    tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
+
+    # Only allow approval of draft tips
+    if tip.status != 'draft':
+        messages.warning(request, 'This tip has already been published.')
+        return redirect('tips:my_tips')
+
+    # Set status based on tipster verification level
+    if request.user.userprofile.is_verified:
+        tip.status = 'active'
+    else:
+        tip.status = 'pending_approval'
+
+    tip.save()
+
+    # Redirect to success page
+    return redirect('tips:tip_published', tip_id=tip.id)
+
+
+@login_required
+@require_http_methods(["POST"])
+def cancel_tip(request, tip_id):
+    """Cancel and delete a draft tip"""
+    tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
+
+    # Only allow cancellation of draft tips
+    if tip.status != 'draft':
+        messages.warning(request, 'Cannot cancel a published tip.')
+        return redirect('tips:my_tips')
+
+    bet_code = tip.bet_code
+    tip.delete()
+    messages.info(request, f'Tip ({bet_code}) cancelled and deleted.')
+    return redirect('tips:create_tip')
+
+
+@login_required
+def tip_published(request, tip_id):
+    """Success page after publishing a tip - Step 3 completion"""
+    tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
+
+    # Only show this page for recently published tips (active or pending_approval)
+    if tip.status not in ['active', 'pending_approval']:
+        return redirect('tips:my_tips')
+
+    # Get matches for display
+    matches = TipMatch.objects.filter(tip=tip).order_by('id')
+
+    context = {
+        'tip': tip,
+        'matches': matches,
+    }
+
+    return render(request, 'tips/tip_published.html', context)
 
 
 @login_required

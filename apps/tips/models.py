@@ -354,13 +354,14 @@ class OCRProviderSettings(models.Model):
         ('easyocr', 'EasyOCR'),
         ('sportpesa', 'SportPesa Scraper'),
         ('gemini', 'Gemini AI (Fast & Accurate)'),
+        ('gemini_langextract', 'Gemini + LangExtract (Best Quality)'),
     ]
 
     provider = models.CharField(
-        max_length=20,
+        max_length=25,
         choices=OCR_PROVIDER_CHOICES,
-        default='gemini',
-        help_text='Select which OCR provider to use for processing betslips. Gemini AI is recommended for best performance.'
+        default='gemini_langextract',
+        help_text='Select which OCR provider to use for processing betslips. Gemini + LangExtract is recommended for best performance and accuracy.'
     )
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
@@ -389,8 +390,8 @@ class OCRProviderSettings(models.Model):
             return settings_obj.provider
         import logging
         logger = logging.getLogger(__name__)
-        logger.info("No OCR provider settings found, defaulting to 'gemini'")
-        return 'gemini'  # Default to Gemini AI
+        logger.info("No OCR provider settings found, defaulting to 'gemini_langextract'")
+        return 'gemini_langextract'  # Default to Gemini + LangExtract
 
     def save(self, *args, **kwargs):
         # Ensure only one settings record exists

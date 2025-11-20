@@ -16,6 +16,9 @@ urlpatterns = [
     # path("earnings/export.csv", views.earnings_export_csv, name="earnings_export_csv"),
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
+    path('approve/<int:tip_id>/', views.approve_tip, name='approve_tip'),
+    path('cancel/<int:tip_id>/', views.cancel_tip, name='cancel_tip'),
+    path('published/<int:tip_id>/', views.tip_published, name='tip_published'),
     path('processing/<int:tip_id>/', views.tip_processing_status, name='tip_processing_status'),
     path('delete/<int:tip_id>/', views.delete_failed_tip, name='delete_failed_tip'),
 

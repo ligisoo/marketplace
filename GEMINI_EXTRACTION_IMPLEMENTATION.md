@@ -34,7 +34,8 @@ Modified `process_betslip_image()` to:
 
 ### 4. **Dependencies** (`requirements.txt`)
 
-- Added `google-genai==0.2.2` for Gemini API integration
+- Added `google-genai==1.51.0` for Gemini API integration (matches langextract version)
+- Added `python-dotenv==1.2.1` for environment variable management
 
 ### 5. **Environment Configuration** (`.env`)
 
@@ -206,6 +207,34 @@ echo "GEMINI_API_KEY=your_api_key_here" >> .env
 1. Ensure betslip image is clear and well-lit
 2. Check image resolution (minimum 800x600 recommended)
 3. Verify bet code format matches expected patterns
+
+## Installation
+
+To start using Gemini extraction in production:
+
+1. **Install the new dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   # Or specifically:
+   pip install google-genai==1.51.0 python-dotenv==1.2.1
+   ```
+
+2. **Run the migration**:
+   ```bash
+   python manage.py migrate tips
+   ```
+
+3. **Verify the API key is set** in `.env`:
+   ```bash
+   echo $GEMINI_API_KEY
+   ```
+
+4. **Test the extraction** (optional):
+   ```bash
+   python test_gemini_extraction.py
+   ```
+
+Gemini is now the default OCR provider and will be used automatically for all new betslip uploads!
 
 ## Credits
 

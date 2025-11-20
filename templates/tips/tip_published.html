@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Tip Published - Ligisoo{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-4xl mx-auto px-4 py-6">
+
+  <!-- Header -->
+  <div class="text-center mb-5">
+    <h1 class="text-2xl md:text-3xl font-bold text-foreground leading-tight">Tip Published Successfully!</h1>
+    <p class="text-sm md:text-base text-muted-foreground">Your tip is now live and ready to earn</p>
+  </div>
+
+  <!-- Progress Steps - All Completed -->
+  <div class="mb-6">
+    <div class="flex items-center justify-center text-xs md:text-sm">
+      <div class="flex items-center text-primary">
+        <span class="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-primary text-primary-foreground rounded-full font-semibold shadow-sm">✓</span>
+        <span class="ml-2 hidden sm:inline">Upload</span>
+      </div>
+      <div class="flex-1 mx-2 md:mx-4 h-1.5 bg-primary rounded-full max-w-24"></div>
+      <div class="flex items-center text-primary">
+        <span class="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-primary text-primary-foreground rounded-full font-semibold shadow-sm">✓</span>
+        <span class="ml-2 hidden sm:inline">Verify</span>
+      </div>
+      <div class="flex-1 mx-2 md:mx-4 h-1.5 bg-primary rounded-full max-w-24"></div>
+      <div class="flex items-center text-primary">
+        <span class="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-primary text-primary-foreground rounded-full font-semibold shadow-sm">✓</span>
+        <span class="ml-2 hidden sm:inline">Go Live</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Card -->
+  <div class="bg-primary/10 border-2 border-primary rounded-lg p-6 shadow-lg mb-5">
+    <div class="flex items-start">
+      <svg class="w-12 h-12 text-primary flex-shrink-0 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div class="flex-1">
+        <h2 class="text-xl font-bold text-foreground mb-2">
+          {% if tip.status == 'active' %}
+            Your Tip is Live!
+          {% else %}
+            Tip Submitted for Review
+          {% endif %}
+        </h2>
+        <p class="text-sm text-muted-foreground mb-4">
+          {% if tip.status == 'active' %}
+            Your tip is now published in the marketplace and buyers can start purchasing it. Start earning from your betting insights!
+          {% else %}
+            Your tip has been submitted for review. You'll be notified once it's approved and goes live.
+          {% endif %}
+        </p>
+
+        <!-- Tip Details -->
+        <div class="bg-card rounded-lg p-4 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted-foreground">Bet Code:</span>
+            <span class="text-sm font-mono font-semibold text-foreground bg-muted px-2 py-1 rounded">{{ tip.bet_code }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted-foreground">Total Odds:</span>
+            <span class="text-sm font-bold text-accent">{{ tip.odds }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted-foreground">Price:</span>
+            <span class="text-sm font-semibold text-foreground">KES {{ tip.price }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted-foreground">Matches:</span>
+            <span class="text-sm font-semibold text-foreground">{{ matches|length }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-muted-foreground">Expires:</span>
+            <span class="text-sm font-medium text-foreground">{{ tip.expires_at|date:"d M Y, g:i A" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Box -->
+  <div class="bg-accent/10 border border-accent/20 rounded-md p-4 mb-5">
+    <div class="flex">
+      <svg class="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+      </svg>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-foreground mb-1">What's Next?</h3>
+        <p class="text-xs text-muted-foreground">
+          {% if tip.status == 'active' %}
+            Your tip is live in the marketplace! Buyers can now purchase it. You'll earn 60% of every sale. Track your earnings in the Earnings dashboard.
+          {% else %}
+            Your tip will be reviewed by our team. Once approved, it will go live automatically. This usually takes a few minutes. You can check its status in "My Tips".
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex flex-col sm:flex-row gap-3">
+    <a href="{% url 'tips:my_tips' %}"
+       class="flex-1 inline-flex items-center justify-center px-5 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-colors">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+      </svg>
+      View My Tips
+    </a>
+
+    <a href="{% url 'tips:create_tip' %}"
+       class="flex-1 inline-flex items-center justify-center px-5 py-3 bg-secondary text-secondary-foreground rounded-md font-semibold hover:bg-secondary/80 transition-colors border border-border">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+      </svg>
+      Create Another Tip
+    </a>
+  </div>
+
+  {% if tip.status == 'active' %}
+  <!-- View in Marketplace -->
+  <div class="text-center mt-5">
+    <a href="{% url 'tips:detail' tip.id %}" class="text-sm text-accent hover:text-accent/80 underline">
+      View your tip in the marketplace →
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
