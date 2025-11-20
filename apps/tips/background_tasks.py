@@ -2,14 +2,22 @@
 Background tasks for betslip processing and enrichment
 """
 import logging
+import hashlib
+import copy
 from typing import Optional
 from django.utils import timezone
+from django.core.cache import cache
 
 from .models import Tip, TipMatch, OCRProviderSettings
-from .ocr import BetslipOCR
+from .betslip_extractor import process_betslip_image
 from .enrichment_service import DataEnrichmentService
 
 logger = logging.getLogger(__name__)
+
+
+def get_file_hash(file_data: bytes) -> str:
+    """Generate MD5 hash of file for caching (from langextract)"""
+    return hashlib.md5(file_data).hexdigest()
 
 
 def process_betslip_async(tip_id: int):
@@ -33,29 +41,42 @@ def process_betslip_async(tip_id: int):
         if not tip.ocr_processed:
             logger.info(f"Processing betslip data for Tip {tip_id}")
 
-            # Get active OCR provider and initialize processor
-            ocr_provider = OCRProviderSettings.get_active_provider()
-            processor = BetslipOCR(provider=ocr_provider)
+            if not tip.screenshot:
+                raise ValueError("No screenshot available for processing")
 
-            # Process based on what's available
-            ocr_result = None
-            if ocr_provider == 'sportpesa' and tip.bet_sharing_link:
-                # Process SportPesa link
-                ocr_result = processor.process_sportpesa_link(tip.bet_sharing_link)
-            elif tip.screenshot:
-                # Process screenshot with OCR
-                ocr_result = processor.process_betslip_image(tip.screenshot)
+            # Read screenshot data for hashing
+            tip.screenshot.seek(0)
+            file_data = tip.screenshot.read()
+            tip.screenshot.seek(0)  # Reset for processing
+
+            # Check cache first (MD5 hash-based caching from langextract)
+            file_hash = get_file_hash(file_data)
+            cache_key = f'betslip_{file_hash}'
+
+            cached_result = cache.get(cache_key)
+            if cached_result:
+                logger.info(f"✓ Cache hit for Tip {tip_id}! Using cached extraction result.")
+                ocr_result = copy.deepcopy(cached_result)
+                ocr_result['cached'] = True
             else:
-                raise ValueError("No screenshot or sharing link available for processing")
+                logger.info(f"Cache miss for Tip {tip_id}. Processing with Gemini...")
+
+                # Process screenshot with new fast extractor
+                ocr_result = process_betslip_image(tip.screenshot)
+
+                # Cache successful results for 24 hours (86400 seconds)
+                if ocr_result.get('success'):
+                    cache.set(cache_key, ocr_result, 86400)
+                    logger.info(f"✓ Cached extraction result for future use")
 
             # Check if processing was successful
             if not ocr_result or not ocr_result.get('success'):
                 error_msg = ocr_result.get('error', 'Unknown error') if ocr_result else 'Processing failed'
-                raise ValueError(f"OCR processing failed: {error_msg}")
+                raise ValueError(f"Extraction failed: {error_msg}")
 
             # Extract data from result
             match_data = ocr_result['data']
-            confidence = ocr_result['confidence']
+            confidence = ocr_result.get('confidence', 95.0)
 
             # Update tip with OCR data
             tip.match_details = match_data
@@ -71,7 +92,10 @@ def process_betslip_async(tip_id: int):
 
             tip.save()
 
-            logger.info(f"OCR processing complete for Tip {tip_id}")
+            if ocr_result.get('cached'):
+                logger.info(f"OCR processing complete for Tip {tip_id} (from cache)")
+            else:
+                logger.info(f"OCR processing complete for Tip {tip_id}")
 
         # Step 2: Create TipMatch records (if not already created)
         existing_matches = TipMatch.objects.filter(tip=tip).count()
