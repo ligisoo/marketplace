@@ -34,7 +34,7 @@ class TipSubmissionForm(forms.ModelForm):
 
     class Meta:
         model = Tip
-        fields = ['bookmaker', 'bet_code', 'price', 'screenshot', 'bet_sharing_link']
+        fields = ['bookmaker', 'bet_code', 'price', 'screenshot']
         widgets = {
             'bookmaker': forms.Select(attrs={
                 'class': 'form-select',
@@ -49,12 +49,7 @@ class TipSubmissionForm(forms.ModelForm):
             'screenshot': forms.FileInput(attrs={
                 'class': 'form-input',
                 'accept': 'image/*',
-                'required': False
-            }),
-            'bet_sharing_link': forms.URLInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'https://www.ke.sportpesa.com/referral/YOUR_CODE',
-                'required': False
+                'required': True
             })
         }
 
@@ -91,14 +86,6 @@ class TipSubmissionForm(forms.ModelForm):
                 raise ValidationError("File must be an image")
 
         return screenshot
-
-    def clean_bet_sharing_link(self):
-        link = self.cleaned_data.get('bet_sharing_link')
-        if link:
-            # Basic validation for SportPesa referral links
-            if 'sportpesa.com/referral/' not in link.lower():
-                raise ValidationError("Please provide a valid SportPesa referral/sharing link")
-        return link
 
     def clean(self):
         cleaned_data = super().clean()
