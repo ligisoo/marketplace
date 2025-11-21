@@ -38,12 +38,22 @@ class TipPayment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    # Idempotency key for preventing duplicate transactions
+    idempotency_key = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+
     def __str__(self):
         return f"M-Pesa Tip Payment - {self.user.phone_number} - KES {self.amount} - {self.tip.bet_code}"
 
     class Meta:
         db_table = 'payments_tip_payment'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'tip', 'idempotency_key'],
+                condition=models.Q(idempotency_key__isnull=False),
+                name='unique_tip_payment_idempotency'
+            ),
+        ]
 
 
 class WalletDeposit(models.Model):
@@ -77,9 +87,19 @@ class WalletDeposit(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    # Idempotency key for preventing duplicate transactions
+    idempotency_key = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+
     def __str__(self):
         return f"M-Pesa Deposit - {self.user.phone_number} - KES {self.amount} - {self.status}"
 
     class Meta:
         db_table = 'payments_wallet_deposit'
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'amount', 'idempotency_key'],
+                condition=models.Q(idempotency_key__isnull=False),
+                name='unique_wallet_deposit_idempotency'
+            ),
+        ]
