@@ -47,7 +47,7 @@
         </h2>
         <p class="text-sm text-muted-foreground mb-4">
           {% if tip.status == 'active' %}
-            Your tip is now published in the marketplace and buyers can start purchasing it. Start earning from your betting insights!
+            Your prediction is now published and Pro subscribers can access it. Start building your sports analytics reputation!
           {% else %}
             Your tip has been submitted for review. You'll be notified once it's approved and goes live.
           {% endif %}
@@ -90,7 +90,7 @@
         <h3 class="text-sm font-medium text-foreground mb-1">What's Next?</h3>
         <p class="text-xs text-muted-foreground">
           {% if tip.status == 'active' %}
-            Your tip is live in the marketplace! Buyers can now purchase it. You'll earn 60% of every sale. Track your earnings in the Earnings dashboard.
+            Your prediction is live in the Community Predictions feed! You can track its performance in your Analytics Dashboard.
           {% else %}
             Your tip will be reviewed by our team. Once approved, it will go live automatically. This usually takes a few minutes. You can check its status in "My Tips".
           {% endif %}
@@ -119,10 +119,10 @@
   </div>
 
   {% if tip.status == 'active' %}
-  <!-- View in Marketplace -->
-  <div class="text-center mt-5">
-    <a href="{% url 'tips:detail' tip.id %}" class="text-sm text-accent hover:text-accent/80 underline">
-      View your tip in the marketplace →
+  <!-- View in Feed -->
+  <div class="mt-8 text-center">
+    <a href="{% url 'tips:marketplace' %}" class="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+      View your prediction in the feed →
     </a>
   </div>
   {% endif %}

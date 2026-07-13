@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}{{ tipster.userprofile.display_name }} - Tipster Profile{% endblock %}
+{% block title %}{{ tipster.userprofile.display_name }} - Sports Analyst Profile{% endblock %}
 
 {% block content %}
 <style>
@@ -22,7 +22,7 @@
             </a>
         </div>
 
-        <!-- Tipster Profile Header -->
+        <!-- Sports Analyst Profile Header -->
         <div class="bg-card border border-border rounded-lg p-8 mb-6">
             <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
                 <!-- Profile Picture -->
@@ -37,7 +37,7 @@
                     {% endif %}
                 </div>
 
-                <!-- Tipster Info -->
+                <!-- Sports Analyst Info -->
                 <div class="flex-1 text-center md:text-left">
                     <div class="flex flex-col md:flex-row md:items-center gap-3 mb-3">
                         <h1 class="text-3xl font-bold text-foreground">{{ profile.display_name }}</h1>
@@ -46,7 +46,7 @@
                                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                 </svg>
-                                Verified Tipster
+                                Verified Sports Analyst
                             </span>
                         {% endif %}
                     </div>
@@ -209,8 +209,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <h3 class="text-xl font-medium text-foreground mb-2">No Active Tips</h3>
-                        <p class="text-muted-foreground">This tipster doesn't have any active tips at the moment.</p>
-                        <p class="text-sm text-muted-foreground mt-2">Check back later for new betting insights!</p>
+                        <p class="text-muted-foreground">This sports analyst doesn't have any active tips at the moment.</p>
+                        <p class="text-sm text-muted-foreground mt-2">Check back later for new sports insights!</p>
                     </div>
                 {% endif %}
             </div>
@@ -318,7 +318,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <h3 class="text-xl font-medium text-foreground mb-2">No Historical Tips</h3>
-                        <p class="text-muted-foreground">This tipster hasn't had any completed or archived tips yet.</p>
+                        <p class="text-muted-foreground">This sports analyst hasn't had any completed or archived tips yet.</p>
                     </div>
                 {% endif %}
             </div>

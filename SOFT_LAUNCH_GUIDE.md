@@ -18,10 +18,10 @@ Hi [Name],
 You've been selected for exclusive early access to Ligisoo, Kenya's newest football tips marketplace before our public launch!
 
 🏆 What is Ligisoo?
-- Connect with expert football tipsters
+- Connect with expert football sports analysts
 - Buy verified tips with transparent performance metrics
 - Secure M-Pesa payments with escrow protection
-- Build your reputation as a tipster and earn revenue
+- Build your reputation as a sports analyst and earn revenue
 
 🎁 Beta User Benefits:
 - FREE access during beta period
@@ -35,7 +35,7 @@ You've been selected for exclusive early access to Ligisoo, Kenya's newest footb
 🧪 What We Need From You:
 1. Test the registration and login process
 2. Try browsing and purchasing tips
-3. For tipsters: Post at least 1-2 tips
+3. For sports analysts: Post at least 1-2 tips
 4. Report any bugs or suggestions via WhatsApp: [Your Number]
 
 ⏰ Beta Period: 2 weeks (ending [Date])
@@ -69,7 +69,7 @@ Create `/templates/beta_guide.html` with:
 - How to register/login
 - How to browse tips
 - How to purchase tips (with test M-Pesa)
-- How to post tips (for tipsters)
+- How to post tips (for sports analysts)
 - How to report issues
 
 ### Phase 2: Identify and Recruit Beta Users (2-3 hours)
@@ -82,9 +82,9 @@ Create `/templates/beta_guide.html` with:
 - Social media followers interested in sports
 - Local football fans and supporters
 
-**Potential Tipsters (5-7 users):**
+**Potential Sports Analysts (5-7 users):**
 - People with football knowledge
-- Current informal tipsters in your network
+- Current informal sports analysts in your network
 - Football analysts or bloggers
 - Former players or coaches
 
@@ -137,16 +137,16 @@ python manage.py createsuperuser --username beta_admin
 ```
 🏆 Launching Soon: Ligisoo - Kenya's First Football Tips Marketplace
 
-After months of development, we're excited to introduce Ligisoo, a platform that connects football fans with expert tipsters in a secure, transparent environment.
+After months of development, we're excited to introduce Ligisoo, a platform that connects football fans with expert sports analysts in a secure, transparent environment.
 
 ✨ Key Features:
-• Verified tipster performance metrics
+• Verified sports analyst performance metrics
 • Secure M-Pesa payment integration
 • Transparent win rates and ROI tracking
 • Escrow protection for all transactions
 
-🎯 For Football Fans: Access expert tips from proven tipsters
-📊 For Tipsters: Build your reputation and earn revenue
+🎯 For Football Fans: Access expert tips from proven sports analysts
+📊 For Sports Analysts: Build your reputation and earn revenue
 
 Currently in private beta. Public launch coming December 2024.
 
@@ -157,13 +157,13 @@ Currently in private beta. Public launch coming December 2024.
 ```
 Tweet 1:
 🎯 Introducing Ligisoo - Kenya's football tips marketplace! 
-Connect with expert tipsters, track performance, secure M-Pesa payments. 
+Connect with expert sports analysts, track performance, secure M-Pesa payments. 
 Private beta launching now! 
 #FootballTips #Kenya
 
 Tweet 2:
 🏆 Are you a football expert? 
-Join Ligisoo as a tipster and monetize your knowledge! 
+Join Ligisoo as a sports analyst and monetize your knowledge! 
 📊 Transparent metrics
 💰 Direct M-Pesa payments  
 🔒 Secure platform
@@ -171,7 +171,7 @@ Join Ligisoo as a tipster and monetize your knowledge!
 
 Tweet 3:
 ⚽ Tired of unreliable football tips?
-Ligisoo provides verified tipster performance and secure payments.
+Ligisoo provides verified sports analyst performance and secure payments.
 No more guessing - see the actual win rates!
 #FootballBetting #TrustedTips
 ```
@@ -180,13 +180,13 @@ No more guessing - see the actual win rates!
 ```
 🎉 Big News: Ligisoo is Here!
 
-We're launching Kenya's first dedicated football tips marketplace. Think of it as the "Airbnb for football tips" - connecting passionate fans with expert tipsters.
+We're launching Kenya's first dedicated football tips marketplace. Think of it as the "Airbnb for football tips" - connecting passionate fans with expert sports analysts.
 
 🔥 Why Ligisoo?
-✅ Verified tipster track records
+✅ Verified sports analyst track records
 ✅ Secure M-Pesa integration  
 ✅ No more fake tips or scams
-✅ Build your tipster reputation
+✅ Build your sports analyst reputation
 
 👥 Join our private beta - link in comments!
 
@@ -349,14 +349,14 @@ def generate_business_report():
     new_users_today = User.objects.filter(date_joined__date=today).count()
     new_users_week = User.objects.filter(date_joined__date__gte=week_ago).count()
     
-    tipsters = UserProfile.objects.filter(is_tipster=True).count()
+    sports analysts = UserProfile.objects.filter(is_tipster=True).count()
     buyers = UserProfile.objects.filter(is_buyer=True).count()
     
     print("👥 USER METRICS")
     print(f"Total users: {total_users}")
     print(f"New users today: {new_users_today}")
     print(f"New users this week: {new_users_week}")
-    print(f"Tipsters: {tipsters}")
+    print(f"Sports Analysts: {sports analysts}")
     print(f"Buyers: {buyers}")
     print()
     
@@ -456,7 +456,7 @@ echo "0 9,18 * * * python scripts/business_metrics.py >> logs/business_metrics.l
 
 #### Weekly KPIs:
 - **User engagement rate**
-- **Tipster performance**
+- **Sports Analyst performance**
 - **User retention**
 - **Conversion rates**
 - **Customer acquisition cost**

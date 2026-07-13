@@ -11,9 +11,6 @@ urlpatterns = [
 
     # Tipster views
     path('my-tips/', views.my_tips, name='my_tips'),
-    path('earnings/', views.earnings_dashboard, name='earnings'),
-    path('earnings/download/', views.download_earnings_statement, name='download_earnings_statement'),
-    # path("earnings/export.csv", views.earnings_export_csv, name="earnings_export_csv"),
     path('create/', views.create_tip, name='create_tip'),
     path('verify/<int:tip_id>/', views.verify_tip, name='verify_tip'),
     path('approve/<int:tip_id>/', views.approve_tip, name='approve_tip'),
@@ -22,8 +19,6 @@ urlpatterns = [
     path('processing/<int:tip_id>/', views.tip_processing_status, name='tip_processing_status'),
     path('delete/<int:tip_id>/', views.delete_failed_tip, name='delete_failed_tip'),
 
-    # Purchase
-    path('purchase/<int:tip_id>/', views.purchase_tip, name='purchase_tip'),
 
     # Tipster profiles
     path('tipster/<int:tipster_id>/', views.tipster_profile, name='tipster_profile'),

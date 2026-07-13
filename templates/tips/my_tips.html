@@ -10,7 +10,7 @@
   [x-cloak] { display: none !important; }
 </style>
 
-<div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || '{% if is_tipster %}selling{% else %}purchases{% endif %}' }">
+<div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'selling' }">
     <!-- Page Header -->
     <div class="mb-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -20,7 +20,6 @@
                 · Manage your tips & purchases
             </span>
             </h1>
-            {% if is_tipster %}
             <a href="{% url 'tips:create_tip' %}"
                aria-label="Create a new tip"
                class="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground
@@ -28,33 +27,29 @@
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
-              New Tip
+              New Prediction
             </a>
-            {% endif %}
         </div>
     </div>
 
     <!-- Tabs -->
     <div class="mb-5 border-b border-border">
         <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-            {% if is_tipster %}
             <button @click="tab = 'selling'"
                     :class="{ 'border-primary text-primary': tab === 'selling', 'border-transparent text-muted-foreground hover:text-foreground hover:border-border': tab !== 'selling' }"
                     class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors">
-                My Tips
+                My Analytics
             </button>
-            {% endif %}
             <button @click="tab = 'purchases'"
                     :class="{ 'border-primary text-primary': tab === 'purchases', 'border-transparent text-muted-foreground hover:text-foreground hover:border-border': tab !== 'purchases' }"
                     class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors">
-                My Purchases
+                Unlocked Pro Predictions
             </button>
         </nav>
     </div>
 
     <!-- Selling Tab -->
     <div x-show="tab === 'selling'" x-cloak>
-        {% if is_tipster %}
             <!-- Selling Stats -->
             <div class="mb-5">
               <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Key metrics">
@@ -72,7 +67,7 @@
                 </div>
                 <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
                   <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg></span>
-                  <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Revenue</div><div class="text-sm font-semibold text-accent">KES {{ selling_stats.total_sales|floatformat:0|intcomma }}</div></div>
+                  <div class="leading-tight"><div class="text-[11px] uppercase tracking-wide text-muted-foreground">Value</div><div class="text-sm font-semibold text-accent">{{ selling_stats.total_sales|floatformat:0|intcomma }}</div></div>
                 </div>
               </div>
             </div>
@@ -86,7 +81,7 @@
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
-                  All Tips ({{ selling_stats.total_tips }})
+                  All Predictions ({{ selling_stats.total_tips }})
                 </a>
                 <a href="?filter=active&tab=selling" 
                    class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors
@@ -306,14 +301,19 @@
                 </div>
               {% endif %}
             {% else %}
-              <div class="text-center py-16 bg-card border border-border rounded-lg shadow-sm">
-                <div class="bg-primary/20 text-primary p-6 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586l6.121 6.121V19a2 2 0 01-2 2z"/></svg></div>
-                <h3 class="text-xl font-semibold text-foreground mb-2">🚀 Ready to Share Your Tips?</h3>
-                <p class="text-sm text-muted-foreground mb-5 max-w-md mx-auto">Start your tipster journey by creating your first betting tip and earning from your football expertise!</p>
-                <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Create Tip</a>
+              <div class="text-center py-16 bg-card border border-dashed border-border rounded-xl">
+                <svg class="mx-auto h-12 w-12 text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-foreground mb-1">No predictions found</h3>
+                <p class="text-muted-foreground mb-6">You haven't posted any predictions matching this filter.</p>
+                <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center btn btn-primary">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                  Post First Prediction
+                </a>
               </div>
             {% endif %}
-        {% endif %}
+
     </div>
 
     <!-- Purchases Tab -->

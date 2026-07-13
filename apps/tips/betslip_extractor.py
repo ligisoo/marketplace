@@ -11,25 +11,41 @@ from dotenv import load_dotenv
 from PIL import Image
 import google.genai as genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 load_dotenv()
 
 # --- CONFIGURATION FOR SPEED (from langextract) ---
-MODEL_ID = 'gemini-2.5-flash-lite'
+MODEL_ID = 'gemini-3.1-flash-lite'
 MAX_DIMENSION = 800   # 800px is the sweet spot for speed/readability
 JPEG_QUALITY = 60     # Lower quality (60) is fine for high-contrast text
 RETRY_DELAY = 1.0     # Start retries quicker
 
 # Initialize Client ONCE (Global Scope) to save setup time
-api_key = os.getenv('LANGEXTRACT_API_KEY')
+api_key = os.getenv('GEMINI_API_KEY')
 if not api_key:
-    logger.warning("LANGEXTRACT_API_KEY not found, trying GEMINI_API_KEY")
-    api_key = os.getenv('GEMINI_API_KEY')
-    if not api_key:
-        logger.error("No API key found. Set LANGEXTRACT_API_KEY or GEMINI_API_KEY")
+    logger.error("No API key found. Set GEMINI_API_KEY in your .env file")
 
 client = genai.Client(api_key=api_key) if api_key else None
+
+
+# --- PYDANTIC SCHEMAS FOR STRUCTURED OUTPUT ---
+class Match(BaseModel):
+    match_date: str = Field(description="Date of the match (e.g. DD/MM/YY)")
+    match_time: str = Field(description="Kickoff time (e.g. HH:MM)")
+    home_team: str
+    away_team: str
+    bet_type: str = Field(description="Betting market or type (e.g. 3 Way, Over/Under)")
+    pick: str = Field(description="The user's pick or selection")
+    odds: float = Field(description="The multiplier/odds for this selection")
+
+class PredictionSlipSummary(BaseModel):
+    total_odds: float = Field(description="The total multiplier/odds for the entire slip")
+
+class PredictionSlip(BaseModel):
+    matches: list[Match]
+    summary: PredictionSlipSummary
 
 
 def _optimize_image_turbo(image_path_or_bytes) -> tuple[bytes, str]:
@@ -81,15 +97,12 @@ def extract_betslip_turbo(image_path_or_bytes) -> dict:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-    # 2. Optimized Prompt (proper field names for compatibility)
-    prompt = """Extract betslip as JSON:
-{"matches":[{"match_date":"DD/MM/YY","match_time":"HH:MM","teams":"Home - Away","home_team":"Home","away_team":"Away","bet_type":"3 Way","pick":"Selection","odds":"1.50"}],"summary":{"total_odds":"10.50"}}
-
-Extract ONLY matches. Use exact names. Output JSON only."""
+    # 2. Optimized Prompt
+    prompt = "Extract the match details and odds from this prediction slip."
 
     # 3. API Call
     max_retries = 2
-    response_text = ""
+    result_dict = None
 
     for attempt in range(max_retries):
         try:
@@ -100,10 +113,16 @@ Extract ONLY matches. Use exact names. Output JSON only."""
                 config=types.GenerateContentConfig(
                     temperature=0.0, # Deterministic = usually faster caching
                     response_mime_type='application/json',
-                    max_output_tokens=1024 # Lower token limit cuts off runaways
+                    response_schema=PredictionSlip,
                 )
             )
-            response_text = response.text
+            # Response is parsed into Pydantic model automatically if SDK supports it,
+            # but we can fallback to json.loads if .parsed isn't populated
+            if hasattr(response, 'parsed') and response.parsed:
+                result_dict = response.parsed.model_dump()
+            else:
+                result_dict = json.loads(response.text)
+                
             logger.info(f"API Call Time: {time.time() - t_req_start:.2f}s")
             break
         except Exception as e:
@@ -111,35 +130,33 @@ Extract ONLY matches. Use exact names. Output JSON only."""
             if attempt < max_retries - 1:
                 time.sleep(RETRY_DELAY)
             else:
-                return {"success": False, "error": "API Timeout/RateLimit"}
+                return {"success": False, "error": f"Extraction failed: {str(e)}"}
+
+    if not result_dict:
+        return {"success": False, "error": "Failed to parse API response"}
 
     # 4. Fast Parsing & Math Check
-    try:
-        result = json.loads(response_text)
+    # Quick Math Validation
+    if 'matches' in result_dict:
+        calc_odds = 1.0
+        for m in result_dict['matches']:
+            # robust float conversion
+            try:
+                o = float(str(m.get('odds', 1)).replace(',', ''))
+                calc_odds *= o
+            except:
+                pass
 
-        # Quick Math Validation
-        if 'matches' in result:
-            calc_odds = 1.0
-            for m in result['matches']:
-                # robust float conversion
-                try:
-                    o = float(str(m.get('odds', 1)).replace(',', ''))
-                    calc_odds *= o
-                except:
-                    pass
+        # Add our calc to result for comparison
+        if 'summary' not in result_dict or not result_dict['summary']:
+            result_dict['summary'] = {}
+        result_dict['summary']['calc_odds'] = round(calc_odds, 2)
 
-            # Add our calc to result for comparison
-            if 'summary' not in result:
-                result['summary'] = {}
-            result['summary']['calc_odds'] = round(calc_odds, 2)
+    total_time = time.time() - start_total
+    logger.info(f"Total extraction time: {total_time:.2f}s")
 
-        total_time = time.time() - start_total
-        logger.info(f"Total extraction time: {total_time:.2f}s")
+    return {"success": True, "data": result_dict}
 
-        return {"success": True, "data": result}
-
-    except json.JSONDecodeError:
-        return {"success": False, "error": "Invalid JSON", "raw": response_text}
 
 
 def process_betslip_image(image_file) -> dict:

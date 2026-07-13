@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.http import JsonResponse, HttpResponse
 import re
 from datetime import datetime
-from apps.tips.models import Tip, TipPurchase
+from apps.tips.models import Tip
 from apps.transactions.services import AccountingService
 from apps.transactions.pdf_utils import StatementPDFGenerator
 from .forms import RegistrationForm, LoginForm, ProfileEditForm
@@ -54,10 +54,7 @@ def user_login(request):
                     return redirect(next_url)
                 
                 # Redirect based on user roles
-                if user.userprofile.is_tipster:
-                    return redirect('tips:my_tips')
-                else:
-                    return redirect('tips:marketplace')
+                return redirect('tips:marketplace')
     else:
         form = LoginForm()
     
@@ -76,32 +73,25 @@ def user_logout(request):
 def profile(request):
     """User profile view"""
     
-    tipster_stats = None
-    if request.user.userprofile.is_tipster:
-        all_tips = Tip.objects.filter(tipster=request.user)
-        resulted_tips = all_tips.filter(is_resulted=True)
-        
-        total_revenue = sum(tip.revenue_generated for tip in all_tips)
-        tipster_earnings = Decimal(str(total_revenue)) * Decimal('0.60') # Assuming 60% share
-        
-        won_tips_count = resulted_tips.filter(is_won=True).count()
-        resulted_count = resulted_tips.count()
-        win_rate = round((won_tips_count / resulted_count * 100), 1) if resulted_count > 0 else 0
+    all_tips = Tip.objects.filter(tipster=request.user)
+    resulted_tips = all_tips.filter(is_resulted=True)
+    
+    won_tips_count = resulted_tips.filter(is_won=True).count()
+    resulted_count = resulted_tips.count()
+    win_rate = round((won_tips_count / resulted_count * 100), 1) if resulted_count > 0 else 0
 
-        total_sales = TipPurchase.objects.filter(tip__tipster=request.user, status='completed').count()
-
-        tipster_stats = {
-            'total_tips': all_tips.count(),
-            'total_revenue': total_revenue,
-            'total_earnings': tipster_earnings,
-            'win_rate': win_rate,
-            'total_sales': total_sales,
-        }
+    analyst_stats = {
+        'total_tips': all_tips.count(),
+        'win_rate': win_rate,
+        # Defaulting these to 0 as we transition to the subscription model
+        'total_sales': 0,
+        'total_earnings': 0,
+    }
 
     return render(request, 'users/profile.html', {
         'user': request.user,
         'profile': request.user.userprofile,
-        'tipster_stats': tipster_stats,
+        'analyst_stats': analyst_stats,
     })
 
 
@@ -138,10 +128,7 @@ def withdraw(request):
         messages.error(request, 'Invalid request method.')
         return redirect('users:profile')
 
-    # Check if user is a tipster
-    if not request.user.userprofile.is_tipster:
-        messages.error(request, 'Only tipsters can withdraw funds.')
-        return redirect('users:profile')
+    # (is_tipster check removed - all users with balance can withdraw)
 
     try:
         # Get form data

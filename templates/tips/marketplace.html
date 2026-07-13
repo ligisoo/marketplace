@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Marketplace - Ligisoo{% endblock %}
+{% block title %}Community Predictions - Ligisoo{% endblock %}
 
 {% block content %}
 <style>
@@ -16,12 +16,12 @@
 <div class="mb-3">
   <div class="flex flex-wrap items-center justify-between gap-2">
     <h1 class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
-      Marketplace
-      <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">· Browse expert tips</span>
+      Community Predictions
+      <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">· Browse expert predictions</span>
     </h1>
     <div></div>
   </div>
-  <p class="mt-1 text-sm text-muted-foreground md:hidden">Browse expert tips</p>
+  <p class="mt-1 text-sm text-muted-foreground md:hidden">Browse expert predictions</p>
 </div>
 
 <!-- MVP Notice 
@@ -40,7 +40,7 @@
 
 <!-- Stats Ribbon -->
 <div class="mb-5">
-  <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Marketplace metrics">
+  <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Platform metrics">
 
     <!-- Results count -->
     <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
@@ -289,10 +289,10 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
     </svg>
     <h3 class="mt-2 text-lg font-medium text-foreground">No tips available</h3>
-    <p class="mt-1 text-muted-foreground">Check back later for new betting tips from expert tipsters.</p>
-    {% if user.is_authenticated and user.userprofile.is_tipster %}
+    <p class="mt-1 text-muted-foreground">Check back later for new match predictions from expert sports analysts.</p>
+    {% if user.is_authenticated %}
       <div class="mt-4">
-        <a href="{% url 'tips:create_tip' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Post Your First Tip</a>
+        <a href="{% url 'tips:create_tip' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Post Your First Prediction</a>
       </div>
     {% endif %}
   </div>

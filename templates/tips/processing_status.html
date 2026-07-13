@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Processing Betslip - LigiSoo{% endblock %}
+{% block title %}Processing Prediction Slip - LigiSoo{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-2xl mx-auto">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-6">Processing Your Betslip</h1>
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Processing Your Prediction Slip</h1>
 
             <!-- Status Card -->
             <div class="border border-gray-200 rounded-lg p-6 mb-6">
@@ -16,7 +16,7 @@
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">Queued for Processing</h3>
-                            <p class="text-sm text-gray-600">Your betslip is in the queue and will be processed shortly.</p>
+                            <p class="text-sm text-gray-600">Your prediction slip is in the queue and will be processed shortly.</p>
                         </div>
                     </div>
                 {% elif tip.processing_status == 'processing' %}
@@ -34,7 +34,7 @@
                         </svg>
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">Processing Complete!</h3>
-                            <p class="text-sm text-gray-600">Your betslip has been processed successfully.</p>
+                            <p class="text-sm text-gray-600">Your prediction slip has been processed successfully.</p>
                         </div>
                     </div>
                     <p class="text-center mt-6">
@@ -49,7 +49,7 @@
                         </svg>
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">Processing Failed</h3>
-                            <p class="text-sm text-gray-600">There was an error processing your betslip.</p>
+                            <p class="text-sm text-gray-600">There was an error processing your prediction slip.</p>
                         </div>
                     </div>
                     {% if error or tip.processing_error %}
@@ -63,7 +63,7 @@
                         <p class="text-sm text-yellow-800">
                             <strong>What happened?</strong><br>
                             This tip was created with the old processing system and encountered an error.
-                            The new system processes betslips instantly (5-9 seconds), so you won't see this error again.
+                            The new system processes prediction slips instantly (5-9 seconds), so you won't see this error again.
                         </p>
                     </div>
 
@@ -88,7 +88,7 @@
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                         </svg>
                         <span class="{% if tip.ocr_processed %}text-green-700{% else %}text-gray-600{% endif %}">
-                            Extract betslip data
+                            Extract prediction slip data
                         </span>
                     </div>
                     <div class="flex items-center text-sm">
@@ -111,7 +111,7 @@
                     <div>
                         <p class="text-sm text-blue-800">
                             <strong>What's happening?</strong><br>
-                            We're processing your betslip in the background. This includes extracting match information 
+                            We're processing your prediction slip in the background. This includes extracting match information 
                             and enriching it with accurate dates, times, and league details from our football database.
                         </p>
                         <p class="text-sm text-blue-800 mt-2">

@@ -34,17 +34,11 @@ class TipSubmissionForm(forms.ModelForm):
 
     class Meta:
         model = Tip
-        fields = ['bookmaker', 'bet_code', 'price', 'screenshot']
+        fields = ['bookmaker', 'bet_code', 'screenshot']
         widgets = {
             'bookmaker': forms.Select(attrs={
                 'class': 'form-select',
                 'required': True
-            }),
-            'price': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Tip price in KES',
-                'min': '1',
-                'step': '1'
             }),
             'screenshot': forms.FileInput(attrs={
                 'class': 'form-input',
@@ -66,14 +60,6 @@ class TipSubmissionForm(forms.ModelForm):
                 raise ValidationError("A tip with this bet code already exists. Please check your bet code.")
         return bet_code
 
-    def clean_price(self):
-        price = self.cleaned_data.get('price')
-        if price and price < 1:
-            raise ValidationError("Minimum tip price is KES 1")
-        if price and price > 1000:
-            raise ValidationError("Maximum tip price is KES 1,000")
-        return price
-    
     def clean_screenshot(self):
         screenshot = self.cleaned_data.get('screenshot')
         if screenshot:
@@ -264,8 +250,6 @@ class TipSearchForm(forms.Form):
 
     SORT_CHOICES = [
         ('-created_at', 'Newest First'),
-        ('price', 'Price: Low to High'),
-        ('-price', 'Price: High to Low'),
         ('-odds', 'Highest Odds'),
         ('expires_at', 'Expiring Soon'),
     ]
@@ -304,26 +288,6 @@ class TipSearchForm(forms.Form):
         })
     )
     
-    min_price = forms.DecimalField(
-        required=False,
-        min_value=0,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Min price (KES)',
-            'step': '1'
-        })
-    )
-    
-    max_price = forms.DecimalField(
-        required=False,
-        min_value=0,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Max price (KES)',
-            'step': '1'
-        })
-    )
-    
     sort_by = forms.ChoiceField(
         choices=SORT_CHOICES,
         required=False,
@@ -338,10 +302,5 @@ class TipSearchForm(forms.Form):
         max_odds = cleaned_data.get('max_odds')
         if min_odds and max_odds and min_odds > max_odds:
             raise ValidationError('Minimum odds cannot be greater than maximum odds')
-        
-        min_price = cleaned_data.get('min_price')
-        max_price = cleaned_data.get('max_price')
-        if min_price and max_price and min_price > max_price:
-            raise ValidationError('Minimum price cannot be greater than maximum price')
         
         return cleaned_data

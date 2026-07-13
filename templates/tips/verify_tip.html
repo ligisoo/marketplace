@@ -5,10 +5,9 @@
 {% block content %}
 <div class="w-full max-w-4xl mx-auto px-4 py-6">
 
-  <!-- Header -->
   <div class="text-center mb-5">
-    <h1 class="text-2xl md:text-3xl font-bold text-foreground leading-tight">Verify Your Tip</h1>
-    <p class="text-sm md:text-base text-muted-foreground">Review the extracted betslip details before publishing</p>
+    <h1 class="text-2xl md:text-3xl font-bold text-foreground leading-tight">Verify Your Prediction</h1>
+    <p class="text-sm md:text-base text-muted-foreground">Review the extracted prediction slip details before publishing</p>
   </div>
 
   <!-- Progress Steps -->
@@ -33,13 +32,13 @@
     </div>
   </div>
 
-  <!-- Betslip Details Card -->
+  <!-- Prediction Slip Details Card -->
   <div class="bg-card border border-border rounded-lg p-5 shadow-sm mb-5">
-    <h2 class="text-lg font-semibold text-foreground mb-4">Betslip Details</h2>
+    <h2 class="text-lg font-semibold text-foreground mb-4">Prediction Slip Details</h2>
 
-    <!-- Total Odds - Prominent Display -->
+    <!-- Total Multiplier - Prominent Display -->
     <div class="bg-accent/10 border-2 border-accent/30 rounded-lg p-4 mb-4 text-center">
-      <label class="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Total Odds</label>
+      <label class="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">Total Expected Multiplier</label>
       <p class="text-3xl font-bold text-accent">{{ tip.odds }}</p>
     </div>
 
@@ -50,13 +49,8 @@
       </div>
 
       <div class="space-y-1">
-        <label class="text-xs text-muted-foreground">Bet Code</label>
+        <label class="text-xs text-muted-foreground">Prediction Code</label>
         <p class="text-sm font-medium text-foreground font-mono bg-muted px-2 py-1 rounded inline-block">{{ tip.bet_code }}</p>
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-xs text-muted-foreground">Price</label>
-        <p class="text-sm font-medium text-foreground">KES {{ tip.price }}</p>
       </div>
 
       <div class="space-y-1">
@@ -116,11 +110,11 @@
       <div class="ml-3">
         <h3 class="text-sm font-medium text-foreground mb-1">Review Carefully</h3>
         <p class="text-xs text-muted-foreground">
-          Please verify that all match details, odds, and selections are correct. Once you accept,
+          Please verify that all match details, multipliers, and selections are correct. Once you accept,
           {% if user.userprofile.is_verified %}
-            your tip will go live immediately.
+            your prediction will go live immediately.
           {% else %}
-            your tip will be submitted for review before going live.
+            your prediction will be submitted for review before going live.
           {% endif %}
         </p>
       </div>
@@ -147,7 +141,7 @@
     <form method="post" action="{% url 'tips:cancel_tip' tip.id %}" class="flex-1">
       {% csrf_token %}
       <button type="submit"
-              onclick="return confirm('Are you sure you want to cancel this tip? All data will be deleted.')"
+              onclick="return confirm('Are you sure you want to cancel this prediction? All data will be deleted.')"
               class="w-full inline-flex items-center justify-center px-5 py-3 bg-destructive text-destructive-foreground rounded-md font-semibold hover:bg-destructive/90 transition-colors">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -162,7 +156,7 @@
   <div class="bg-card border border-border rounded-lg p-5 shadow-sm mt-5">
     <h3 class="text-sm font-semibold text-foreground mb-3">Original Screenshot</h3>
     <img src="{{ tip.screenshot.url }}"
-         alt="Betslip screenshot"
+         alt="Prediction Slip screenshot"
          class="max-w-full h-auto rounded border border-border">
   </div>
   {% endif %}

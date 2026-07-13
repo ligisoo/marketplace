@@ -21,16 +21,6 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Optional username'
         })
     )
-    # User roles - multiple selection allowed
-    is_buyer = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
-    )
-    is_tipster = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'})
-    )
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'form-input',
@@ -61,13 +51,6 @@ class RegistrationForm(UserCreationForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        is_buyer = cleaned_data.get('is_buyer')
-        is_tipster = cleaned_data.get('is_tipster')
-
-        # At least one role must be selected
-        if not is_buyer and not is_tipster:
-            raise forms.ValidationError("Please select at least one account type (Buyer or Tipster).")
-
         return cleaned_data
     
     def save(self, commit=True):
@@ -78,10 +61,8 @@ class RegistrationForm(UserCreationForm):
 
         if commit:
             user.save()
-            # Set user roles in profile
-            user.userprofile.is_buyer = self.cleaned_data.get('is_buyer', False)
-            user.userprofile.is_tipster = self.cleaned_data.get('is_tipster', False)
-            user.userprofile.save()
+            # User profile is automatically created via signal
+            # Any default roles or properties are handled there
 
         return user
 

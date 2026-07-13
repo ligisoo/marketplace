@@ -24,13 +24,12 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    # User roles - users can have multiple roles
-    is_buyer = models.BooleanField(default=True, help_text="Can purchase tips from tipsters")
-    is_tipster = models.BooleanField(default=False, help_text="Can share tips and earn revenue")
+    # Subscription tier
+    is_pro = models.BooleanField(default=False, help_text="Pro subscriber with access to top 10 analysts")
+    pro_expires_at = models.DateTimeField(blank=True, null=True, help_text="When the pro subscription expires")
 
     bio = models.TextField(max_length=500, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     
     # Verification status
     is_verified = models.BooleanField(default=False)
@@ -41,13 +40,17 @@ class UserProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        roles = []
-        if self.is_buyer:
-            roles.append("Buyer")
-        if self.is_tipster:
-            roles.append("Tipster")
-        role_str = ", ".join(roles) if roles else "No roles"
+        role_str = "Pro" if self.is_pro_active else "Free"
         return f"{self.user.phone_number} - {role_str}"
+        
+    @property
+    def is_pro_active(self):
+        """Check if user has an active pro subscription"""
+        from django.utils import timezone
+        if self.is_pro and self.pro_expires_at:
+            if self.pro_expires_at > timezone.now():
+                return True
+        return False
     
     @property
     def display_name(self):
@@ -58,28 +61,8 @@ class UserProfile(models.Model):
 
     @property
     def user_roles(self):
-        """Return list of user's active roles"""
-        roles = []
-        if self.is_buyer:
-            roles.append('buyer')
-        if self.is_tipster:
-            roles.append('tipster')
-        return roles
-
-    def get_accounting_balance(self):
-        """
-        Get the user's wallet balance from the accounting system.
-        This is the source of truth for the user's balance.
-        """
-        try:
-            from apps.transactions.models import Account
-            wallet_account = Account.objects.filter(user=self.user).first()
-            if wallet_account:
-                return wallet_account.get_balance()
-            return 0
-        except Exception:
-            # Fallback to the legacy field if accounting system is not available
-            return self.wallet_balance
+        """Return list of user's active roles for frontend styling"""
+        return ['pro'] if self.is_pro_active else ['free']
 
 
 @receiver(post_save, sender=User)

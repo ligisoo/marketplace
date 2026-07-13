@@ -6,10 +6,9 @@ from django.db.models import Q, Count
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from .models import Tip, TipMatch, TipPurchase, TipView
+from .models import Tip, TipMatch
 from .forms import TipSubmissionForm, TipVerificationForm, TipSearchForm
 from .ocr import BetslipOCR
-from apps.transactions.pdf_utils import StatementPDFGenerator
 from datetime import datetime, timedelta
 from decimal import Decimal
 import json
@@ -46,22 +45,11 @@ def marketplace(request):
         max_odds = form.cleaned_data.get('max_odds')
         if max_odds:
             tips = tips.filter(odds__lte=max_odds)
-        
-        min_price = form.cleaned_data.get('min_price')
-        if min_price:
-            tips = tips.filter(price__gte=min_price)
-        
-        max_price = form.cleaned_data.get('max_price')
-        if max_price:
-            tips = tips.filter(price__lte=max_price)
-        
+            
         sort_by = form.cleaned_data.get('sort_by', '-created_at')
         tips = tips.order_by(sort_by)
     else:
         tips = tips.order_by('-created_at')
-    
-    # Add purchase count annotation
-    tips = tips.annotate(total_purchases=Count('purchases'))
     
     # Pagination
     paginator = Paginator(tips, 12)  # 12 tips per page
@@ -83,30 +71,18 @@ def tip_detail(request, tip_id):
     
     # Track view for analytics (skip if user is the tipster)
     if request.user != tip.tipster:
-        # Get IP address, fallback to '127.0.0.1' if not available
-        ip_address = request.META.get('REMOTE_ADDR') or request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or '127.0.0.1'
+        # Note: TipView model has been removed. We can track views in a different way or remove this logic.
+        pass
         
-        TipView.objects.create(
-            tip=tip,
-            user=request.user if request.user.is_authenticated else None,
-            ip_address=ip_address,
-            user_agent=request.META.get('HTTP_USER_AGENT', '')
-        )
-    
-    # Check if user has already purchased this tip
-    has_purchased = False
-    if request.user.is_authenticated:
-        has_purchased = TipPurchase.objects.filter(
-            tip=tip, 
-            buyer=request.user, 
-            status='completed'
-        ).exists()
-    
+    can_view_matches = True
+    if tip.is_premium:
+        if not request.user.is_authenticated or not request.user.userprofile.is_pro_active:
+            can_view_matches = False
+            
     context = {
         'tip': tip,
         'matches': tip.matches.all(),
-        'has_purchased': has_purchased,
-        'can_purchase': tip.can_be_purchased() and not has_purchased,
+        'can_view_matches': can_view_matches,
     }
     
     return render(request, 'tips/detail.html', context)
@@ -114,13 +90,13 @@ def tip_detail(request, tip_id):
 
 @login_required
 def my_tips(request):
-    """Tipster's dashboard showing their tips and purchases"""
+    """Analyst's dashboard showing their tips"""
     
     # Get filter parameter for My Tips section
     tip_filter = request.GET.get('filter', 'all')  # all, active, archived
     
     # Base queryset for user's tips
-    base_tips = Tip.objects.filter(tipster=request.user).annotate(total_purchases=Count('purchases'))
+    base_tips = Tip.objects.filter(tipster=request.user)
     
     # Apply filter
     if tip_filter == 'active':
@@ -151,279 +127,21 @@ def my_tips(request):
         'active_tips': all_tips.filter(status='active').count(),
         'pending_tips': all_tips.filter(status='pending_approval').count(),
         'archived_tips': all_tips.filter(status='archived').count(),
-        'total_sales': sum(tip.revenue_generated for tip in all_tips),
         'current_filter': tip_filter,
-    }
-
-    # Data for "My Purchases"
-    my_purchased_tips = TipPurchase.objects.filter(
-        buyer=request.user,
-        status='completed'
-    ).select_related('tip', 'tip__tipster').order_by('-created_at')
-
-    # Pagination for purchased tips
-    purchases_paginator = Paginator(my_purchased_tips, 10)
-    purchases_page_number = request.GET.get('purchases_page')
-    purchases_page_obj = purchases_paginator.get_page(purchases_page_number)
-
-    # Stats for purchased tips
-    purchases_stats = {
-        'total_purchases': my_purchased_tips.count(),
-        'total_spent': sum(p.amount for p in my_purchased_tips),
-        'won_tips': my_purchased_tips.filter(tip__is_resulted=True, tip__is_won=True).count(),
-        'lost_tips': my_purchased_tips.filter(tip__is_resulted=True, tip__is_won=False).count(),
-        'pending_tips': my_purchased_tips.filter(tip__is_resulted=False).count(),
     }
 
     context = {
         'selling_page_obj': selling_page_obj,
         'selling_tips': selling_page_obj.object_list,
         'selling_stats': selling_stats,
-        'purchases_page_obj': purchases_page_obj,
-        'purchases': purchases_page_obj.object_list,
-        'purchases_stats': purchases_stats,
-        'is_tipster': request.user.userprofile.is_tipster,
     }
     
     return render(request, 'tips/my_tips.html', context)
 
 
 @login_required
-def earnings_dashboard(request):
-    """Tipster earnings dashboard with detailed analytics"""
-    if not request.user.userprofile.is_tipster:
-        messages.error(request, 'Only tipsters can access this page.')
-        return redirect('tips:marketplace')
-
-    from django.db.models import Sum, Count, Q
-    from datetime import timedelta
-    from decimal import Decimal
-
-    # Get all tipster's tips
-    all_tips = Tip.objects.filter(tipster=request.user)
-
-    # Calculate total revenue
-    total_revenue = sum(tip.revenue_generated for tip in all_tips)
-
-    # Calculate earnings split (60/40)
-    platform_commission_rate = Decimal('0.40')
-    tipster_share_rate = Decimal('0.60')
-
-    tipster_earnings = Decimal(str(total_revenue)) * tipster_share_rate
-    platform_commission = Decimal(str(total_revenue)) * platform_commission_rate
-
-    # Get completed purchases
-    all_purchases = TipPurchase.objects.filter(
-        tip__tipster=request.user,
-        status='completed'
-    ).select_related('tip')
-
-    # Anonymous buyer statistics
-    unique_buyers_count = all_purchases.values('buyer').distinct().count()
-
-    # Repeat customers (buyers who purchased more than once)
-    buyer_purchase_counts = all_purchases.values('buyer').annotate(
-        purchase_count=Count('id')
-    )
-    repeat_customers = sum(1 for b in buyer_purchase_counts if b['purchase_count'] > 1)
-
-    # Time-based analytics
-    now = timezone.now()
-    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
-
-    # This month's earnings
-    this_month_purchases = all_purchases.filter(completed_at__gte=this_month_start)
-    this_month_revenue = sum(p.amount for p in this_month_purchases)
-    this_month_earnings = Decimal(str(this_month_revenue)) * tipster_share_rate
-
-    # Last month's earnings
-    last_month_purchases = all_purchases.filter(
-        completed_at__gte=last_month_start,
-        completed_at__lt=this_month_start
-    )
-    last_month_revenue = sum(p.amount for p in last_month_purchases)
-    last_month_earnings = Decimal(str(last_month_revenue)) * tipster_share_rate
-
-    # Calculate growth
-    if last_month_earnings > 0:
-        growth_percentage = ((this_month_earnings - last_month_earnings) / last_month_earnings) * 100
-    else:
-        growth_percentage = 100 if this_month_earnings > 0 else 0
-
-    # Top performing tips (by revenue)
-    top_tips_by_revenue = []
-    for tip in all_tips:
-        revenue = tip.revenue_generated
-        if revenue > 0:
-            top_tips_by_revenue.append({
-                'tip': tip,
-                'revenue': revenue,
-                'earnings': Decimal(str(revenue)) * tipster_share_rate,
-                'purchases': tip.purchase_count,
-            })
-
-    top_tips_by_revenue.sort(key=lambda x: x['revenue'], reverse=True)
-    top_tips_by_revenue = top_tips_by_revenue[:5]  # Top 5
-
-    # Top tips by purchase count
-    top_tips_by_sales = []
-    for tip in all_tips:
-        purchase_count = tip.purchase_count
-        if purchase_count > 0:
-            top_tips_by_sales.append({
-                'tip': tip,
-                'purchases': purchase_count,
-                'revenue': tip.revenue_generated,
-                'earnings': Decimal(str(tip.revenue_generated)) * tipster_share_rate,
-            })
-
-    top_tips_by_sales.sort(key=lambda x: x['purchases'], reverse=True)
-    top_tips_by_sales = top_tips_by_sales[:5]  # Top 5
-
-    # Recent transactions (last 10, anonymous)
-    recent_transactions = all_purchases.order_by('-completed_at')[:10]
-
-    # Weekly breakdown (last 4 weeks)
-    weekly_data = []
-    for week_num in range(4):
-        week_end = now - timedelta(days=week_num * 7)
-        week_start = week_end - timedelta(days=7)
-
-        week_purchases = all_purchases.filter(
-            completed_at__gte=week_start,
-            completed_at__lt=week_end
-        )
-        week_revenue = sum(p.amount for p in week_purchases)
-        week_earnings = Decimal(str(week_revenue)) * tipster_share_rate
-
-        weekly_data.insert(0, {
-            'week_label': f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}",
-            'revenue': week_revenue,
-            'earnings': week_earnings,
-            'purchases': week_purchases.count(),
-        })
-
-    context = {
-        # Overall earnings
-        'total_revenue': total_revenue,
-        'tipster_earnings': tipster_earnings,
-        'platform_commission': platform_commission,
-        'tipster_share_percentage': 60,
-        'platform_commission_percentage': 40,
-
-        # Monthly stats
-        'this_month_revenue': this_month_revenue,
-        'this_month_earnings': this_month_earnings,
-        'last_month_earnings': last_month_earnings,
-        'growth_percentage': round(growth_percentage, 1),
-
-        # Buyer statistics (anonymous)
-        'total_purchases': all_purchases.count(),
-        'unique_buyers': unique_buyers_count,
-        'repeat_customers': repeat_customers,
-
-        # Top performing tips
-        'top_tips_by_revenue': top_tips_by_revenue,
-        'top_tips_by_sales': top_tips_by_sales,
-
-        # Recent activity
-        'recent_transactions': recent_transactions,
-
-        # Weekly breakdown
-        'weekly_data': weekly_data,
-
-        # General stats
-        'total_tips': all_tips.count(),
-        'active_tips': all_tips.filter(status='active').count(),
-    }
-
-    return render(request, 'tips/earnings_dashboard.html', context)
-
-
-@login_required
-def download_earnings_statement(request):
-    """
-    Generate and download PDF earnings statement for sellers/tipsters.
-    """
-    if not request.user.userprofile.is_tipster:
-        messages.error(request, 'Only tipsters can access this page.')
-        return redirect('tips:marketplace')
-
-    # Get all tipster's tips
-    all_tips = Tip.objects.filter(tipster=request.user)
-
-    # Calculate total revenue
-    total_revenue = sum(tip.revenue_generated for tip in all_tips)
-
-    # Calculate earnings split (60/40)
-    platform_commission_rate = Decimal('0.40')
-    tipster_share_rate = Decimal('0.60')
-
-    tipster_earnings = Decimal(str(total_revenue)) * tipster_share_rate
-    platform_commission = Decimal(str(total_revenue)) * platform_commission_rate
-
-    # Get completed purchases
-    all_purchases = TipPurchase.objects.filter(
-        tip__tipster=request.user,
-        status='completed'
-    ).select_related('tip', 'buyer')
-
-    # Anonymous buyer statistics
-    unique_buyers_count = all_purchases.values('buyer').distinct().count()
-
-    # Repeat customers (buyers who purchased more than once)
-    buyer_purchase_counts = all_purchases.values('buyer').annotate(
-        purchase_count=Count('id')
-    )
-    repeat_customers = sum(1 for b in buyer_purchase_counts if b['purchase_count'] > 1)
-
-    # Recent transactions for PDF
-    recent_transactions = []
-    for purchase in all_purchases.order_by('-completed_at')[:20]:  # Last 20 transactions
-        recent_transactions.append({
-            'date': purchase.completed_at or purchase.created_at,
-            'tip_title': f"{purchase.tip.bookmaker.title()} Tip ({purchase.tip.bet_code})",
-            'amount': purchase.amount,
-            'tipster_share': Decimal(str(purchase.amount)) * tipster_share_rate,
-        })
-
-    # Prepare earnings data for PDF
-    earnings_data = {
-        'total_revenue': total_revenue,
-        'platform_commission': platform_commission,
-        'tipster_earnings': tipster_earnings,
-        'total_purchases': all_purchases.count(),
-        'unique_buyers': unique_buyers_count,
-        'repeat_customers': repeat_customers,
-        'tips_count': all_tips.count(),
-        'recent_transactions': recent_transactions,
-    }
-
-    # Generate PDF
-    pdf_generator = StatementPDFGenerator()
-    pdf_buffer = pdf_generator.generate_seller_statement(
-        user=request.user,
-        earnings_data=earnings_data
-    )
-
-    # Create response with PDF
-    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
-
-    # Generate filename with date
-    filename = f"earnings_statement_{request.user.phone_number}_{datetime.now().strftime('%Y%m%d')}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    return response
-
-
-@login_required
 def create_tip(request):
     """Create a new tip - Process betslip synchronously"""
-    if not request.user.userprofile.is_tipster:
-        messages.error(request, 'Only tipsters can create tips.')
-        return redirect('tips:marketplace')
-
     if request.method == 'POST':
         form = TipSubmissionForm(request.POST, request.FILES)
         if form.is_valid():
@@ -459,7 +177,7 @@ def create_tip(request):
                         cache.set(cache_key, extraction_result, 86400)
 
                 if not extraction_result.get('success'):
-                    error_msg = extraction_result.get('error', 'Failed to extract betslip data')
+                    error_msg = extraction_result.get('error', 'Failed to extract prediction slip data')
                     messages.error(request, f'Error: {error_msg}')
                     return render(request, 'tips/create_tip.html', {'form': form})
 
@@ -468,7 +186,7 @@ def create_tip(request):
                 matches = betslip_data.get('matches', [])
 
                 if not matches:
-                    messages.error(request, 'No matches found in the betslip. Please upload a clear image.')
+                    messages.error(request, 'No matches found in the prediction slip. Please upload a clear image.')
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 # Create tip with extracted data
@@ -529,7 +247,7 @@ def create_tip(request):
                 tip.save()
 
                 # Redirect to verification step
-                messages.success(request, 'Betslip processed successfully! Please verify the extracted data.')
+                messages.success(request, 'Prediction slip processed successfully! Please verify the extracted data.')
                 return redirect('tips:verify_tip', tip_id=tip.id)
 
             except Exception as e:
@@ -577,11 +295,8 @@ def approve_tip(request, tip_id):
         messages.warning(request, 'This tip has already been published.')
         return redirect('tips:my_tips')
 
-    # Set status based on tipster verification level
-    if request.user.userprofile.is_verified:
-        tip.status = 'active'
-    else:
-        tip.status = 'pending_approval'
+    # Set status to active immediately (no manual moderation required)
+    tip.status = 'active'
 
     tip.save()
 
@@ -642,7 +357,7 @@ def tip_processing_status(request, tip_id):
         return redirect('tips:my_tips')
 
     # If processing failed, show error and options
-    if tip.processing_status == 'failed':
+    if getattr(tip, 'processing_status', None) == 'failed':
         context = {
             'tip': tip,
             'error': getattr(tip, 'processing_error', 'Unknown error occurred during processing'),
@@ -651,7 +366,7 @@ def tip_processing_status(request, tip_id):
         return render(request, 'tips/processing_status.html', context)
 
     # If processing is complete from old background task, redirect to verify
-    if tip.processing_status == 'completed' and tip.ocr_processed:
+    if getattr(tip, 'processing_status', None) == 'completed' and tip.ocr_processed:
         return redirect('tips:verify_tip', tip_id=tip.id)
 
     # Still processing (old background tasks) or pending
@@ -670,7 +385,7 @@ def delete_failed_tip(request, tip_id):
     tip = get_object_or_404(Tip, id=tip_id, tipster=request.user)
 
     # Only allow deletion of failed or temporary tips
-    if tip.processing_status == 'failed' or tip.bet_code.startswith('TEMP_'):
+    if getattr(tip, 'processing_status', None) == 'failed' or tip.bet_code.startswith('TEMP_'):
         bet_code = tip.bet_code
         tip.delete()
         messages.success(request, f'Failed tip ({bet_code}) has been deleted.')
@@ -678,86 +393,6 @@ def delete_failed_tip(request, tip_id):
         messages.error(request, 'Only failed tips can be deleted this way.')
 
     return redirect('tips:my_tips')
-
-
-@login_required
-@require_http_methods(["POST"])
-def purchase_tip(request, tip_id):
-    """Initiate tip purchase"""
-    tip = get_object_or_404(Tip, id=tip_id)
-    
-    # Validation checks
-    if not tip.can_be_purchased():
-        return JsonResponse({
-            'success': False,
-            'error': 'This tip cannot be purchased at the moment.'
-        })
-    
-    if not request.user.userprofile.is_buyer:
-        return JsonResponse({
-            'success': False,
-            'error': 'Only buyers can purchase tips.'
-        })
-    
-    if request.user == tip.tipster:
-        return JsonResponse({
-            'success': False,
-            'error': 'You cannot purchase your own tip.'
-        })
-    
-    # Check if already purchased
-    if TipPurchase.objects.filter(tip=tip, buyer=request.user).exists():
-        return JsonResponse({
-            'success': False,
-            'error': 'You have already purchased this tip.'
-        })
-    
-    # Check wallet balance
-    if request.user.userprofile.wallet_balance < tip.price:
-        return JsonResponse({
-            'success': False,
-            'error': 'Insufficient wallet balance. Please add funds.'
-        })
-    
-    # Create purchase record with accounting entries
-    try:
-        from apps.transactions.services import AccountingService
-        from django.db import transaction as db_transaction
-
-        with db_transaction.atomic():
-            # Create accounting entries for the purchase
-            accounting_txn = AccountingService.record_tip_purchase(
-                buyer=request.user,
-                tipster=tip.tipster,
-                tip=tip,
-                amount=tip.price
-            )
-
-            # Create TipPurchase record
-            purchase = TipPurchase.objects.create(
-                tip=tip,
-                buyer=request.user,
-                amount=tip.price,
-                transaction_id=accounting_txn.reference,
-                status='completed',
-                completed_at=timezone.now()
-            )
-
-            # Sync wallet balances with accounting
-            AccountingService.sync_wallet_balance(request.user)
-            AccountingService.sync_wallet_balance(tip.tipster)
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Tip purchased successfully!',
-            'redirect_url': f'/tips/{tip.id}/'
-        })
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': f'Purchase failed: {str(e)}'
-        })
 
 
 def tipster_profile(request, tipster_id):
@@ -768,8 +403,7 @@ def tipster_profile(request, tipster_id):
     
     tipster = get_object_or_404(
         User,
-        id=tipster_id,
-        userprofile__is_tipster=True
+        id=tipster_id
     )
     
     # Get tipster's active tips
@@ -802,10 +436,8 @@ def tipster_profile(request, tipster_id):
         'resulted_tips': resulted_tips.count(),  # Track resulted separately
         'won_tips': resulted_tips.filter(is_won=True).count(),
         'win_rate': 0,
-        'total_sales': sum(tip.revenue_generated for tip in all_tips),
         'active_tips': active_tips.count(),
         'historical_tips': historical_tips.count(),
-        'total_purchases': sum(tip.purchase_count for tip in all_tips),
         'avg_odds': resulted_tips.aggregate(Avg('odds'))['odds__avg'] or 0,
     }
 
@@ -815,7 +447,7 @@ def tipster_profile(request, tipster_id):
     
     context = {
         'tipster': tipster,
-        'profile': tipster.userprofile,
+        'profile': getattr(tipster, 'userprofile', None),
         'active_page_obj': active_page_obj,
         'active_tips': active_page_obj.object_list,
         'historical_page_obj': historical_page_obj,
@@ -827,109 +459,57 @@ def tipster_profile(request, tipster_id):
 
 
 def leaderboard(request):
-    """Leaderboard showing top tipsters by various metrics"""
+    """Leaderboard showing top tipsters by win rate"""
     from django.contrib.auth import get_user_model
     from django.db.models import Count, Sum, Q, Avg
 
     User = get_user_model()
 
     # Get all tipsters with their stats
-    tipsters = User.objects.filter(
-        userprofile__is_tipster=True
-    ).select_related('userprofile')
+    tipsters = User.objects.all().select_related('userprofile')
 
     # Calculate stats for each tipster
     leaderboard_data = []
 
     for tipster in tipsters:
-        # Get all tips (not just resulted ones)
         all_tips = Tip.objects.filter(tipster=tipster)
-
-        # Get resulted tips for win rate calculation
         resulted_tips = all_tips.filter(is_resulted=True)
-
-        # Count total tips (all tips, not just resulted)
         total_tips = all_tips.count()
-
-        # Win rate is only for resulted tips
         resulted_count = resulted_tips.count()
         won_tips = resulted_tips.filter(is_won=True).count()
         win_rate = round((won_tips / resulted_count * 100), 1) if resulted_count > 0 else 0
-
-        # Calculate total sales
-        total_sales = sum(tip.revenue_generated for tip in all_tips)
-
-        # Calculate average odds (only from resulted tips)
         avg_odds = resulted_tips.aggregate(avg=Avg('odds'))['avg'] or 0
-
-        # Total purchases across all tips
-        total_purchases = sum(tip.purchase_count for tip in all_tips)
-
-        # Active tips count
         active_tips = all_tips.filter(status='active').count()
 
-        # Include tipsters with at least 1 tip (resulted or not)
         if total_tips > 0:
             leaderboard_data.append({
                 'tipster': tipster,
-                'profile': tipster.userprofile,
+                'profile': getattr(tipster, 'userprofile', None),
                 'total_tips': total_tips,
                 'won_tips': won_tips,
                 'win_rate': win_rate,
-                'total_sales': total_sales,
                 'avg_odds': round(avg_odds, 2) if avg_odds else 0,
-                'total_purchases': total_purchases,
                 'active_tips': active_tips,
-                'resulted_count': resulted_count,  # Track how many are resulted
+                'resulted_count': resulted_count,
             })
 
     # Default sorting
     sort_by = request.GET.get('sort', 'win_rate')
 
-    # Sort leaderboard with better tiebreakers
     if sort_by == 'win_rate':
-        # Sort by: win_rate (desc), resulted_count (desc), total_purchases (desc), total_sales (desc)
-        # This puts tipsters with results first, then by popularity and sales
         leaderboard_data.sort(
             key=lambda x: (
-                x['resulted_count'] > 0,  # Tipsters with results first
+                x['resulted_count'] > 0,
                 x['win_rate'],
-                x['total_purchases'],
-                x['total_sales'],
                 x['total_tips']
             ),
             reverse=True
         )
     elif sort_by == 'total_tips':
-        # Sort by: total_tips (desc), win_rate (desc), total_purchases (desc)
         leaderboard_data.sort(
             key=lambda x: (
                 x['total_tips'],
                 x['win_rate'],
-                x['total_purchases'],
-                x['total_sales']
-            ),
-            reverse=True
-        )
-    elif sort_by == 'total_sales':
-        # Sort by: total_sales (desc), total_purchases (desc), win_rate (desc)
-        leaderboard_data.sort(
-            key=lambda x: (
-                x['total_sales'],
-                x['total_purchases'],
-                x['win_rate'],
-                x['total_tips']
-            ),
-            reverse=True
-        )
-    elif sort_by == 'total_purchases':
-        # Sort by: total_purchases (desc), total_sales (desc), win_rate (desc)
-        leaderboard_data.sort(
-            key=lambda x: (
-                x['total_purchases'],
-                x['total_sales'],
-                x['win_rate'],
-                x['total_tips']
             ),
             reverse=True
         )
@@ -939,8 +519,7 @@ def leaderboard(request):
             key=lambda x: (
                 x['resulted_count'] > 0,
                 x['win_rate'],
-                x['total_purchases'],
-                x['total_sales']
+                x['total_tips']
             ),
             reverse=True
         )
