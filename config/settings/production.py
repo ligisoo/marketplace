@@ -8,10 +8,7 @@ from decouple import config
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    'ligisoo.co.ke',
-    'www.ligisoo.co.ke',
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
@@ -33,7 +30,7 @@ DATABASES = {
         'NAME': config('DB_NAME', default='ligisoo_marketplace'),
         'USER': config('DB_USER', default='ligisoo_user'),
         'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
+        'HOST': config('DB_HOST', default='db'),
         'PORT': config('DB_PORT', default='5432', cast=int),
         'CONN_MAX_AGE': 600,
         'OPTIONS': {
