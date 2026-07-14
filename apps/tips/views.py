@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import Tip, TipMatch
 from .forms import TipSubmissionForm, TipVerificationForm, TipSearchForm
-from .ocr import BetslipOCR
+
 from datetime import datetime, timedelta
 from decimal import Decimal
 import json

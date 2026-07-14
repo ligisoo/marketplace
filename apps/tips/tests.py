@@ -7,7 +7,7 @@ import io
 import json
 from datetime import timedelta
 
-from .ocr import BetslipOCR
+
 from .models import OCRProviderSettings
 
 # Dummy PNG image (1x1 transparent PNG)

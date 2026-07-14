@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from datetime import timedelta
 from .models import Tip, TipMatch
-from .ocr import BetslipOCR
+
 
 
 class TipSubmissionForm(forms.ModelForm):
