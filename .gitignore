@@ -241,4 +241,4 @@ ligisooke_backup_*/
 *.pem
 *.crt
 config.json
-secrets.json
+secrets.jsonlegacy_archive/
