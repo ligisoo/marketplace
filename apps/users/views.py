@@ -83,9 +83,8 @@ def profile(request):
     analyst_stats = {
         'total_tips': all_tips.count(),
         'win_rate': win_rate,
-        # Defaulting these to 0 as we transition to the subscription model
-        'total_sales': 0,
-        'total_earnings': 0,
+        'won_tips': won_tips_count,
+        'active_tips': all_tips.filter(status='active').count(),
     }
 
     return render(request, 'users/profile.html', {

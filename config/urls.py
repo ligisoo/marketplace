@@ -20,12 +20,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import render
 
-def home(request):
-    return render(request, 'home.html')
+from apps.pages.views import home_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', home, name='home'),
+    path('', home_view, name='home'),
     path('users/', include('apps.users.urls')),
     path('tips/', include('apps.tips.urls')),
     path('payments/', include('payments.urls')),

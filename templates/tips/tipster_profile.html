@@ -72,6 +72,9 @@
                         <div class="bg-muted/30 rounded-lg p-4 text-center">
                             <div class="text-2xl font-bold text-accent">{{ stats.won_tips }}</div>
                             <div class="text-xs text-muted-foreground mt-1">Won Tips</div>
+                            {% if stats.resulted_tips > 0 %}
+                            <div class="text-xs text-red-600 dark:text-red-400 mt-1">{{ stats.lost_tips }} lost</div>
+                            {% endif %}
                         </div>
                         <div class="bg-muted/30 rounded-lg p-4 text-center">
                             {% if stats.resulted_tips > 0 %}
@@ -86,11 +89,8 @@
                             {% endif %}
                         </div>
                         <div class="bg-muted/30 rounded-lg p-4 text-center">
-                            <div class="text-2xl font-bold text-primary">{{ stats.total_purchases }}</div>
-                            <div class="text-xs text-muted-foreground mt-1">Tips Sold</div>
-                            {% if stats.total_purchases > 0 %}
-                            <div class="text-xs text-accent mt-1">{{ stats.total_purchases }} buyer{{ stats.total_purchases|pluralize }}</div>
-                            {% endif %}
+                            <div class="text-2xl font-bold text-primary">{{ stats.avg_odds|floatformat:2 }}x</div>
+                            <div class="text-xs text-muted-foreground mt-1">Average Odds</div>
                         </div>
                     </div>
                 </div>
@@ -131,7 +131,7 @@
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
                                         <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
-                                        <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 🔒 Full code after purchase</p>
+                                        <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 👀 View Slip to reveal full code</p>
                                     </div>
                                     <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
                                 </div>
@@ -146,10 +146,8 @@
                                                     <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
                                                 </div>
                                             {% endfor %}
-                                            {% if tip.preview_data.total_matches == 2 %}
-                                                <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
-                                            {% elif tip.preview_data.total_matches > 2 %}
-                                                <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
+                                            {% if tip.hidden_matches_count > 0 %}
+                                                <p class="text-xs text-muted-foreground text-center">+{{ tip.hidden_matches_count }} more match{{ tip.hidden_matches_count|pluralize:"es" }} hidden</p>
                                             {% endif %}
                                         {% else %}
                                             <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
@@ -161,21 +159,20 @@
                                         {% endif %}
                                     {% endwith %}
 
-                                    <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
-                                        <div>
-                                            <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
-                                            <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-xs text-muted-foreground">
+                                    <div class="mt-4 flex justify-between items-end pt-4 border-t border-border">
+                                        <span class="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md border border-border">
+                                            {{ tip.created_at|naturaltime }}
+                                        </span>
+                                        <div class="text-right flex flex-col items-end gap-2">
+                                            <span class="text-xs font-medium text-amber-600 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20 shadow-sm">
                                                 {% if tip.time_until_expiry.days > 0 %}
                                                     {{ tip.time_until_expiry.days }}d left
                                                 {% elif tip.time_until_expiry.seconds > 3600 %}
-                                                    {{ tip.time_until_expiry.seconds|floatformat:0|slice:":1" }}h left
+                                                    {% widthratio tip.time_until_expiry.seconds 3600 1 %}h left
                                                 {% else %}
-                                                    {{ tip.time_until_expiry.seconds|floatformat:0|slice:":2" }}m left
+                                                    {% widthratio tip.time_until_expiry.seconds 60 1 %}m left
                                                 {% endif %}
-                                            </p>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -260,10 +257,8 @@
                                                     <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
                                                 </div>
                                             {% endfor %}
-                                            {% if tip.preview_data.total_matches == 2 %}
-                                                <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
-                                            {% elif tip.preview_data.total_matches > 2 %}
-                                                <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
+                                            {% if tip.hidden_matches_count > 0 %}
+                                                <p class="text-xs text-muted-foreground text-center">+{{ tip.hidden_matches_count }} more match{{ tip.hidden_matches_count|pluralize:"es" }} hidden</p>
                                             {% endif %}
                                         {% else %}
                                             <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
@@ -275,17 +270,10 @@
                                         {% endif %}
                                     {% endwith %}
 
-                                    <div class="mt-4 flex justify-between items-center pt-4 border-t border-border">
-                                        <div>
-                                            <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
-                                            <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
-                                            <p class="text-xs text-muted-foreground">Revenue: KES {{ tip.revenue_generated|floatformat:0|intcomma }}</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-xs text-muted-foreground">
-                                                {{ tip.created_at|naturaltime }}
-                                            </p>
-                                        </div>
+                                    <div class="mt-4 flex justify-between items-end pt-4 border-t border-border">
+                                        <span class="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md border border-border">
+                                            {{ tip.created_at|naturaltime }}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -324,42 +312,7 @@
             </div>
         </div>
 
-        <!-- Performance Section (if has resulted tips) -->
-        {% if stats.total_tips > 0 %}
-        <div class="bg-card border border-border rounded-lg p-6">
-            <h2 class="text-xl font-bold text-foreground mb-4">Performance Overview</h2>
 
-            <div class="space-y-4">
-                <!-- Win Rate Bar -->
-                <div>
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-muted-foreground">Win Rate</span>
-                        <span class="font-medium text-foreground">{{ stats.win_rate }}%</span>
-                    </div>
-                    <div class="w-full bg-muted rounded-full h-3 overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-300 {% if stats.win_rate >= 70 %}bg-green-500{% elif stats.win_rate >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}"
-                             style="width: {{ stats.win_rate }}%"></div>
-                    </div>
-                </div>
-
-                <!-- Success Breakdown -->
-                <div class="grid grid-cols-3 gap-4 text-center pt-4 border-t border-border">
-                    <div>
-                        <div class="text-3xl font-bold text-green-600">{{ stats.won_tips }}</div>
-                        <div class="text-sm text-muted-foreground">Won</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-bold text-red-600">{{ stats.total_tips|add:"-stats.won_tips" }}</div>
-                        <div class="text-sm text-muted-foreground">Lost</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-bold text-primary">{{ stats.total_tips }}</div>
-                        <div class="text-sm text-muted-foreground">Total</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

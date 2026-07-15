@@ -254,7 +254,7 @@ class TipSearchForm(forms.Form):
         ('expires_at', 'Expiring Soon'),
     ]
 
-    search = forms.CharField(
+    q = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',

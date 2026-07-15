@@ -127,6 +127,13 @@ class Tip(models.Model):
         
         top_tipster_ids = [u.id for u in top_tipsters]
         return self.tipster_id in top_tipster_ids
+
+    @property
+    def hidden_matches_count(self):
+        """Returns the number of hidden matches"""
+        total = self.preview_data.get('total_matches', len(self.preview_data.get('matches', [])))
+        shown = len(self.get_preview_matches())
+        return max(0, total - shown)
         
     def get_preview_matches(self):
         """

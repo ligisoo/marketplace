@@ -24,7 +24,7 @@ def marketplace(request):
     
     # Apply search filters
     if form.is_valid():
-        search = form.cleaned_data.get('search')
+        search = form.cleaned_data.get('q')
         if search:
             tips = tips.filter(
                 Q(bet_code__icontains=search) |
@@ -46,7 +46,7 @@ def marketplace(request):
         if max_odds:
             tips = tips.filter(odds__lte=max_odds)
             
-        sort_by = form.cleaned_data.get('sort_by', '-created_at')
+        sort_by = form.cleaned_data.get('sort_by') or '-created_at'
         tips = tips.order_by(sort_by)
     else:
         tips = tips.order_by('-created_at')
@@ -435,6 +435,7 @@ def tipster_profile(request, tipster_id):
         'total_tips': all_tips.count(),  # All tips, not just resulted
         'resulted_tips': resulted_tips.count(),  # Track resulted separately
         'won_tips': resulted_tips.filter(is_won=True).count(),
+        'lost_tips': resulted_tips.filter(is_won=False).count(),
         'win_rate': 0,
         'active_tips': active_tips.count(),
         'historical_tips': historical_tips.count(),

@@ -4,194 +4,72 @@
 
 {% block content %}
 <style>
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  [x-cloak]{ display:none !important; }
-  /* Compact form helpers (requires Tailwind build) */
-  .form-compact label { @apply text-xs text-muted-foreground mb-1; }
-  .form-compact input, .form-compact select { @apply h-9 text-sm py-1.5; }
+  [x-cloak] { display: none !important; }
+  /* Single line form styling */
+  .filter-input, .filter-select {
+    @apply bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none placeholder-muted-foreground w-full h-10;
+  }
 </style>
 
-<!-- Compact toolbar header -->
-<div class="mb-3">
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <h1 class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
+<!-- Header -->
+<div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+  <div>
+    <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-1">
       Community Predictions
-      <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">· Browse expert predictions</span>
     </h1>
-    <div></div>
-  </div>
-  <p class="mt-1 text-sm text-muted-foreground md:hidden">Browse expert predictions</p>
-</div>
-
-<!-- MVP Notice 
-<div class="mb-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-  <div class="flex items-center">
-    <svg class="w-5 h-5 text-blue-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
-    <p class="text-sm text-foreground">
-      <span class="font-semibold">Currently showing SportPesa tips.</span>
-      <span class="text-muted-foreground ml-1">More bookmakers (Betika, Odibets, Mozzart) coming soon!</span>
+    <p class="text-muted-foreground text-sm md:text-base">
+      Browse and discover the latest sports predictions.
     </p>
   </div>
-</div>
--->
-
-<!-- Stats Ribbon -->
-<div class="mb-5">
-  <div class="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Platform metrics">
-
-    <!-- Results count -->
-    <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
-      </span>
-      <div class="leading-tight">
-        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Results</div>
-        <div class="text-sm font-semibold text-foreground">{{ page_obj.paginator.count|default:0 }}</div>
-      </div>
-    </div>
-
-    {% if request.GET.bookmaker %}
-    <!-- Bookmaker -->
-    <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h10M4 14h7M4 18h4"/></svg>
-      </span>
-      <div class="leading-tight">
-        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Bookmaker</div>
-        <div class="text-sm font-semibold text-foreground">{{ request.GET.bookmaker }}</div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if request.GET.min_odds or request.GET.max_odds %}
-    <!-- Odds -->
-    <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18M12 3v18"/></svg>
-      </span>
-      <div class="leading-tight">
-        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Odds</div>
-        <div class="text-sm font-semibold text-foreground">
-          {% if request.GET.min_odds %}{{ request.GET.min_odds }}{% else %}–{% endif %} – {% if request.GET.max_odds %}{{ request.GET.max_odds }}{% else %}–{% endif %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if request.GET.min_price or request.GET.max_price %}
-    <!-- Price -->
-    <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span class="inline-flex items-center justify-center rounded-md bg-accent/15 text-accent w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"/></svg>
-      </span>
-      <div class="leading-tight">
-        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Price</div>
-        <div class="text-sm font-semibold text-foreground">
-          KES {% if request.GET.min_price %}{{ request.GET.min_price }}{% else %}–{% endif %} – {% if request.GET.max_price %}{{ request.GET.max_price }}{% else %}–{% endif %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if request.GET.search %}
-    <!-- Search -->
-    <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10 18a8 8 0 110-16 8 8 0 010 16z"/></svg>
-      </span>
-      <div class="leading-tight">
-        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Search</div>
-        <div class="text-sm font-semibold text-foreground">“{{ request.GET.search }}”</div>
-      </div>
-    </div>
-    {% endif %}
-
-    {% if request.GET.sort_by %}
-    <!-- Sort (safe rendering) -->
-    <div role="listitem" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-      <span class="inline-flex items-center justify-center rounded-md bg-primary/15 text-primary w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10l4-4 4 4M18 14l-4 4-4-4"/></svg>
-      </span>
-      <div class="leading-tight">
-        <div class="text-[11px] uppercase tracking-wide text-muted-foreground">Sort</div>
-        <div class="text-sm font-semibold text-foreground">
-          {% for value,label in form.sort_by.field.choices %}
-            {% if value == request.GET.sort_by %}
-              {{ label }}
-            {% endif %}
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {# Clear All Filters Chip #}
-    {% if request.GET.search or request.GET.sort_by or request.GET.bookmaker or request.GET.min_odds or request.GET.max_odds or request.GET.min_price or request.GET.max_price %}
-    <a role="listitem" href="{% url 'tips:marketplace' %}" class="snap-start shrink-0 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/60 text-foreground px-3 py-2 hover:bg-muted transition-colors">
-      <span class="inline-flex items-center justify-center rounded-md bg-foreground/10 text-foreground w-7 h-7">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </span>
-      <span class="text-sm font-medium">Clear all</span>
-    </a>
-    {% endif %}
+  <div class="text-sm text-muted-foreground">
+    Showing <strong>{{ page_obj.paginator.count|default:0 }}</strong> prediction{{ page_obj.paginator.count|pluralize }}
   </div>
 </div>
 
-<!-- Search & Filters (Compact, Option A behavior) -->
-<div class="bg-card rounded-lg border border-border p-3 md:p-4 mb-4">
-  <form method="get" class="form-compact space-y-2"
-        x-data="{ showFilters: false, isDesktop: window.matchMedia('(min-width: 768px)').matches }"
-        x-init="
-          if (isDesktop) showFilters = true;
-          const mq = window.matchMedia('(min-width: 768px)');
-          const handler = e => { isDesktop = e.matches; showFilters = isDesktop ? true : false; };
-          mq.addEventListener('change', handler);
-        ">
-    <!-- Row 1: Search + Sort -->
-    <div class="grid grid-cols-1 md:grid-cols-12 md:items-end gap-2">
-      <div class="md:col-span-8">
-        {{ form.search.label_tag }}
-        {{ form.search }}
-      </div>
-      <div class="md:col-span-4">
-        {{ form.sort_by.label_tag }}
-        {{ form.sort_by }}
-      </div>
+<!-- Horizontal One-Line Filters -->
+<div class="bg-card border border-border rounded-xl p-2 mb-8 shadow-sm">
+  <form method="get" class="flex flex-col lg:flex-row items-center gap-2">
+    
+    <!-- Search -->
+    <div class="relative flex-grow w-full lg:w-auto">
+      <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search teams, analysts..." class="filter-input min-w-[200px]" style="padding-right: 2.25rem;">
+      <svg class="w-4 h-4 absolute right-3 top-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
     </div>
 
-    <!-- Toggle (mobile only) -->
-    <div class="md:hidden">
-      <button type="button" x-show="!isDesktop" @click="showFilters = !showFilters"
-              class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors text-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-        <span x-text="showFilters ? 'Hide Filters' : 'More Filters'"></span>
-      </button>
+    <!-- Sort By -->
+    <div class="w-full lg:w-40 shrink-0">
+      <select name="sort_by" class="filter-select">
+        {% for value, label in form.sort_by.field.choices %}
+          <option value="{{ value }}" {% if request.GET.sort_by == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
     </div>
 
-    <!-- Additional Filters -->
-    <div x-cloak x-show="showFilters" x-collapse.min.0px class="grid grid-cols-1 md:grid-cols-12 gap-2">
-      <div class="md:col-span-4">
-        {{ form.bookmaker.label_tag }}
-        {{ form.bookmaker }}
-      </div>
-      <div class="md:col-span-4 grid grid-cols-2 gap-2">
-        <div>{{ form.min_odds.label_tag }}{{ form.min_odds }}</div>
-        <div>{{ form.max_odds.label_tag }}{{ form.max_odds }}</div>
-      </div>
-      <div class="md:col-span-4 grid grid-cols-2 gap-2">
-        <div>{{ form.min_price.label_tag }}{{ form.min_price }}</div>
-        <div>{{ form.max_price.label_tag }}{{ form.max_price }}</div>
-      </div>
+    <!-- Bookmaker -->
+    <div class="w-full lg:w-40 shrink-0">
+      <select name="bookmaker" class="filter-select">
+        {% for value, label in form.bookmaker.field.choices %}
+          <option value="{{ value }}" {% if request.GET.bookmaker == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
     </div>
 
-    <!-- Actions -->
-    <div class="flex flex-col sm:flex-row gap-2 pt-1">
-      <button type="submit" class="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-sm font-medium">Apply</button>
-      <a href="{% url 'tips:marketplace' %}" class="flex-1 text-center bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-sm font-medium">Clear</a>
+    <!-- Odds Range -->
+    <div class="flex items-center gap-2 w-full lg:w-auto shrink-0">
+      <input type="number" step="0.1" name="min_odds" value="{{ request.GET.min_odds|default:'' }}" placeholder="Min Odds" class="filter-input w-24">
+      <span class="text-muted-foreground">-</span>
+      <input type="number" step="0.1" name="max_odds" value="{{ request.GET.max_odds|default:'' }}" placeholder="Max Odds" class="filter-input w-24">
     </div>
+    
+    <button type="submit" class="w-full lg:w-auto bg-primary text-primary-foreground font-semibold px-6 h-10 rounded-lg hover:opacity-90 transition-opacity shrink-0">
+      Apply
+    </button>
+
+    {% if request.GET.q or request.GET.bookmaker or request.GET.min_odds or request.GET.max_odds %}
+    <a href="{% url 'tips:marketplace' %}" class="w-full lg:w-auto flex items-center justify-center bg-secondary text-secondary-foreground font-semibold px-4 h-10 rounded-lg hover:bg-secondary/80 transition-colors shrink-0">
+      Clear
+    </a>
+    {% endif %}
   </form>
 </div>
 
@@ -199,63 +77,76 @@
 {% if tips %}
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for tip in tips %}
-      <div class="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow">
+      <div class="bg-card border border-border rounded-2xl p-6 hover:shadow-md hover:border-primary/30 transition-all group flex flex-col h-full">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h3 class="font-semibold text-lg text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
-            <p class="text-sm text-muted-foreground">{{ tip.get_bookmaker_display }} • 🔒 Full code after purchase</p>
+            <h3 class="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h3>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">{{ tip.get_bookmaker_display }}</span>
+              <span class="text-xs text-muted-foreground flex items-center gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                Hidden
+              </span>
+            </div>
           </div>
-          <span class="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">{{ tip.odds }}x</span>
+          <span class="bg-green-500/10 text-green-600 border border-green-500/20 px-3 py-1 rounded-full text-sm font-extrabold">{{ tip.odds }}x</span>
         </div>
 
-        <div class="space-y-3">
+        <div class="space-y-2 flex-grow">
           {% with preview_matches=tip.get_preview_matches %}
             {% if preview_matches %}
               {% for match in preview_matches %}
-                <div class="mb-3 p-2 bg-secondary rounded">
-                  <div class="font-medium text-sm text-foreground">{{ match.home_team }} vs {{ match.away_team }}</div>
-                  <div class="text-xs text-muted-foreground">{{ match.league }} • {{ match.market }}</div>
+                <div class="p-3 bg-secondary/50 rounded-xl border border-border/50">
+                  <div class="font-semibold text-sm text-foreground mb-1">{{ match.home_team }} vs {{ match.away_team }}</div>
+                  <div class="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{{ match.league }}</span>
+                    <span class="font-medium px-2 py-0.5 bg-background rounded-md">{{ match.market }}</span>
+                  </div>
                 </div>
               {% endfor %}
-              {% if tip.preview_data.total_matches == 2 %}
-                <p class="text-xs text-muted-foreground text-center">+1 more match hidden</p>
-              {% elif tip.preview_data.total_matches > 2 %}
-                <p class="text-xs text-muted-foreground text-center">+{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} hidden</p>
+              {% if tip.hidden_matches_count > 0 %}
+                <div class="text-xs text-center font-medium text-muted-foreground py-2 bg-secondary/30 rounded-xl border border-dashed border-border">
+                  +{{ tip.hidden_matches_count }} more match{{ tip.hidden_matches_count|pluralize:"es" }} hidden
+                </div>
               {% endif %}
             {% else %}
-              <div class="text-xs text-center text-muted-foreground py-4 bg-secondary/50 rounded border border-dashed">
-                <svg class="w-6 h-6 mx-auto mb-1 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-                <div class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</div>
+              <div class="text-xs text-center text-muted-foreground py-6 bg-secondary/30 rounded-xl border border-dashed border-border flex flex-col items-center justify-center">
+                <svg class="w-6 h-6 mb-2 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</span>
               </div>
             {% endif %}
           {% endwith %}
+        </div>
 
-          <div class="mt-4 flex justify-between items-center">
-            <div>
-              <span class="text-lg font-bold text-primary">KES {{ tip.price }}</span>
-              <p class="text-xs text-muted-foreground">{{ tip.purchase_count }} purchase{{ tip.purchase_count|pluralize }}</p>
+        <div class="mt-4 pt-4 border-t border-border flex justify-between items-end">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+              {{ tip.tipster.userprofile.display_name|slice:":2" }}
             </div>
-            <div class="text-right">
-              <p class="text-xs text-muted-foreground">by {{ tip.tipster.userprofile.display_name }}</p>
-              <p class="text-xs text-muted-foreground">
-                {% if tip.time_until_expiry.days > 0 %}
-                  {{ tip.time_until_expiry.days }}d left
-                {% elif tip.time_until_expiry.seconds > 3600 %}
-                  {# integer division hours = seconds // 3600 #}
-                  {% widthratio tip.time_until_expiry.seconds 3600 1 %}h left
-                {% else %}
-                  {# integer division minutes = seconds // 60 #}
-                  {% widthratio tip.time_until_expiry.seconds 60 1 %}m left
-                {% endif %}
+            <div>
+              <p class="text-sm font-bold text-foreground">
+                {{ tip.tipster.userprofile.display_name }}
+              </p>
+              <p class="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Analyst
               </p>
             </div>
           </div>
-        </div>
-
-        <div class="mt-4 pt-4 border-t border-border">
-          <a href="{% url 'tips:detail' tip.id %}" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity text-center block">View Details</a>
+          <div class="text-right flex flex-col items-end gap-2">
+            <span class="text-xs font-medium text-amber-600 bg-amber-500/10 px-2 py-1 rounded-md border border-amber-500/20 shadow-sm">
+              {% if tip.time_until_expiry.days > 0 %}
+                {{ tip.time_until_expiry.days }}d left
+              {% elif tip.time_until_expiry.seconds > 3600 %}
+                {% widthratio tip.time_until_expiry.seconds 3600 1 %}h left
+              {% else %}
+                {% widthratio tip.time_until_expiry.seconds 60 1 %}m left
+              {% endif %}
+            </span>
+            <a href="{% url 'tips:detail' tip.id %}" class="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+              View Slip
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+          </div>
         </div>
       </div>
     {% endfor %}
@@ -263,38 +154,34 @@
 
   <!-- Pagination -->
   {% if page_obj.has_other_pages %}
-    <div class="mt-8 flex justify-center">
-      <nav class="flex space-x-1">
+    <div class="mt-10 flex justify-center">
+      <nav class="flex items-center gap-1 bg-card border border-border p-1 rounded-lg shadow-sm">
         {% if page_obj.has_previous %}
-          <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.bookmaker %}&bookmaker={{ request.GET.bookmaker }}{% endif %}{% if request.GET.min_odds %}&min_odds={{ request.GET.min_odds }}{% endif %}{% if request.GET.max_odds %}&max_odds={{ request.GET.max_odds }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}"
-             class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">First</a>
-          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.bookmaker %}&bookmaker={{ request.GET.bookmaker }}{% endif %}{% if request.GET.min_odds %}&min_odds={{ request.GET.min_odds }}{% endif %}{% if request.GET.max_odds %}&max_odds={{ request.GET.max_odds }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}"
-             class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">Previous</a>
+          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.bookmaker %}&bookmaker={{ request.GET.bookmaker }}{% endif %}{% if request.GET.min_odds %}&min_odds={{ request.GET.min_odds }}{% endif %}{% if request.GET.max_odds %}&max_odds={{ request.GET.max_odds }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="px-3 py-1.5 text-sm font-medium rounded-md text-muted-foreground hover:bg-secondary transition-colors">Prev</a>
         {% endif %}
 
-        <span class="px-3 py-2 text-sm bg-primary text-primary-foreground rounded">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <span class="px-4 py-1.5 text-sm font-bold bg-primary text-primary-foreground rounded-md shadow-sm">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
 
         {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.bookmaker %}&bookmaker={{ request.GET.bookmaker }}{% endif %}{% if request.GET.min_odds %}&min_odds={{ request.GET.min_odds }}{% endif %}{% if request.GET.max_odds %}&max_odds={{ request.GET.max_odds }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}"
-             class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">Next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.bookmaker %}&bookmaker={{ request.GET.bookmaker }}{% endif %}{% if request.GET.min_odds %}&min_odds={{ request.GET.min_odds }}{% endif %}{% if request.GET.max_odds %}&max_odds={{ request.GET.max_odds }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}"
-             class="px-3 py-2 text-sm bg-secondary text-secondary-foreground hover:bg-accent rounded">Last</a>
+          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.bookmaker %}&bookmaker={{ request.GET.bookmaker }}{% endif %}{% if request.GET.min_odds %}&min_odds={{ request.GET.min_odds }}{% endif %}{% if request.GET.max_odds %}&max_odds={{ request.GET.max_odds }}{% endif %}{% if request.GET.sort_by %}&sort_by={{ request.GET.sort_by }}{% endif %}" class="px-3 py-1.5 text-sm font-medium rounded-md text-muted-foreground hover:bg-secondary transition-colors">Next</a>
         {% endif %}
       </nav>
     </div>
   {% endif %}
+
 {% else %}
-  <div class="text-center py-12">
-    <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="text-center py-16 bg-card border border-border rounded-2xl shadow-sm">
+    <svg class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
     </svg>
-    <h3 class="mt-2 text-lg font-medium text-foreground">No tips available</h3>
-    <p class="mt-1 text-muted-foreground">Check back later for new match predictions from expert sports analysts.</p>
-    {% if user.is_authenticated %}
-      <div class="mt-4">
-        <a href="{% url 'tips:create_tip' %}" class="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition-opacity">Post Your First Prediction</a>
-      </div>
-    {% endif %}
+    <h3 class="text-lg font-bold text-foreground">No predictions found</h3>
+    <p class="mt-2 text-muted-foreground max-w-md mx-auto">Try adjusting your filters or search terms to find what you're looking for.</p>
+    <div class="mt-6">
+      <a href="{% url 'tips:marketplace' %}" class="inline-flex items-center justify-center rounded-lg font-medium transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-6">
+        Clear Filters
+      </a>
+    </div>
   </div>
 {% endif %}
+
 {% endblock %}
