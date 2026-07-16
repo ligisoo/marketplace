@@ -75,9 +75,19 @@ def tip_detail(request, tip_id):
         pass
         
     can_view_matches = True
-    if tip.is_premium:
-        if not request.user.is_authenticated or not request.user.userprofile.is_pro_active:
-            can_view_matches = False
+    
+    # Restrict access to slips from Top N Analysts for free users
+    from .utils import get_top_analysts
+    
+    # If the user is the tipster themselves, they can always view it
+    if request.user != tip.tipster:
+        # Check if this tip is from a Top Analyst
+        top_ids = get_top_analysts()
+        
+        if tip.tipster.id in top_ids:
+            # If so, check if the current user is a Pro subscriber
+            if not request.user.is_authenticated or not request.user.userprofile.is_pro_active:
+                can_view_matches = False
             
     context = {
         'tip': tip,
@@ -406,6 +416,18 @@ def tipster_profile(request, tipster_id):
         id=tipster_id
     )
     
+    # Block access to profile if this is a Top Analyst and user is not Pro
+    from .utils import get_top_analysts
+    from django.conf import settings
+    if request.user != tipster:
+        if tipster.id in get_top_analysts():
+            if not request.user.is_authenticated or not request.user.userprofile.is_pro_active:
+                from django.contrib import messages
+                from django.shortcuts import redirect
+                limit = getattr(settings, 'PRO_RESTRICTED_TOP_ANALYSTS_COUNT', 10)
+                messages.info(request, f"This analyst is in the Top {limit}! Their profile and prediction slips are exclusive to Pro subscribers. Upgrade to unlock!")
+                return redirect('payments:pricing')
+    
     # Get tipster's active tips
     active_tips = Tip.objects.filter(
         tipster=tipster,
@@ -439,7 +461,7 @@ def tipster_profile(request, tipster_id):
         'win_rate': 0,
         'active_tips': active_tips.count(),
         'historical_tips': historical_tips.count(),
-        'avg_odds': resulted_tips.aggregate(Avg('odds'))['odds__avg'] or 0,
+        'avg_odds': all_tips.aggregate(Avg('odds'))['odds__avg'] or 0,
     }
 
     # Calculate win rate only from resulted tips
@@ -479,7 +501,7 @@ def leaderboard(request):
         resulted_count = resulted_tips.count()
         won_tips = resulted_tips.filter(is_won=True).count()
         win_rate = round((won_tips / resulted_count * 100), 1) if resulted_count > 0 else 0
-        avg_odds = resulted_tips.aggregate(avg=Avg('odds'))['avg'] or 0
+        avg_odds = all_tips.aggregate(avg=Avg('odds'))['avg'] or 0
         active_tips = all_tips.filter(status='active').count()
 
         if total_tips > 0:
@@ -514,6 +536,15 @@ def leaderboard(request):
             ),
             reverse=True
         )
+    elif sort_by == 'avg_odds':
+        leaderboard_data.sort(
+            key=lambda x: (
+                x['avg_odds'],
+                x['win_rate'],
+                x['total_tips']
+            ),
+            reverse=True
+        )
     else:
         # Default to win_rate sorting
         leaderboard_data.sort(
@@ -529,9 +560,13 @@ def leaderboard(request):
     for idx, tipster_data in enumerate(leaderboard_data, 1):
         tipster_data['rank'] = idx
 
+    from django.conf import settings
+    limit = getattr(settings, 'PRO_RESTRICTED_TOP_ANALYSTS_COUNT', 10)
+
     context = {
         'leaderboard': leaderboard_data,
         'sort_by': sort_by,
+        'pro_restricted_limit': limit,
     }
 
     return render(request, 'tips/leaderboard.html', context)

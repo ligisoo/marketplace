@@ -163,6 +163,12 @@ MPESA_PASSKEY = config('MPESA_PASSKEY', default='')
 MPESA_CALLBACK_URL = config('MPESA_CALLBACK_URL', default='https://ligisoo.co.ke/api/callback')
 MPESA_CALLBACK_SECRET = config('MPESA_CALLBACK_SECRET', default='')
 ENVIRONMENT = config('ENVIRONMENT', default='development')
+PRO_RESTRICTED_TOP_ANALYSTS_COUNT = config('PRO_RESTRICTED_TOP_ANALYSTS_COUNT', default=10, cast=int)
+
+# Subscription Pricing (in KES)
+SUBSCRIPTION_PRICE_WEEKLY = config('SUBSCRIPTION_PRICE_WEEKLY', default=100, cast=int)
+SUBSCRIPTION_PRICE_MONTHLY = config('SUBSCRIPTION_PRICE_MONTHLY', default=400, cast=int)
+SUBSCRIPTION_PRICE_ANNUAL = config('SUBSCRIPTION_PRICE_ANNUAL', default=4000, cast=int)
 
 # AWS Configuration for Textract OCR
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')

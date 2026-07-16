@@ -21,11 +21,11 @@
             <div class="bg-card border border-border rounded-lg p-6 mb-6">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        {% if has_purchased or user == tip.tipster %}
+                        {% if can_view_matches %}
                             <h1 class="text-2xl font-bold text-foreground">{{ tip.bet_code }}</h1>
                         {% else %}
                             <h1 class="text-2xl font-bold text-foreground">{{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}</h1>
-                            <p class="text-xs text-yellow-600 mb-1">🔒 Full bet code visible after purchase</p>
+                            <p class="text-xs text-yellow-600 mb-1">🔒 Full bet code visible for Pro subscribers</p>
                         {% endif %}
                         <p class="text-muted-foreground">{{ tip.get_bookmaker_display }} Prediction Slip</p>
                     </div>
@@ -59,14 +59,7 @@
                         <p class="text-sm text-muted-foreground">Total Odds</p>
                         <p class="text-xl font-bold text-green-400">{{ tip.odds }}x</p>
                     </div>
-                    <div class="text-center">
-                        <p class="text-sm text-muted-foreground">Price</p>
-                        <p class="text-xl font-bold text-primary">KES {{ tip.price }}</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-sm text-muted-foreground">Purchases</p>
-                        <p class="text-xl font-bold text-foreground">{{ tip.purchase_count }}</p>
-                    </div>
+                    <!-- Removed Price and Purchases for GRA pivot -->
                     <div class="text-center">
                     {% load tip_extras %}
                     {% if tip.is_resulted %}
@@ -96,7 +89,7 @@
                 {% if tip.screenshot %}
                     <div class="mb-6">
                         <h3 class="text-lg font-medium text-foreground mb-3">Prediction Slip Screenshot</h3>
-                        {% if has_purchased or user == tip.tipster %}
+                        {% if can_view_matches %}
                             <div class="border border-border rounded-lg overflow-hidden">
                                 <img src="{{ tip.screenshot.url }}" alt="Prediction Slip screenshot"
                                      class="w-full h-auto max-h-96 object-contain bg-muted/30">
@@ -110,8 +103,8 @@
                                         <svg class="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                                         </svg>
-                                        <p class="font-medium">Purchase to view clear prediction slip</p>
-                                        <p class="text-sm opacity-80">Screenshot unlocked after payment</p>
+                                        <p class="font-medium">Upgrade to Pro to view prediction slip</p>
+                                        <p class="text-sm opacity-80">Screenshot unlocked for Pro subscribers</p>
                                     </div>
                                 </div>
                             </div>
@@ -124,8 +117,8 @@
             <div class="bg-card rounded-lg border border-border p-4">
                 <h3 class="text-base font-medium text-foreground mb-3">Matches & Markets</h3>
 
-                {% if has_purchased or user == tip.tipster %}
-                    <!-- Full details for purchasers and sports analyst -->
+                {% if can_view_matches %}
+                    <!-- Full details for Pro subscribers and sports analyst -->
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
@@ -224,7 +217,7 @@
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                                                     </svg>
                                                     <p class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</p>
-                                                    <p class="text-xs mt-1">Purchase to reveal all matches</p>
+                                                    <p class="text-xs mt-1">Upgrade to Pro to reveal all matches</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -235,11 +228,11 @@
 
                         {% if tip.preview_data.total_matches == 2 and tip.get_preview_matches %}
                             <div class="text-center p-3 bg-muted/30 border border-border rounded-lg mt-3">
-                                <p class="text-sm text-muted-foreground">🔒 +1 more match - Purchase to see full details</p>
+                                <p class="text-sm text-muted-foreground">🔒 +1 more match - Upgrade to Pro to see full details</p>
                             </div>
                         {% elif tip.preview_data.total_matches > 2 %}
                             <div class="text-center p-3 bg-muted/30 border border-border rounded-lg mt-3">
-                                <p class="text-sm text-muted-foreground">🔒 +{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} - Purchase to see full details</p>
+                                <p class="text-sm text-muted-foreground">🔒 +{{ tip.preview_data.total_matches|add:"-2" }} more match{{ tip.preview_data.total_matches|add:"-2"|pluralize:"es" }} - Upgrade to Pro to see full details</p>
                             </div>
                         {% endif %}
                     </div>
@@ -249,7 +242,7 @@
 
         <!-- Sidebar -->
         <div class="lg:col-span-1">
-            <!-- Purchase/Action Card -->
+            <!-- Access Info Card -->
             <div class="bg-card rounded-lg border border-border p-6 mb-6 sticky top-4">
                 {% if user == tip.tipster %}
                     <!-- Sports Analyst's own tip -->
@@ -260,94 +253,30 @@
                             View All My Tips
                         </a>
                     </div>
-                {% elif has_purchased %}
-                    <!-- Already purchased -->
+                {% elif can_view_matches %}
+                    <!-- Access Granted -->
                     <div class="text-center">
                         <svg class="mx-auto h-12 w-12 text-green-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <h3 class="text-lg font-medium text-foreground mb-2">Purchased</h3>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Access Granted</h3>
                         <p class="text-muted-foreground mb-4">You have full access to this tip's details and bet code.</p>
                         <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
                             <p class="text-sm font-medium text-green-700 dark:text-green-400">Bet Code</p>
                             <p class="text-lg font-bold text-green-800 dark:text-green-300 font-mono">{{ tip.bet_code }}</p>
                         </div>
                     </div>
-                {% elif can_purchase %}
-                    <!-- Can purchase -->
-                    <div class="text-center">
-                        <h3 class="text-lg font-medium text-foreground mb-4">Purchase This Tip</h3>
-                        <div class="mb-4">
-                            <p class="text-3xl font-bold text-primary">KES {{ tip.price }}</p>
-                            <p class="text-sm text-muted-foreground">One-time payment</p>
-                        </div>
-
-                        {% if user.is_authenticated %}
-                            <!-- Wallet Balance Display -->
-                            <div class="bg-secondary/50 border border-border rounded-lg p-3 mb-4">
-                                <p class="text-xs text-muted-foreground">Your Wallet Balance</p>
-                                <p class="text-lg font-bold text-accent">KES {{ user.userprofile.wallet_balance|floatformat:0 }}</p>
-                            </div>
-
-                            <!-- Payment Options -->
-                            <div class="space-y-2">
-                                {% if user.userprofile.wallet_balance >= tip.price %}
-                                    <!-- Wallet Payment (Primary if sufficient balance) -->
-                                    <button onclick="purchaseTipWithWallet({{ tip.id }})" class="w-full btn btn-primary" id="wallet-purchase-btn">
-                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                        Pay with Wallet
-                                    </button>
-                                {% else %}
-                                    <!-- Insufficient balance - show disabled wallet button -->
-                                    <button disabled class="w-full btn btn-secondary opacity-50 cursor-not-allowed">
-                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                        Insufficient Wallet Balance
-                                    </button>
-                                    <p class="text-xs text-yellow-400">
-                                        Need KES {{ tip.price|floatformat:0 }} more.
-                                        <a href="{% url 'users:profile' %}" class="underline">Add funds</a>
-                                    </p>
-                                {% endif %}
-
-                                {% if user.phone_number %}
-                                    <!-- M-Pesa Payment -->
-                                    <button onclick="purchaseTipWithMpesa({{ tip.id }})"
-                                            class="w-full btn {% if user.userprofile.wallet_balance >= tip.price %}btn-secondary{% else %}btn-primary{% endif %}"
-                                            id="mpesa-purchase-btn">
-                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                        </svg>
-                                        Pay with M-Pesa
-                                    </button>
-                                {% else %}
-                                    <div class="text-center mt-2">
-                                        <p class="text-xs text-muted-foreground">
-                                            <a href="{% url 'users:profile' %}" class="text-primary underline">Add phone number</a> for M-Pesa payments
-                                        </p>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                            <a href="{% url 'users:login' %}?next={{ request.path }}" class="w-full btn btn-primary">
-                                Login to Purchase
-                            </a>
-                        {% endif %}
-                    </div>
                 {% else %}
-                    <!-- Cannot purchase -->
+                    <!-- Pro Exclusive -->
                     <div class="text-center">
-                        <h3 class="text-lg font-medium text-foreground mb-4">Tip Unavailable</h3>
-                        <p class="text-muted-foreground mb-4">
-                            {% if not tip.is_active %}
-                                This tip has expired or is no longer active.
-                            {% else %}
-                                This tip cannot be purchased at the moment.
-                            {% endif %}
-                        </p>
+                        <svg class="mx-auto h-12 w-12 text-yellow-500 mb-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Pro Exclusive Tip</h3>
+                        <p class="text-muted-foreground mb-4">This analyst's predictions are restricted to Pro subscribers.</p>
+                        <a href="{% url 'payments:pricing' %}" class="w-full btn btn-primary">
+                            Upgrade to Pro
+                        </a>
                     </div>
                 {% endif %}
             </div>
@@ -384,153 +313,4 @@
     </div>
 </div>
 
-{% if can_purchase and user.is_authenticated %}
-<script>
-let paymentCheckInterval;
-
-// Wallet Purchase Function
-function purchaseTipWithWallet(tipId) {
-    const btn = document.getElementById('wallet-purchase-btn');
-
-    if (!confirm('Purchase this tip for KES {{ tip.price }} from your wallet?')) {
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Processing...';
-
-    fetch(`/tips/purchase/${tipId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message || 'Tip purchased successfully!', 'success');
-
-            // Redirect to tip detail page after short delay
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        } else {
-            showToast(data.error || 'Purchase failed', 'error');
-            btn.disabled = false;
-            btn.innerHTML = `
-                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                </svg>
-                Pay with Wallet
-            `;
-        }
-    })
-    .catch(error => {
-        console.error('Purchase error:', error);
-        showToast('An error occurred. Please try again.', 'error');
-        btn.disabled = false;
-        btn.innerHTML = `
-            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-            </svg>
-            Pay with Wallet
-        `;
-    });
-}
-
-// M-Pesa Purchase Function
-function purchaseTipWithMpesa(tipId) {
-    const btn = document.getElementById('mpesa-purchase-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Initiating payment...';
-
-    fetch('/payments/api/initiate-tip-payment/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            tip_id: tipId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.checkout_request_id) {
-            showToast(data.message, 'success');
-            btn.innerHTML = '<span class="spinner"></span> Check your phone...';
-            
-            // Start polling for payment status
-            pollPaymentStatus(data.checkout_request_id, tipId);
-        } else {
-            showToast(data.error || 'Payment initiation failed', 'error');
-            btn.disabled = false;
-            btn.innerHTML = `
-                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                </svg>
-                Pay with M-Pesa
-            `;
-        }
-    })
-    .catch(error => {
-        showToast('An error occurred. Please try again.', 'error');
-        btn.disabled = false;
-        btn.innerHTML = `
-            <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-            </svg>
-            Pay with M-Pesa
-        `;
-    });
-}
-
-function pollPaymentStatus(checkoutRequestId, tipId) {
-    let attempts = 0;
-    const maxAttempts = 60; // Poll for 5 minutes (60 * 5 seconds)
-    
-    paymentCheckInterval = setInterval(() => {
-        attempts++;
-        
-        fetch(`/payments/api/status/${checkoutRequestId}/`, {
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'completed') {
-                clearInterval(paymentCheckInterval);
-                showToast('Payment successful! Tip purchased.', 'success');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-            } else if (data.status === 'failed') {
-                clearInterval(paymentCheckInterval);
-                showToast('Payment failed. Please try again.', 'error');
-                const btn = document.getElementById('purchase-btn');
-                btn.disabled = false;
-                btn.innerHTML = 'Pay with M-Pesa';
-            } else if (attempts >= maxAttempts) {
-                clearInterval(paymentCheckInterval);
-                showToast('Payment status check timeout. Please refresh page to check status.', 'warning');
-                const btn = document.getElementById('purchase-btn');
-                btn.disabled = false;
-                btn.innerHTML = 'Pay with M-Pesa';
-            }
-        })
-        .catch(error => {
-            if (attempts >= maxAttempts) {
-                clearInterval(paymentCheckInterval);
-                showToast('Payment status check failed. Please refresh page.', 'error');
-                const btn = document.getElementById('purchase-btn');
-                btn.disabled = false;
-                btn.innerHTML = 'Pay with M-Pesa';
-            }
-        });
-    }, 5000); // Check every 5 seconds
-}
-</script>
-{% endif %}
 {% endblock %}

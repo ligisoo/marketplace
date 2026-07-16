@@ -4,6 +4,12 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 import json
+from io import BytesIO
+from PIL import Image
+from django.core.files.base import ContentFile
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Tip(models.Model):
@@ -99,10 +105,60 @@ class Tip(models.Model):
     @property
     def time_until_first_match(self):
         """Get time remaining until the first match starts"""
-        starts_at = self.first_match_starts_at
-        if starts_at and starts_at > timezone.now():
-            return starts_at - timezone.now()
+        first_match_date = self.first_match_starts_at
+        if first_match_date and first_match_date > timezone.now():
+            return first_match_date - timezone.now()
         return timedelta(0)
+
+    def save(self, *args, **kwargs):
+        # Image compression logic
+        if self.screenshot and not getattr(self, '_image_compressed', False):
+            try:
+                # Open the uploaded image
+                img = Image.open(self.screenshot)
+                
+                # Convert to RGB if necessary (e.g. RGBA or P)
+                if img.mode in ('RGBA', 'LA'):
+                    background = Image.new(img.mode[:-1], img.size, (255, 255, 255))
+                    background.paste(img, img.split()[-1])
+                    img = background
+                elif img.mode != 'RGB':
+                    img = img.convert('RGB')
+                    
+                # Resize if wider than 1080px
+                max_width = 1080
+                if img.width > max_width:
+                    ratio = max_width / img.width
+                    new_height = int(img.height * ratio)
+                    img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+                
+                # Save as WebP to a BytesIO object
+                output = BytesIO()
+                img.save(output, format='WEBP', quality=80, method=4)
+                output.seek(0)
+                
+                # Update the file name and content
+                # Split original name to get basename without extension
+                original_name = self.screenshot.name.split('.')[0]
+                if '/' in original_name:
+                    original_name = original_name.split('/')[-1]
+                    
+                new_filename = f"{original_name}.webp"
+                
+                # Use save=False to avoid infinite recursion
+                self.screenshot.save(
+                    new_filename, 
+                    ContentFile(output.read()), 
+                    save=False
+                )
+                
+                # Mark as compressed to avoid re-compressing
+                self._image_compressed = True
+                
+            except Exception as e:
+                logger.error(f"Failed to compress betslip image: {e}")
+                
+        super().save(*args, **kwargs)
 
     @property
     def is_live(self):

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ligisoo Pro - Upgrade{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            Unlock <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Ligisoo Pro</span>
+        </h1>
+        <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Get exclusive access to predictions from our Top 10 Analysts and skyrocket your winning potential.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <!-- Weekly Plan -->
+        <div class="bg-card border border-border rounded-2xl p-8 flex flex-col relative transition-transform hover:-translate-y-1">
+            <h3 class="text-2xl font-bold text-foreground mb-2">Weekly Pass</h3>
+            <p class="text-muted-foreground mb-6">Perfect for a quick test run.</p>
+            <div class="text-4xl font-bold text-foreground mb-6">
+                KES {{ weekly_price }} <span class="text-lg text-muted-foreground font-normal">/week</span>
+            </div>
+            <ul class="space-y-4 mb-8 flex-1">
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Access slips from Top 10 Analysts</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Advanced tipster analytics</span>
+                </li>
+            </ul>
+            <a href="{% url 'payments:checkout' %}?tier=weekly" class="btn bg-secondary text-secondary-foreground hover:bg-secondary/80 w-full text-center py-3 rounded-lg font-bold">
+                Get Weekly
+            </a>
+        </div>
+
+        <!-- Monthly Plan (Popular) -->
+        <div class="bg-card border-2 border-primary rounded-2xl p-8 flex flex-col relative transform md:-translate-y-4 shadow-xl shadow-primary/10">
+            <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <span class="bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-full">
+                    Most Popular
+                </span>
+            </div>
+            <h3 class="text-2xl font-bold text-foreground mb-2">Monthly Pass</h3>
+            <p class="text-muted-foreground mb-6">Our most popular plan.</p>
+            <div class="text-4xl font-bold text-primary mb-6">
+                KES {{ monthly_price }} <span class="text-lg text-muted-foreground font-normal">/month</span>
+            </div>
+            <ul class="space-y-4 mb-8 flex-1">
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Access slips from Top 10 Analysts</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Advanced tipster analytics</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Ad-free browsing</span>
+                </li>
+            </ul>
+            <a href="{% url 'payments:checkout' %}?tier=monthly" class="btn btn-primary w-full text-center py-3 rounded-lg font-bold">
+                Get Monthly
+            </a>
+        </div>
+
+        <!-- Annual Plan -->
+        <div class="bg-card border border-border rounded-2xl p-8 flex flex-col relative transition-transform hover:-translate-y-1">
+            <h3 class="text-2xl font-bold text-foreground mb-2">Annual Pass</h3>
+            <p class="text-muted-foreground mb-6">For the serious investors.</p>
+            <div class="text-4xl font-bold text-foreground mb-6">
+                KES {{ annual_price }} <span class="text-lg text-muted-foreground font-normal">/year</span>
+            </div>
+            <ul class="space-y-4 mb-8 flex-1">
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">All Monthly features</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Save KES 800 per year</span>
+                </li>
+                <li class="flex items-start">
+                    <svg class="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span class="text-foreground">Priority Support</span>
+                </li>
+            </ul>
+            <a href="{% url 'payments:checkout' %}?tier=annual" class="btn bg-secondary text-secondary-foreground hover:bg-secondary/80 w-full text-center py-3 rounded-lg font-bold">
+                Get Annual
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

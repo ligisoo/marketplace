@@ -16,6 +16,12 @@ def home_view(request):
         match_date__gt=timezone.now()
     ).values('home_team', 'away_team', 'match_date').distinct().order_by('match_date')[:4]
     
+    # Get IDs of Top Analysts restricted to Pro
+    from apps.tips.utils import get_top_analysts
+    from django.conf import settings
+    top_analyst_ids = get_top_analysts()
+    limit = getattr(settings, 'PRO_RESTRICTED_TOP_ANALYSTS_COUNT', 10)
+    
     # Recent active insights
     recent_insights = Tip.objects.filter(status='active').order_by('-created_at')[:4]
     
@@ -23,6 +29,8 @@ def home_view(request):
         'top_analysts': top_analysts,
         'upcoming_matches': upcoming_matches,
         'recent_insights': recent_insights,
+        'top_analyst_ids': top_analyst_ids,
+        'pro_restricted_limit': limit,
     }
     return render(request, 'home.html', context)
 

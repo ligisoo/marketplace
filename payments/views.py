@@ -42,9 +42,9 @@ class InitiateSubscriptionView(APIView):
         tier = data.get('tier', 'monthly')
         idempotency_key = data.get('idempotency_key')
         
-        if tier not in ['weekly', 'monthly']:
+        if tier not in ['weekly', 'monthly', 'annual']:
             return Response(
-                {'error': 'Invalid subscription tier. Choose weekly or monthly.'}, 
+                {'error': 'Invalid subscription tier. Choose weekly, monthly, or annual.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
             
@@ -54,7 +54,12 @@ class InitiateSubscriptionView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        amount = 100 if tier == 'weekly' else 400
+        if tier == 'weekly':
+            amount = settings.SUBSCRIPTION_PRICE_WEEKLY
+        elif tier == 'monthly':
+            amount = settings.SUBSCRIPTION_PRICE_MONTHLY
+        else:
+            amount = settings.SUBSCRIPTION_PRICE_ANNUAL
         
         # Check for idempotency - return existing payment if same key used
         try:
@@ -186,7 +191,7 @@ class SubscriptionCallbackView(APIView):
                 user_profile.is_pro = True
                 
                 # Add time based on tier
-                days_to_add = 7 if payment.tier == 'weekly' else 30
+                days_to_add = 7 if payment.tier == 'weekly' else (30 if payment.tier == 'monthly' else 365)
                 now = timezone.now()
                 
                 if user_profile.pro_expires_at and user_profile.pro_expires_at > now:
@@ -244,7 +249,7 @@ class SubscriptionStatusView(APIView):
                         user_profile.is_pro = True
                         
                         # Add time based on tier
-                        days_to_add = 7 if payment.tier == 'weekly' else 30
+                        days_to_add = 7 if payment.tier == 'weekly' else (30 if payment.tier == 'monthly' else 365)
                         now = timezone.now()
                         
                         if user_profile.pro_expires_at and user_profile.pro_expires_at > now:
@@ -274,3 +279,32 @@ class SubscriptionStatusView(APIView):
                 {'error': 'Payment not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+def pricing_view(request):
+    """Render the pricing page"""
+    context = {
+        'weekly_price': settings.SUBSCRIPTION_PRICE_WEEKLY,
+        'monthly_price': settings.SUBSCRIPTION_PRICE_MONTHLY,
+        'annual_price': settings.SUBSCRIPTION_PRICE_ANNUAL,
+    }
+    return render(request, 'payments/pricing.html', context)
+
+@login_required
+def checkout_view(request):
+    tier = request.GET.get('tier', 'monthly')
+    
+    if tier == 'weekly':
+        amount = settings.SUBSCRIPTION_PRICE_WEEKLY
+    elif tier == 'monthly':
+        amount = settings.SUBSCRIPTION_PRICE_MONTHLY
+    else:
+        amount = settings.SUBSCRIPTION_PRICE_ANNUAL
+    context = {
+        'tier': tier,
+        'amount': amount,
+        'tier_display': tier.capitalize()
+    }
+    return render(request, 'payments/checkout.html', context)

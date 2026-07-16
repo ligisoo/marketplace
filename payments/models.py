@@ -19,6 +19,7 @@ class SubscriptionPayment(models.Model):
     TIER_CHOICES = [
         ('weekly', 'Weekly (KES 100)'),
         ('monthly', 'Monthly (KES 400)'),
+        ('annual', 'Annual (KES 4000)'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

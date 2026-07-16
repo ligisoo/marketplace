@@ -85,6 +85,11 @@
                    class="text-sm font-medium transition-colors hover:text-primary {% if request.resolver_match.url_name == 'leaderboard' %}text-primary{% else %}text-muted-foreground{% endif %}">
                     Leaderboard
                 </a>
+                {% if user.is_authenticated and not user.userprofile.is_pro_active %}
+                <a href="{% url 'payments:pricing' %}" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4">
+                    Upgrade to Pro
+                </a>
+                {% endif %}
             </nav>
 
             <!-- User Authentication & Mobile Menu -->
@@ -107,7 +112,12 @@
                             <!-- User Info Header -->
                             <div class="px-4 py-3 border-b border-border">
                                 <div class="flex flex-col space-y-1">
-                                    <p class="text-sm font-medium leading-none">{{ user.userprofile.display_name }}</p>
+                                    <div class="flex items-center space-x-2">
+                                        <p class="text-sm font-medium leading-none">{{ user.userprofile.display_name }}</p>
+                                        {% if user.userprofile.is_pro_active %}
+                                        <span class="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm shadow-yellow-500/20">PRO</span>
+                                        {% endif %}
+                                    </div>
                                     <p class="text-xs leading-none text-muted-foreground">{{ user.phone_number }}</p>
 
                                 </div>

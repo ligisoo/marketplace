@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout - Ligisoo Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+    <div class="bg-card border border-border rounded-2xl p-8 shadow-sm">
+        <h1 class="text-3xl font-bold text-foreground mb-2">Complete Your Upgrade</h1>
+        <p class="text-muted-foreground mb-8">You are upgrading to the <span class="font-bold text-primary">{{ tier_display }} Pass</span>.</p>
+
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Order Summary -->
+            <div class="flex-1 bg-muted/30 rounded-xl p-6 border border-border/50">
+                <h3 class="text-lg font-semibold text-foreground mb-4">Order Summary</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-muted-foreground">Plan</span>
+                    <span class="font-medium text-foreground">Ligisoo Pro ({{ tier_display }})</span>
+                </div>
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-muted-foreground">Amount</span>
+                    <span class="font-bold text-xl text-foreground">KES {{ amount }}</span>
+                </div>
+                
+                <div class="pt-4 border-t border-border">
+                    <p class="text-sm text-muted-foreground mb-2"><svg class="w-4 h-4 inline text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Instant Activation</p>
+                    <p class="text-sm text-muted-foreground"><svg class="w-4 h-4 inline text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z"></path></svg> Secure M-Pesa Payment</p>
+                </div>
+            </div>
+
+            <!-- Payment Form -->
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-foreground mb-4">Pay with M-Pesa</h3>
+                
+                <div id="payment-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-foreground mb-1">M-Pesa Phone Number</label>
+                        <input type="text" id="phone_number" value="{{ user.phone_number }}" class="w-full bg-background border border-input rounded-lg px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" readonly>
+                        <p class="text-xs text-muted-foreground mt-1">Number linked to your account.</p>
+                    </div>
+
+                    <button id="pay-btn" class="btn btn-primary w-full py-3 rounded-lg font-bold text-lg mt-4 flex justify-center items-center">
+                        <span>Pay KES {{ amount }}</span>
+                    </button>
+                </div>
+
+                <!-- Loading State -->
+                <div id="payment-processing" class="hidden text-center py-6">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                    <h3 class="text-lg font-bold text-foreground">Processing Payment...</h3>
+                    <p class="text-muted-foreground mt-2">Please check your phone for the M-Pesa prompt and enter your PIN.</p>
+                    <p class="text-xs text-muted-foreground mt-4" id="polling-status">Waiting for confirmation...</p>
+                </div>
+
+                <!-- Success State -->
+                <div id="payment-success" class="hidden text-center py-6">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                        <svg class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-foreground">Payment Successful!</h3>
+                    <p class="text-muted-foreground mt-2">Welcome to Ligisoo Pro. Your account has been upgraded.</p>
+                    <a href="{% url 'users:profile' %}" class="btn btn-primary mt-6 inline-block">Go to Dashboard</a>
+                </div>
+                
+                <!-- Error State -->
+                <div id="payment-error" class="hidden text-center py-6">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                        <svg class="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-foreground">Payment Failed</h3>
+                    <p class="text-muted-foreground mt-2" id="error-message">We couldn't process your payment.</p>
+                    <button id="retry-btn" class="btn btn-secondary mt-6">Try Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const payBtn = document.getElementById('pay-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const formDiv = document.getElementById('payment-form');
+        const processingDiv = document.getElementById('payment-processing');
+        const successDiv = document.getElementById('payment-success');
+        const errorDiv = document.getElementById('payment-error');
+        const errorMessage = document.getElementById('error-message');
+        const pollingStatus = document.getElementById('polling-status');
+        
+        let pollInterval;
+        let pollCount = 0;
+        const MAX_POLLS = 30; // 30 * 2s = 60s
+        
+        // Helper to generate idempotency key
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function initiatePayment() {
+            // Hide form, show processing
+            formDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            processingDiv.classList.remove('hidden');
+            
+            const idempotencyKey = generateUUID();
+            
+            fetch('/payments/api/initiate-subscription/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    tier: '{{ tier }}',
+                    idempotency_key: idempotencyKey
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    // Start polling status
+                    startPolling(data.checkout_request_id);
+                }
+            })
+            .catch(error => {
+                showError('Network error. Please try again.');
+            });
+        }
+        
+        function startPolling(checkoutRequestId) {
+            pollCount = 0;
+            pollingStatus.textContent = 'Waiting for your PIN entry...';
+            
+            pollInterval = setInterval(() => {
+                pollCount++;
+                
+                if (pollCount > MAX_POLLS) {
+                    clearInterval(pollInterval);
+                    showError('Payment timed out. If you received a prompt, please complete it and check your profile later.');
+                    return;
+                }
+                
+                fetch(`/payments/api/status/${checkoutRequestId}/`, {
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        clearInterval(pollInterval);
+                        showSuccess();
+                    } else if (data.status === 'failed' || data.status === 'cancelled') {
+                        clearInterval(pollInterval);
+                        showError(data.response_description || 'Payment failed or was cancelled.');
+                    }
+                })
+                .catch(err => console.error('Polling error', err));
+                
+            }, 2000); // Poll every 2 seconds
+        }
+        
+        function showError(msg) {
+            processingDiv.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+            errorMessage.textContent = msg;
+            if (pollInterval) clearInterval(pollInterval);
+        }
+        
+        function showSuccess() {
+            processingDiv.classList.add('hidden');
+            successDiv.classList.remove('hidden');
+        }
+        
+        payBtn.addEventListener('click', initiatePayment);
+        retryBtn.addEventListener('click', () => {
+            errorDiv.classList.add('hidden');
+            formDiv.classList.remove('hidden');
+        });
+    });
+</script>
+{% endblock %}
