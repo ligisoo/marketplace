@@ -18,4 +18,4 @@ We do not accept wagers, place bets, or hold funds intended for gambling. All in
 
 ---
 
-*For support or inquiries, please visit our [Help Center](/pages/help-center/).*
+*For support or inquiries, please visit our [Help Center](/help-center/).*
