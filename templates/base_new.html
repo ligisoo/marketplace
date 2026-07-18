@@ -101,7 +101,7 @@
     
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-background text-foreground min-h-screen font-sans">
+<body class="bg-background text-foreground min-h-screen font-sans flex flex-col">
     <!-- Navigation -->
     <nav class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div class="container mx-auto px-4 flex h-16 items-center justify-between max-w-[1008px]">
@@ -324,6 +324,14 @@
             </div>
         </div>
     </footer>
+    
+    <!-- Regulatory Compliance Band -->
+    <div class="bg-red-900/90 text-red-50 text-center py-3 px-4 text-xs font-semibold tracking-wide border-t border-red-800 z-50 sticky bottom-0 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2">
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full border-2 border-red-50 text-red-50 text-[10px] mr-1">18+</span>
+            <span>Ligisoo is a sports analytics platform, not a gambling operator. Please use our insights responsibly. Past performance does not guarantee future results.</span>
+        </div>
+    </div>
     
     <!-- HTMX Config -->
     <script>
