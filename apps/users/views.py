@@ -121,106 +121,9 @@ def edit_profile(request):
 def withdraw(request):
     """
     Handle withdrawal requests to M-Pesa.
-    This will be connected to M-Pesa B2C API once available.
+    DISABLED: Under the SaaS subscription model, wallet features are disabled.
     """
-    if request.method != 'POST':
-        messages.error(request, 'Invalid request method.')
-        return redirect('users:profile')
-
-    # (is_tipster check removed - all users with balance can withdraw)
-
-    try:
-        # Get form data
-        amount = Decimal(request.POST.get('amount', '0'))
-        mpesa_phone = request.POST.get('mpesa_phone', '').strip()
-
-        # Validate amount
-        if amount < Decimal('10'):
-            messages.error(request, 'Minimum withdrawal amount is KES 10.')
-            return redirect('users:profile')
-
-        # Get user's current balance
-        current_balance = request.user.userprofile.get_accounting_balance()
-
-        if amount > current_balance:
-            messages.error(request, f'Insufficient balance. You have KES {current_balance}.')
-            return redirect('users:profile')
-
-        # Validate phone number
-        phone_pattern = r'^(254|0)[17]\d{8}$'
-        if not re.match(phone_pattern, mpesa_phone):
-            messages.error(request, 'Invalid M-Pesa phone number format.')
-            return redirect('users:profile')
-
-        # Normalize phone number to 254 format
-        if mpesa_phone.startswith('0'):
-            mpesa_phone = '254' + mpesa_phone[1:]
-
-        # Calculate Safaricom commission (you can adjust this based on actual M-Pesa rates)
-        # For now, we'll use a placeholder commission structure
-        # M-Pesa withdrawal charges vary by amount:
-        # 10-100: KES 11
-        # 101-500: KES 28
-        # 501-1000: KES 33
-        # 1001-2500: KES 53
-        # 2501-5000: KES 57
-        # 5001-7500: KES 78
-        # 7501-150000: KES 98
-
-        if amount <= 100:
-            safaricom_commission = Decimal('11')
-        elif amount <= 500:
-            safaricom_commission = Decimal('28')
-        elif amount <= 1000:
-            safaricom_commission = Decimal('33')
-        elif amount <= 2500:
-            safaricom_commission = Decimal('53')
-        elif amount <= 5000:
-            safaricom_commission = Decimal('57')
-        elif amount <= 7500:
-            safaricom_commission = Decimal('78')
-        else:
-            safaricom_commission = Decimal('98')
-
-        # Check if user has enough balance including commission
-        total_deduction = amount + safaricom_commission
-        if total_deduction > current_balance:
-            messages.error(
-                request,
-                f'Insufficient balance. Amount: KES {amount}, Fee: KES {safaricom_commission}, '
-                f'Total: KES {total_deduction}, Available: KES {current_balance}.'
-            )
-            return redirect('users:profile')
-
-        # Record withdrawal in accounting system
-        # TODO: Connect to M-Pesa B2C API here
-        # For now, we'll just record it in our system
-        transaction = AccountingService.record_withdrawal(
-            user=request.user,
-            amount=amount,
-            mpesa_phone=mpesa_phone,
-            safaricom_commission=safaricom_commission
-        )
-
-        # Sync wallet balance with accounting system
-        AccountingService.sync_wallet_balance(request.user)
-
-        messages.success(
-            request,
-            f'Withdrawal request submitted! KES {amount} will be sent to {mpesa_phone}. '
-            f'Transaction fee: KES {safaricom_commission}. '
-            f'Reference: {transaction.reference}'
-        )
-        messages.info(
-            request,
-            'Note: M-Pesa B2C integration is pending. This withdrawal has been recorded but not yet processed.'
-        )
-
-    except ValueError as e:
-        messages.error(request, 'Invalid amount entered.')
-    except Exception as e:
-        messages.error(request, f'An error occurred: {str(e)}')
-
+    messages.info(request, "Wallet features and withdrawals are no longer active under our subscription-only model.")
     return redirect('users:profile')
 
 
@@ -228,81 +131,20 @@ def withdraw(request):
 def transaction_history(request):
     """
     Display user's transaction history from the accounting system.
-    Shows banking-style statement with running balance.
+    DISABLED: Under the SaaS subscription model, wallet features are disabled.
     """
-    # Get date filters from query params (optional)
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-
-    # Get user's transaction statement
-    statement = AccountingService.get_user_statement(
-        user=request.user,
-        start_date=start_date,
-        end_date=end_date
-    )
-
-    # Get current balance
-    current_balance = request.user.userprofile.get_accounting_balance()
-
-    context = {
-        'statement': statement,
-        'current_balance': current_balance,
-        'start_date': start_date,
-        'end_date': end_date,
-    }
-
-    return render(request, 'users/transaction_history.html', context)
+    messages.info(request, "Wallet features and transaction histories are no longer active under our subscription-only model.")
+    return redirect('users:profile')
 
 
 @login_required
 def download_transaction_statement(request):
     """
     Generate and download PDF statement for buyer's transaction history.
+    DISABLED: Under the SaaS subscription model, wallet features are disabled.
     """
-    # Get date filters from query params (optional)
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
-
-    start_date = None
-    end_date = None
-
-    # Parse dates if provided
-    if start_date_str:
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-        except ValueError:
-            pass
-
-    if end_date_str:
-        try:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-        except ValueError:
-            pass
-
-    # Get user's transaction statement
-    statement = AccountingService.get_user_statement(
-        user=request.user,
-        start_date=start_date,
-        end_date=end_date
-    )
-
-    # Generate PDF
-    pdf_generator = StatementPDFGenerator()
-    pdf_buffer = pdf_generator.generate_buyer_statement(
-        user=request.user,
-        statement_data=statement,
-        start_date=start_date,
-        end_date=end_date
-    )
-
-    # Create response with PDF
-    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
-
-    # Generate filename with date
-    filename = f"transaction_statement_{request.user.phone_number}_{datetime.now().strftime('%Y%m%d')}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    return response
+    messages.info(request, "Wallet features and transaction statements are no longer active under our subscription-only model.")
+    return redirect('users:profile')
 
 
 def public_profile(request, user_id):

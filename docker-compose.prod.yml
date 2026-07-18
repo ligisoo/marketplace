@@ -2,7 +2,7 @@
 services:
   web:
     build: .
-    command: gunicorn --bind 0.0.0.0:8000 --workers 3 config.wsgi:application
+    command: gunicorn --bind 0.0.0.0:8000 --workers 3 --worker-class gthread --threads 4 config.wsgi:application
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -10,6 +10,7 @@ services:
       - .env
     depends_on:
       - db
+      - redis
     restart: always
 
   nginx:
@@ -42,6 +43,10 @@ services:
       - POSTGRES_DB=${DB_NAME:-ligisoo_marketplace}
       - POSTGRES_USER=${DB_USER:-ligisoo_user}
       - POSTGRES_PASSWORD=${DB_PASSWORD:-ligisoo_secret}
+    restart: always
+
+  redis:
+    image: redis:7-alpine
     restart: always
 
 volumes:

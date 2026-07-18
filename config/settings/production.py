@@ -93,11 +93,11 @@ LOGGING = {
     },
 }
 
-# Cache configuration (using database cache for persistence across restarts)
+# Cache configuration (using Redis in-memory cache for high performance)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'api_cache_table',
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': config('REDIS_URL', default='redis://redis:6379/1'),
     }
 }
 

@@ -484,37 +484,36 @@ def tipster_profile(request, tipster_id):
 def leaderboard(request):
     """Leaderboard showing top tipsters by win rate"""
     from django.contrib.auth import get_user_model
-    from django.db.models import Count, Sum, Q, Avg
+    from django.db.models import Count, Q, Avg
 
     User = get_user_model()
 
-    # Get all tipsters with their stats
-    tipsters = User.objects.all().select_related('userprofile')
+    # Get all tipsters with annotated stats to avoid N+1 queries
+    tipsters = User.objects.annotate(
+        total_tips_count=Count('tips'),
+        resulted_count=Count('tips', filter=Q(tips__is_resulted=True)),
+        won_tips=Count('tips', filter=Q(tips__is_resulted=True, tips__is_won=True)),
+        active_tips=Count('tips', filter=Q(tips__status='active')),
+        avg_odds=Avg('tips__odds')
+    ).filter(total_tips_count__gt=0).select_related('userprofile')
 
     # Calculate stats for each tipster
     leaderboard_data = []
 
     for tipster in tipsters:
-        all_tips = Tip.objects.filter(tipster=tipster)
-        resulted_tips = all_tips.filter(is_resulted=True)
-        total_tips = all_tips.count()
-        resulted_count = resulted_tips.count()
-        won_tips = resulted_tips.filter(is_won=True).count()
-        win_rate = round((won_tips / resulted_count * 100), 1) if resulted_count > 0 else 0
-        avg_odds = all_tips.aggregate(avg=Avg('odds'))['avg'] or 0
-        active_tips = all_tips.filter(status='active').count()
+        win_rate = round((tipster.won_tips / tipster.resulted_count * 100), 1) if tipster.resulted_count > 0 else 0.0
+        avg_odds = float(tipster.avg_odds) if tipster.avg_odds else 0.0
 
-        if total_tips > 0:
-            leaderboard_data.append({
-                'tipster': tipster,
-                'profile': getattr(tipster, 'userprofile', None),
-                'total_tips': total_tips,
-                'won_tips': won_tips,
-                'win_rate': win_rate,
-                'avg_odds': round(avg_odds, 2) if avg_odds else 0,
-                'active_tips': active_tips,
-                'resulted_count': resulted_count,
-            })
+        leaderboard_data.append({
+            'tipster': tipster,
+            'profile': getattr(tipster, 'userprofile', None),
+            'total_tips': tipster.total_tips_count,
+            'won_tips': tipster.won_tips,
+            'win_rate': win_rate,
+            'avg_odds': round(avg_odds, 2),
+            'active_tips': tipster.active_tips,
+            'resulted_count': tipster.resulted_count,
+        })
 
     # Default sorting
     sort_by = request.GET.get('sort', 'win_rate')
@@ -533,6 +532,7 @@ def leaderboard(request):
             key=lambda x: (
                 x['total_tips'],
                 x['win_rate'],
+                x['resulted_count']
             ),
             reverse=True
         )
@@ -570,3 +570,4 @@ def leaderboard(request):
     }
 
     return render(request, 'tips/leaderboard.html', context)
+
