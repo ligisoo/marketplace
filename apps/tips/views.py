@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
@@ -563,11 +564,96 @@ def leaderboard(request):
     from django.conf import settings
     limit = getattr(settings, 'PRO_RESTRICTED_TOP_ANALYSTS_COUNT', 10)
 
+    user_has_tips = False
+    if request.user.is_authenticated:
+        user_has_tips = any(d['tipster'].id == request.user.id for d in leaderboard_data)
+
     context = {
         'leaderboard': leaderboard_data,
         'sort_by': sort_by,
         'pro_restricted_limit': limit,
+        'user_has_tips': user_has_tips,
     }
 
     return render(request, 'tips/leaderboard.html', context)
 
+
+@staff_member_required
+def manual_resolution(request):
+    """Admin dashboard to manually resolve stuck slips"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        match_id = request.POST.get('match_id')
+        
+        if match_id and action in ['won', 'lost', 'void']:
+            match = get_object_or_404(TipMatch, id=match_id)
+            match.is_resulted = True
+            
+            if action == 'won':
+                match.is_won = True
+                match.actual_result = 'Manual Win'
+            elif action == 'lost':
+                match.is_won = False
+                match.actual_result = 'Manual Loss'
+            elif action == 'void':
+                match.is_won = True  # Treat void as won so accumulator continues
+                match.actual_result = 'Void / Push'
+                match.odds = Decimal('1.00')  # Reset odds to 1.0
+                
+            match.save()
+            
+            # Check if all matches in tip are resulted
+            tip = match.tip
+            if tip.matches.filter(is_resulted=False).count() == 0:
+                tip_won = not tip.matches.filter(is_won=False).exists()
+                tip.is_resulted = True
+                tip.is_won = tip_won
+                tip.status = 'archived'
+                tip.result_verified_at = timezone.now()
+                
+                # Recalculate tip odds if voided
+                total_odds = Decimal('1.00')
+                for m in tip.matches.all():
+                    total_odds *= m.odds
+                tip.odds = round(total_odds, 2)
+                tip.save()
+                
+                messages.success(request, f"Tip {tip.bet_code or tip.id} fully graded as {'WON' if tip_won else 'LOST'}")
+            else:
+                messages.success(request, f"Match manually graded as {action.upper()}")
+                
+        return redirect('tips:manual_resolution')
+        
+    # Get tips that are active, past expiry, and not resulted
+    # We add an hour grace period to be safe
+    stuck_tips = Tip.objects.filter(
+        status='active',
+        is_resulted=False,
+        expires_at__lt=timezone.now() - timedelta(hours=2)
+    ).prefetch_related('matches').order_by('expires_at')
+    
+    return render(request, 'tips/manual_resolution.html', {
+        'stuck_tips': stuck_tips
+    })
+
+def tip_live_scores(request, tip_id):
+    """AJAX endpoint to get live scores for a tip"""
+    tip = get_object_or_404(Tip, id=tip_id)
+    
+    live_matches = []
+    for match in tip.matches.all():
+        if match.api_match_id and not match.is_resulted:
+            from apps.fixtures.models import Fixture
+            fixture = Fixture.objects.filter(api_id=match.api_match_id).first()
+            if fixture:
+                live_matches.append({
+                    'id': match.id,
+                    'is_live': fixture.is_live,
+                    'is_finished': fixture.is_finished,
+                    'score': fixture.get_result_string() if fixture.home_goals is not None else None,
+                    'elapsed': fixture.elapsed,
+                    'status_short': fixture.status_short
+                })
+                
+    return JsonResponse({'matches': live_matches})

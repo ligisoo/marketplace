@@ -143,9 +143,14 @@ class ResultVerifier:
                 fixture = self._find_matching_fixture(tip_match)
 
             if fixture:
+                # Save api_match_id early so we can track live scores
+                if not tip_match.api_match_id:
+                    tip_match.api_match_id = str(fixture.api_id)
+                    tip_match.save(update_fields=['api_match_id'])
+                    
                 # Check if match is finished
                 if not fixture.is_finished:
-                    logger.info(f"Match {tip_match.home_team} vs {tip_match.away_team} not yet finished")
+                    logger.info(f"Match {tip_match.home_team} vs {tip_match.away_team} not yet finished (Status: {fixture.status_short})")
                     continue
 
                 # Verify this specific match

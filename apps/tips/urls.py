@@ -22,4 +22,10 @@ urlpatterns = [
 
     # Tipster profiles
     path('tipster/<int:tipster_id>/', views.tipster_profile, name='tipster_profile'),
+    
+    # Moderation / Admin
+    path('resolution/', views.manual_resolution, name='manual_resolution'),
+    
+    # AJAX Endpoints
+    path('<int:tip_id>/live-scores/', views.tip_live_scores, name='tip_live_scores'),
 ]

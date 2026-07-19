@@ -137,6 +137,15 @@
                                     </svg>
                                     Create New Prediction
                                 </a>
+                                
+                                {% if user.is_staff %}
+                                <a href="{% url 'tips:manual_resolution' %}" class="flex items-center px-4 py-2 text-sm text-orange-600 hover:bg-muted font-medium">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                                    </svg>
+                                    Resolve Slips
+                                </a>
+                                {% endif %}
                             </div>
                             <div class="border-t border-border py-1">
                                 <a href="{% url 'users:logout' %}" class="flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted">
@@ -218,6 +227,14 @@
                        @click="$dispatch('toggle-mobile-menu')">
                         My Profile
                     </a>
+                    
+                    {% if user.is_staff %}
+                    <a href="{% url 'tips:manual_resolution' %}"
+                       class="text-lg font-medium transition-colors hover:text-orange-600 text-orange-500"
+                       @click="$dispatch('toggle-mobile-menu')">
+                        Resolve Slips (Admin)
+                    </a>
+                    {% endif %}
                     <a href="{% url 'users:logout' %}"
                        class="text-lg font-medium transition-colors hover:text-primary text-muted-foreground"
                        @click="$dispatch('toggle-mobile-menu')">

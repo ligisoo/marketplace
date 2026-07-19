@@ -246,6 +246,29 @@ class TipMatch(models.Model):
     def __str__(self):
         return f"{self.home_team} vs {self.away_team} - {self.market}"
 
+    @property
+    def live_data(self):
+        """Get live match data if available and not yet resulted"""
+        if self.is_resulted or not self.api_match_id:
+            return None
+            
+        from apps.fixtures.models import Fixture
+        try:
+            fixture = Fixture.objects.get(api_id=int(self.api_match_id))
+            if not fixture.is_finished:
+                # API-Football returns null for goals if 0 sometimes, safely fallback to 0 if match started
+                h_goals = fixture.home_goals if fixture.home_goals is not None else 0
+                a_goals = fixture.away_goals if fixture.away_goals is not None else 0
+                return {
+                    'home_goals': h_goals,
+                    'away_goals': a_goals,
+                    'elapsed': fixture.elapsed,
+                    'status': fixture.status_short
+                }
+        except (Fixture.DoesNotExist, ValueError):
+            pass
+        return None
+
 
 class OCRProviderSettings(models.Model):
     """Settings for OCR provider selection"""

@@ -130,6 +130,26 @@
     </div>
     {% endif %}
     -->
+    <!-- Motivational Banner for Unranked Users -->
+    {% if user.is_authenticated and not user_has_tips %}
+    <div class="mb-6 relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-accent/10 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div class="flex items-start gap-4">
+        <div class="bg-primary/20 text-primary p-3 rounded-full flex-shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </div>
+        <div>
+          <h4 class="text-lg font-bold text-foreground">You're not on the board yet!</h4>
+          <p class="text-sm text-muted-foreground mt-1">Share your first sports prediction to start tracking your win rate and claim your spot on the leaderboard.</p>
+        </div>
+      </div>
+      <a href="{% url 'tips:create_tip' %}" class="shrink-0 whitespace-nowrap inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors shadow-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Post a Prediction
+      </a>
+    </div>
+    {% endif %}
     
     <!-- Table -->
     <div class="bg-card border border-border rounded-lg overflow-hidden">
