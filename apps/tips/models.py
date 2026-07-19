@@ -40,7 +40,7 @@ class Tip(models.Model):
     screenshot = models.ImageField(upload_to='betslips/', null=True, blank=True)
     bet_sharing_link = models.URLField(max_length=500, null=True, blank=True, help_text='SportPesa bet sharing/referral link')
     match_details = models.JSONField(default=dict, help_text='OCR extracted match details')
-    preview_data = models.JSONField(default=dict, help_text='Preview data for buyers')
+    preview_data = models.JSONField(default=dict, help_text='Preview data for non-Pro users')
     
     # Status and timestamps
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending_approval')
@@ -193,7 +193,7 @@ class Tip(models.Model):
         
     def get_preview_matches(self):
         """
-        Get preview match information for buyers.
+        Get preview match information for non-Pro users.
         Always hides at least one match to avoid giving away the entire tip.
         """
         matches = self.preview_data.get('matches', [])
@@ -206,14 +206,7 @@ class Tip(models.Model):
             return matches[:1]  # Show only first match, hide the second
         else:
             return matches[:2]  # Show first 2 matches for 3+ match betslips
-    
-    def can_be_purchased(self):
-        """Check if tip can be purchased"""
-        return (
-            self.status == 'active' and 
-            self.expires_at > timezone.now() and
-            self.ocr_processed
-        )
+
     
     def auto_archive_if_expired(self):
         """Automatically archive tip if expired"""

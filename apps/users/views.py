@@ -9,8 +9,6 @@ from django.http import JsonResponse, HttpResponse
 import re
 from datetime import datetime
 from apps.tips.models import Tip
-from apps.transactions.services import AccountingService
-from apps.transactions.pdf_utils import StatementPDFGenerator
 from .forms import RegistrationForm, LoginForm, ProfileEditForm
 from .models import User, UserProfile
 
@@ -116,35 +114,6 @@ def edit_profile(request):
 
     return render(request, 'users/edit_profile.html', {'form': form})
 
-
-@login_required
-def withdraw(request):
-    """
-    Handle withdrawal requests to M-Pesa.
-    DISABLED: Under the SaaS subscription model, wallet features are disabled.
-    """
-    messages.info(request, "Wallet features and withdrawals are no longer active under our subscription-only model.")
-    return redirect('users:profile')
-
-
-@login_required
-def transaction_history(request):
-    """
-    Display user's transaction history from the accounting system.
-    DISABLED: Under the SaaS subscription model, wallet features are disabled.
-    """
-    messages.info(request, "Wallet features and transaction histories are no longer active under our subscription-only model.")
-    return redirect('users:profile')
-
-
-@login_required
-def download_transaction_statement(request):
-    """
-    Generate and download PDF statement for buyer's transaction history.
-    DISABLED: Under the SaaS subscription model, wallet features are disabled.
-    """
-    messages.info(request, "Wallet features and transaction statements are no longer active under our subscription-only model.")
-    return redirect('users:profile')
 
 
 def public_profile(request, user_id):

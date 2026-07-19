@@ -5,7 +5,7 @@ from django.conf import settings
 
 
 class MpesaService:
-    """M-Pesa API integration service for tip purchases"""
+    """M-Pesa API integration service for Pro subscriptions"""
     
     def __init__(self):
         self.consumer_key = getattr(settings, 'MPESA_CONSUMER_KEY', '')
@@ -67,7 +67,7 @@ class MpesaService:
         return password_base64, timestamp
     
     def initiate_stk_push(self, phone_number, amount, account_reference, transaction_desc, callback_url):
-        """Initiate M-Pesa STK Push payment for tip purchase"""
+        """Initiate M-Pesa STK Push payment for Pro subscription"""
         
         # Development mode simulation
         if self.dev_mode:
@@ -76,7 +76,7 @@ class MpesaService:
                 'success': True,
                 'checkout_request_id': str(uuid.uuid4()),
                 'merchant_request_id': f'DEV_MERCHANT_{uuid.uuid4()}',
-                'customer_message': 'DEV MODE: Payment simulation - tip will be purchased automatically in 30 seconds',
+                'customer_message': 'DEV MODE: Payment simulation - subscription will be processed automatically in 30 seconds',
                 'response_code': '0',
                 'response_description': 'Development mode simulation'
             }
@@ -95,7 +95,7 @@ class MpesaService:
             elif not phone_number.startswith('254'):
                 phone_number = '254' + phone_number
             
-            # STK Push payload for tip purchases
+            # STK Push payload for Pro subscriptions
             # For CustomerBuyGoodsOnline: BusinessShortCode = HONO, PartyB = Till Number
             payload = {
                 "BusinessShortCode": self.hono,

@@ -71,9 +71,14 @@ def get_top_analysts():
     from django.conf import settings
     from apps.tips.models import Tip
     from django.db.models import Count, Q
+    from django.core.cache import cache
     
     User = get_user_model()
-    
+    cache_key = 'top_analysts_ids'
+    cached_ids = cache.get(cache_key)
+    if cached_ids is not None:
+        return cached_ids
+        
     # Get tipsters who have at least one tip
     tipsters = User.objects.annotate(
         total_tips_count=Count('tips'),
@@ -97,8 +102,10 @@ def get_top_analysts():
         reverse=True
     )
         
-
-    
     limit = getattr(settings, 'PRO_RESTRICTED_TOP_ANALYSTS_COUNT', 10)
     # Return top N IDs
-    return [t['id'] for t in leaderboard_data[:limit]]
+    top_ids = [t['id'] for t in leaderboard_data[:limit]]
+    
+    # Cache for 15 minutes
+    cache.set(cache_key, top_ids, 60 * 15)
+    return top_ids
