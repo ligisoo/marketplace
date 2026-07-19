@@ -9,17 +9,18 @@
   [x-cloak]{ display:none !important; }
 </style>
 
-<div class="max-w-7xl mx-auto">
+<div class="space-y-8 pb-12">
 
-  <!-- Ultra-compact header -->
-  <div class="mb-3">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <h1 class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
-        Sports Analyst Leaderboard
-        <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">
-          · Top performers by success & momentum
-        </span>
+  <!-- Page Header (Matched to Homepage) -->
+  <section class="relative py-8 md:py-10 bg-gradient-to-br from-primary/10 via-background to-accent/10 rounded-3xl overflow-hidden shadow-sm border border-primary/10 mb-8 px-6 md:px-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div class="relative z-10 text-left">
+      <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-2">
+        Sports Analyst <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Leaderboard</span>
       </h1>
+      <p class="text-lg text-foreground/80">
+        Top performers by success & momentum
+      </p>
+    </div>
 
       <!-- Desktop: segmented sort -->
       <div class="hidden md:flex items-center">
@@ -48,12 +49,8 @@
         </div>
       </div>
     </div>
-    <p class="mt-1 text-sm text-muted-foreground md:hidden">
-      Top performers by success & momentum
-    </p>
-
     <!-- Mobile: dropdown sort -->
-    <div class="mt-2 md:hidden">
+    <div class="mt-2 md:hidden relative z-10">
       <label for="sortSelect" class="sr-only">Sort by</label>
       <select id="sortSelect" onchange="window.location.href=this.value"
               class="w-full h-9 rounded-md border border-border bg-card text-foreground text-sm">
@@ -62,7 +59,7 @@
         <option value="?sort=avg_odds" {% if sort_by == 'avg_odds' %}selected{% endif %}>📈 Sort by: Avg Odds</option>
       </select>
     </div>
-  </div>
+  </section>
 
   {% if leaderboard %}
     <!-- Ribbon: compact summary chips -->
