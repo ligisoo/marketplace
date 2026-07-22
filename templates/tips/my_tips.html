@@ -10,7 +10,7 @@
 </style>
 
 <div class="space-y-8 pb-12">
-    <!-- Page Header (Matched to Community Predictions & Home) -->
+    <!-- Page Header (Matched to Homepage) -->
     <section class="relative py-8 md:py-10 bg-gradient-to-br from-primary/10 via-background to-accent/10 rounded-3xl overflow-hidden shadow-sm border border-primary/10 mb-8 px-6 md:px-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div class="relative z-10 text-left">
             <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-2">
@@ -20,7 +20,7 @@
                 Manage the sports predictions you have shared with the community.
             </p>
         </div>
-        <div class="relative z-10 shrink-0">
+        <div class="relative z-10">
             <a href="{% url 'tips:create_tip' %}"
                aria-label="Create a new tip"
                class="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground h-12 px-6 text-sm font-bold shadow-lg hover:bg-primary/90 hover:-translate-y-0.5 transition-all">
@@ -32,56 +32,43 @@
         </div>
     </section>
 
-    <!-- Shared Stats Bar -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-            <span class="inline-flex items-center justify-center rounded-lg bg-primary/10 text-primary w-12 h-12 shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586l6.121 6.121V19a2 2 0 01-2 2z"/></svg>
-            </span>
-            <div>
-                <div class="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Total Slips</div>
-                <div class="text-2xl font-black text-foreground">{{ selling_stats.total_tips }}</div>
-            </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-            <span class="inline-flex items-center justify-center rounded-lg bg-green-500/10 text-green-500 w-12 h-12 shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </span>
-            <div>
-                <div class="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Active</div>
-                <div class="text-2xl font-black text-green-500">{{ selling_stats.active_tips }}</div>
-            </div>
-        </div>
-        <div class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-            <span class="inline-flex items-center justify-center rounded-lg bg-muted text-muted-foreground w-12 h-12 shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-            </span>
-            <div>
-                <div class="text-xs uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Archived</div>
-                <div class="text-2xl font-black text-muted-foreground">{{ selling_stats.archived_tips }}</div>
-            </div>
+    <!-- Shared Stats -->
+    <div class="mb-8">
+        <div class="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory" role="list" aria-label="Key metrics">
+          <div role="listitem" class="snap-start flex-1 min-w-[150px] inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+              <span class="inline-flex items-center justify-center rounded-lg bg-primary/10 text-primary w-10 h-10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586l6.121 6.121V19a2 2 0 01-2 2z"/></svg></span>
+              <div class="leading-tight"><div class="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">Total Slips</div><div class="text-xl font-black text-foreground">{{ selling_stats.total_tips }}</div></div>
+          </div>
+          <div role="listitem" class="snap-start flex-1 min-w-[150px] inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+              <span class="inline-flex items-center justify-center rounded-lg bg-green-500/10 text-green-600 w-10 h-10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></span>
+              <div class="leading-tight"><div class="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">Active</div><div class="text-xl font-black text-green-600">{{ selling_stats.active_tips }}</div></div>
+          </div>
+          <div role="listitem" class="snap-start flex-1 min-w-[150px] inline-flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
+              <span class="inline-flex items-center justify-center rounded-lg bg-gray-500/10 text-gray-500 w-10 h-10"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></span>
+              <div class="leading-tight"><div class="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">Archived</div><div class="text-xl font-black text-gray-500">{{ selling_stats.archived_tips }}</div></div>
+          </div>
         </div>
     </div>
 
-    <!-- Filter Bar (Styled matching Marketplace) -->
-    <div class="bg-card border border-border rounded-xl p-2 mb-8 shadow-sm">
+    <!-- Filter Buttons -->
+    <div class="mb-6">
         <div class="flex flex-wrap gap-2">
-            <a href="?filter=all" 
-                class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm
-                        {% if selling_stats.current_filter == 'all' %}bg-primary text-primary-foreground{% else %}bg-secondary/50 text-secondary-foreground hover:bg-secondary{% endif %}">
-                All Slips ({{ selling_stats.total_tips }})
-            </a>
-            <a href="?filter=active" 
-                class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm
-                        {% if selling_stats.current_filter == 'active' %}bg-green-600 text-white{% else %}bg-secondary/50 text-secondary-foreground hover:bg-secondary{% endif %}">
-                <span class="w-2 h-2 bg-current rounded-full mr-2 opacity-80 {% if selling_stats.current_filter == 'active' %}animate-pulse{% endif %}"></span>
-                Active ({{ selling_stats.active_tips }})
-            </a>
-            <a href="?filter=archived" 
-                class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm
-                        {% if selling_stats.current_filter == 'archived' %}bg-gray-600 text-white{% else %}bg-secondary/50 text-secondary-foreground hover:bg-secondary{% endif %}">
-                Archived ({{ selling_stats.archived_tips }})
-            </a>
+        <a href="?filter=all" 
+            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm
+                    {% if selling_stats.current_filter == 'all' %}bg-primary text-primary-foreground{% else %}bg-secondary text-secondary-foreground hover:bg-secondary/80{% endif %}">
+            All Slips ({{ selling_stats.total_tips }})
+        </a>
+        <a href="?filter=active" 
+            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm
+                    {% if selling_stats.current_filter == 'active' %}bg-green-600 text-white{% else %}bg-secondary text-secondary-foreground hover:bg-secondary/80{% endif %}">
+            <span class="w-2 h-2 bg-current rounded-full mr-2 opacity-80 {% if selling_stats.current_filter == 'active' %}animate-pulse{% endif %}"></span>
+            Active ({{ selling_stats.active_tips }})
+        </a>
+        <a href="?filter=archived" 
+            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm
+                    {% if selling_stats.current_filter == 'archived' %}bg-gray-600 text-white{% else %}bg-secondary text-secondary-foreground hover:bg-secondary/80{% endif %}">
+            Archived ({{ selling_stats.archived_tips }})
+        </a>
         </div>
     </div>
 
@@ -101,56 +88,68 @@
             <div class="flex justify-between items-start mb-4">
                 <div>
                 <h3 class="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                    {{ tip.bet_code|slice:":3" }}***{{ tip.bet_code|slice:"-2:" }}
+                    <a href="{% url 'tips:detail' tip.id %}">{{ tip.bet_code }}</a>
                 </h3>
                 <div class="flex items-center gap-2 mt-1">
                     <span class="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">{{ tip.get_bookmaker_display }}</span>
-                    <span class="text-xs text-muted-foreground flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
-                        Shared
-                    </span>
+                    {% if tip.status == 'archived' %}
+                    <span class="text-xs text-muted-foreground flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Archived</span>
+                    {% elif tip.status == 'pending_approval' %}
+                    <span class="text-xs text-amber-500 flex items-center gap-1">Pending</span>
+                    {% else %}
+                    <span class="text-xs text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Active</span>
+                    {% endif %}
                 </div>
                 </div>
-                <span class="bg-green-500/10 text-green-600 border border-green-500/20 px-3 py-1 rounded-full text-sm font-extrabold">{{ tip.odds }}x</span>
+                <span class="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-sm font-extrabold">{{ tip.odds }}x</span>
             </div>
 
             <div class="space-y-2 flex-grow">
                 {% with preview_matches=tip.get_preview_matches %}
-                    {% if preview_matches %}
+                {% if preview_matches %}
                     {% for match in preview_matches %}
-                        <div class="p-3 bg-secondary/50 rounded-xl border border-border/50">
+                    <div class="p-3 bg-secondary/50 rounded-xl border border-border/50">
                         <div class="font-semibold text-sm text-foreground mb-1">{{ match.home_team }} vs {{ match.away_team }}</div>
                         <div class="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>{{ match.league }}</span>
-                            <span class="font-medium px-2 py-0.5 bg-background rounded-md">{{ match.market }}</span>
+                        <span>{{ match.league }}</span>
+                        <span class="font-medium px-2 py-0.5 bg-background rounded-md">{{ match.market }}</span>
                         </div>
-                        </div>
-                    {% endfor %}
-                    {% if tip.hidden_matches_count > 0 %}
-                        <div class="text-xs text-center font-medium text-muted-foreground py-2 bg-secondary/30 rounded-xl border border-dashed border-border">
-                        +{{ tip.hidden_matches_count }} more match{{ tip.hidden_matches_count|pluralize:"es" }} hidden
-                        </div>
-                    {% endif %}
-                    {% else %}
-                    <div class="text-xs text-center text-muted-foreground py-6 bg-secondary/30 rounded-xl border border-dashed border-border flex flex-col items-center justify-center">
-                        <svg class="w-6 h-6 mb-2 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        <span class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }}</span>
                     </div>
-                    {% endif %}
+                    {% endfor %}
+              {% if tip.hidden_matches_count > 0 %}
+                <div class="text-xs text-center font-medium text-muted-foreground py-2 bg-secondary/30 rounded-xl border border-dashed border-border">
+                  +{{ tip.hidden_matches_count }} more match{{ tip.hidden_matches_count|pluralize:"es" }} hidden
+                </div>
+              {% endif %}
+                {% else %}
+                    <div class="text-xs text-center text-muted-foreground py-6 bg-secondary/30 rounded-xl border border-dashed border-border flex flex-col items-center justify-center">
+                    <svg class="w-6 h-6 mb-2 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <span class="font-medium">{{ tip.preview_data.total_matches }} match{{ tip.preview_data.total_matches|pluralize:"es" }} hidden</span>
+                    </div>
+                {% endif %}
                 {% endwith %}
             </div>
 
+            <!-- Stats Footer -->
+            <div class="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-1 text-accent"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> {{ tip.purchase_count }} Unlocks</span>
+                </div>
+            </div>
+
             <div class="mt-4 pt-4 border-t border-border flex justify-between items-end">
-                <div></div>
+                <div>
+                <!-- Removed Price/Cost to strictly comply with GRA Pivot -->
+                </div>
                 <div class="text-right flex flex-col items-end gap-2 w-full">
                 <div class="flex items-center justify-between w-full">
-                    <span class="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md border border-border">
-                        {{ tip.created_at|naturaltime }}
-                    </span>
-                    <a href="{% url 'tips:detail' tip.id %}" class="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
-                        View Slip
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </a>
+                  <span class="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md border border-border">
+                      {{ tip.created_at|naturaltime }}
+                  </span>
+                  <a href="{% url 'tips:detail' tip.id %}" class="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                      View Slip
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  </a>
                 </div>
                 </div>
             </div>
@@ -178,9 +177,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
         </svg>
         <h3 class="text-lg font-bold text-foreground mb-1">No shared slips found</h3>
-        <p class="text-muted-foreground max-w-md mx-auto mb-6">You haven't shared any predictions matching this filter.</p>
-        <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center justify-center bg-primary text-primary-foreground rounded-xl font-bold h-12 px-6 shadow-lg hover:bg-primary/90 transition-all hover:-translate-y-0.5">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <p class="text-muted-foreground mb-6">You haven't shared any predictions matching this filter.</p>
+        <a href="{% url 'tips:create_tip' %}" class="inline-flex items-center justify-center bg-primary text-primary-foreground rounded-lg font-semibold h-10 px-6 hover:bg-primary/90 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Share First Slip
         </a>
         </div>
