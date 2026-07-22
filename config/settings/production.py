@@ -36,7 +36,7 @@ DATABASES = {
         'NAME': config('DB_NAME', default='ligisoo_marketplace'),
         'USER': config('DB_USER', default='ligisoo_user'),
         'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='db'),
+        'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='5432', cast=int),
         'CONN_MAX_AGE': 600,
         'OPTIONS': {
@@ -97,7 +97,7 @@ LOGGING = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://redis:6379/1'),
+        'LOCATION': config('REDIS_URL', default='redis://127.0.0.1:6379/1'),
     }
 }
 
