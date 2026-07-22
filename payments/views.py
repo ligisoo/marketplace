@@ -140,6 +140,7 @@ class InitiateSubscriptionView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class SubscriptionCallbackView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
     throttle_classes = [CallbackThrottle]
 
     @mpesa_security_required
