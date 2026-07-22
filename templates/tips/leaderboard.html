@@ -9,18 +9,17 @@
   [x-cloak]{ display:none !important; }
 </style>
 
-<div class="space-y-8 pb-12">
+<div class="max-w-7xl mx-auto">
 
-  <!-- Page Header (Matched to Homepage) -->
-  <section class="relative py-8 md:py-10 bg-gradient-to-br from-primary/10 via-background to-accent/10 rounded-3xl overflow-hidden shadow-sm border border-primary/10 mb-8 px-6 md:px-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
-    <div class="relative z-10 text-left">
-      <h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-2">
-        Sports Analyst <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Leaderboard</span>
+  <!-- Ultra-compact header -->
+  <div class="mb-3">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h1 class="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
+        Sports Analyst Leaderboard
+        <span class="ml-2 hidden md:inline text-sm font-normal text-muted-foreground">
+          · Top performers by success & momentum
+        </span>
       </h1>
-      <p class="text-lg text-foreground/80">
-        Top performers by success & momentum
-      </p>
-    </div>
 
       <!-- Desktop: segmented sort -->
       <div class="hidden md:flex items-center">
@@ -49,8 +48,12 @@
         </div>
       </div>
     </div>
+    <p class="mt-1 text-sm text-muted-foreground md:hidden">
+      Top performers by success & momentum
+    </p>
+
     <!-- Mobile: dropdown sort -->
-    <div class="mt-2 md:hidden relative z-10">
+    <div class="mt-2 md:hidden">
       <label for="sortSelect" class="sr-only">Sort by</label>
       <select id="sortSelect" onchange="window.location.href=this.value"
               class="w-full h-9 rounded-md border border-border bg-card text-foreground text-sm">
@@ -59,7 +62,7 @@
         <option value="?sort=avg_odds" {% if sort_by == 'avg_odds' %}selected{% endif %}>📈 Sort by: Avg Odds</option>
       </select>
     </div>
-  </section>
+  </div>
 
   {% if leaderboard %}
     <!-- Ribbon: compact summary chips -->
@@ -130,26 +133,6 @@
     </div>
     {% endif %}
     -->
-    <!-- Motivational Banner for Unranked Users -->
-    {% if user.is_authenticated and not user_has_tips %}
-    <div class="mb-6 relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 via-background to-accent/10 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-      <div class="flex items-start gap-4">
-        <div class="bg-primary/20 text-primary p-3 rounded-full flex-shrink-0">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-          </svg>
-        </div>
-        <div>
-          <h4 class="text-lg font-bold text-foreground">You're not on the board yet!</h4>
-          <p class="text-sm text-muted-foreground mt-1">Share your first sports prediction to start tracking your win rate and claim your spot on the leaderboard.</p>
-        </div>
-      </div>
-      <a href="{% url 'tips:create_tip' %}" class="shrink-0 whitespace-nowrap inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors shadow-sm">
-        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        Post a Prediction
-      </a>
-    </div>
-    {% endif %}
     
     <!-- Table -->
     <div class="bg-card border border-border rounded-lg overflow-hidden">
