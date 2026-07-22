@@ -19,12 +19,12 @@ die()     { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 # ---------------------------------------------------------------------------
 # Config — adjust these if your paths differ
 # ---------------------------------------------------------------------------
-APP_USER="walter"
-APP_DIR="/home/walter/Projects/marketplace"
+APP_USER="ligisoo_ke"
+APP_DIR="/home/ligisoo_ke/marketplace"
 VENV_DIR="${APP_DIR}/.venv"
 DEPLOY_DIR="${APP_DIR}/deploy"
 DOMAIN="ligisoo.co.ke"
-CERTBOT_EMAIL="admin@ligisoo.co.ke"   # ← update this
+CERTBOT_EMAIL="ligisoo.ke@gmail.com"
 
 MODE="${1:-}"
 
