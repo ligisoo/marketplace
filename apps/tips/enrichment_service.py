@@ -3,8 +3,15 @@ Service to enrich betslip data with accurate match information from API-Football
 """
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
-from fuzzywuzzy import fuzz
+try:
+    from fuzzywuzzy import fuzz
+except ImportError:
+    from difflib import SequenceMatcher
+    class FuzzFallback:
+        @staticmethod
+        def ratio(s1, s2):
+            return int(SequenceMatcher(None, str(s1), str(s2)).ratio() * 100)
+    fuzz = FuzzFallback()
 from django.db.models import Q
 
 from apps.fixtures.models import Fixture, Team

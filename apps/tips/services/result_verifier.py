@@ -227,33 +227,20 @@ class ResultVerifier:
         Returns:
             Fixture if found, None otherwise
         """
-        from apps.fixtures.models import Fixture
-        from fuzzywuzzy import fuzz
-
-        # Search within a reasonable date range
-        if tip_match.match_date:
-            start_date = tip_match.match_date.date() - timedelta(days=1)
-            end_date = tip_match.match_date.date() + timedelta(days=2)
-        else:
-            # Search last 7 days if no date specified
-            start_date = datetime.now().date() - timedelta(days=7)
-            end_date = datetime.now().date() + timedelta(days=1)
-
-        fixtures = Fixture.objects.filter(
-            date__date__gte=start_date,
-            date__date__lte=end_date
-        ).select_related('home_team', 'away_team')
-
-        best_match = None
-        best_score = 0
-        threshold = 75
+        try:
+            from fuzzywuzzy import fuzz
+            calc_ratio = fuzz.ratio
+        except ImportError:
+            from difflib import SequenceMatcher
+            def calc_ratio(s1: str, s2: str) -> float:
+                return SequenceMatcher(None, s1, s2).ratio() * 100
 
         for fixture in fixtures:
-            home_similarity = fuzz.ratio(
+            home_similarity = calc_ratio(
                 tip_match.home_team.lower(),
                 fixture.home_team.name.lower()
             )
-            away_similarity = fuzz.ratio(
+            away_similarity = calc_ratio(
                 tip_match.away_team.lower(),
                 fixture.away_team.name.lower()
             )

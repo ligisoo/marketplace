@@ -20,3 +20,6 @@ reportlab==4.2.5
 google-genai==1.51.0
 python-dotenv==1.2.1
 redis==5.0.4
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.27.1
+
