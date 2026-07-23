@@ -235,6 +235,21 @@ class ResultVerifier:
             def calc_ratio(s1: str, s2: str) -> float:
                 return SequenceMatcher(None, s1, s2).ratio() * 100
 
+        from apps.fixtures.models import Fixture
+        from datetime import timedelta
+
+        match_date = tip_match.match_date.date()
+        fixtures = Fixture.objects.filter(
+            date__date__range=[
+                match_date - timedelta(days=1),
+                match_date + timedelta(days=1)
+            ]
+        )
+
+        best_match = None
+        best_score = 0
+        threshold = 75
+
         for fixture in fixtures:
             home_similarity = calc_ratio(
                 tip_match.home_team.lower(),
