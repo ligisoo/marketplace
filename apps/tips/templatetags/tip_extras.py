@@ -62,7 +62,8 @@ def get_match_status(tip_match):
             'score': score,
             'elapsed': fixture.elapsed,
             'status': fixture.status_long or fixture.status_short,
-            'status_short': fixture.status_short
+            'status_short': fixture.status_short,
+            'updated_at': fixture.updated_at
         }
         
     except Exception:

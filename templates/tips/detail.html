@@ -163,6 +163,11 @@
                                                     {% if match_status.score %}{{ match_status.score }}{% endif %}
                                                     {% if match_status.elapsed %} · {{ match_status.elapsed }}'{% endif %}
                                                 </div>
+                                                {% if match_status.updated_at %}
+                                                    <div class="text-[10px] text-muted-foreground italic">
+                                                        Updated {{ match_status.updated_at|timesince }} ago
+                                                    </div>
+                                                {% endif %}
                                             {% elif match_status.is_finished %}
                                                 <span class="inline-flex items-center px-2 py-1 bg-gray-500/10 border border-gray-500/30 text-gray-700 dark:text-gray-400 rounded text-xs font-medium">Finished</span>
                                                 {% if match_status.score %}

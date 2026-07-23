@@ -196,19 +196,38 @@ def fetch_upcoming_fixtures():
 
 def fetch_live_fixtures():
     """
-    Fetch currently live fixtures for real-time score updates using API-Football 
-    and livescore.cz scraper as a complementary source.
+    Fetch currently live fixtures from API-Football for real-time score updates.
+    Optimized: Only queries the API if there are active tips with matches currently playing.
     """
     logger.info("=" * 60)
-    logger.info("LIVE FIXTURES FETCH STARTED")
+    logger.info("LIVE FIXTURES API FETCH STARTED")
     logger.info(f"Time: {timezone.now()}")
     logger.info("=" * 60)
 
     try:
-        from apps.fixtures.services import APIFootballService, LivescoreCzScraper
+        from apps.tips.models import TipMatch
+        from datetime import timedelta
+        
+        now = timezone.now()
+        # Check if any active tip has matches that kicked off in the last 3.5 hours, or start in next 15 mins
+        has_active_matches = TipMatch.objects.filter(
+            tip__status='active',
+            match_date__gte=now - timedelta(hours=3, minutes=30),
+            match_date__lte=now + timedelta(minutes=15)
+        ).exists()
+
+        if not has_active_matches:
+            logger.info("No active matches in tips currently playing. Skipping API-Football fetch to save quota.")
+            logger.info("=" * 60)
+            logger.info("LIVE FIXTURES API FETCH COMPLETED (SKIPPED)")
+            logger.info("=" * 60)
+            logger.info("")
+            return
+
+        from apps.fixtures.services import APIFootballService
         api_service = APIFootballService()
 
-        # Step 1: Check API-Football usage
+        # Check API-Football usage
         stats = api_service.get_api_usage_stats()
         logger.info(f"API Usage: {stats['api_requests']}/{stats['limit']} requests today")
 
@@ -219,18 +238,9 @@ def fetch_live_fixtures():
                 created, updated = api_service.save_fixtures(response)
                 logger.info(f"✓ API-Football: {created} created, {updated} updated")
         else:
-            logger.warning("API limit nearly reached, relying on livescore.cz scraper")
+            logger.warning("API limit nearly reached, skipping API fetch")
 
-        # Step 2: Complement with free livescore.cz scraper
-        logger.info("Scraping real-time scores from livescore.cz...")
-        scraper = LivescoreCzScraper()
-        scrape_stats = scraper.scrape_and_sync()
-        logger.info(
-            f"✓ Livescore.cz: {scrape_stats['scraped']} matches scraped, "
-            f"{scrape_stats['updated']} updated, {scrape_stats['created']} created in DB"
-        )
-
-        # Log any live matches in DB
+        # Log currently live matches in DB
         from apps.fixtures.models import Fixture
         live_matches = Fixture.objects.filter(status_short__in=['1H', '2H', 'HT', 'ET', 'P'])[:5]
         if live_matches.exists():
@@ -242,7 +252,35 @@ def fetch_live_fixtures():
         logger.error(f"Error fetching live fixtures: {str(e)}", exc_info=True)
 
     logger.info("=" * 60)
-    logger.info("LIVE FIXTURES FETCH COMPLETED")
+    logger.info("LIVE FIXTURES API FETCH COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")
+
+
+def scrape_live_fixtures():
+    """
+    Scrape real-time scores using the free scraper.
+    Runs frequently without consuming API quota.
+    """
+    logger.info("=" * 60)
+    logger.info("FREE SCRAPER RUN STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
+
+    try:
+        from apps.fixtures.services import LivescoreCzScraper
+        logger.info("Scraping real-time scores from livescore.cz...")
+        scraper = LivescoreCzScraper()
+        scrape_stats = scraper.scrape_and_sync()
+        logger.info(
+            f"✓ Livescore.cz: {scrape_stats['scraped']} matches scraped, "
+            f"{scrape_stats['updated']} updated, {scrape_stats['created']} created in DB"
+        )
+    except Exception as e:
+        logger.error(f"Error in free scraper run: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("FREE SCRAPER RUN COMPLETED")
     logger.info("=" * 60)
     logger.info("")
 
@@ -336,21 +374,22 @@ def schedule_jobs():
     # API Usage: 3 calls per day (fetches 3 days ahead)
     schedule.every().day.at("03:00").do(fetch_upcoming_fixtures)
 
-    # Job 2: Fetch live fixtures every 30 minutes
-    # API Usage: 48 calls per day (2 per hour × 24 hours)
-    # Total daily usage: 3 + 48 = 51 calls (leaving 49 calls buffer for 100 limit)
-    schedule.every(30).minutes.do(fetch_live_fixtures)
+    # Job 2: Fetch live fixtures from API every 15 minutes (only runs when active tips have matches playing)
+    schedule.every(15).minutes.do(fetch_live_fixtures)
 
-    # Job 3: Run result verification every 30 minutes (without API fetch, use DB only)
-    schedule.every(30).minutes.do(run_result_verification)
+    # Job 3: Scrape live scores from free source every 10 minutes (unconditional & free)
+    schedule.every(10).minutes.do(scrape_live_fixtures)
 
-    # Job 4: Clean up temporary tips every hour
+    # Job 4: Run result verification every 15 minutes (without API fetch, use DB only)
+    schedule.every(15).minutes.do(run_result_verification)
+
+    # Job 5: Clean up temporary tips every hour
     schedule.every().hour.do(cleanup_temp_tips)
 
-    # Job 5: Archive expired tips every hour
+    # Job 6: Archive expired tips every hour
     schedule.every().hour.do(run_tip_archiving)
 
-    # Job 6: Detect and recover stuck matches every 30 minutes (offset from live fixtures)
+    # Job 7: Detect and recover stuck matches every 30 minutes (offset from live fixtures)
     schedule.every(30).minutes.do(run_stuck_match_recovery)
 
     # Alternative schedules for result verification (uncomment the one you prefer):
