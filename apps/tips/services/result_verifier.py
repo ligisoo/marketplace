@@ -248,27 +248,36 @@ class ResultVerifier:
             ]
         )
 
+        def is_team_match(name1: str, name2: str) -> Tuple[bool, float]:
+            n1 = name1.lower().strip()
+            n2 = name2.lower().strip()
+            if n1 == n2:
+                return True, 100.0
+            
+            # Substring match (ensure at least 4 characters to avoid false matches on 'fc', 'utd', etc.)
+            if len(n1) >= 4 and n1 in n2:
+                return True, 90.0
+            if len(n2) >= 4 and n2 in n1:
+                return True, 90.0
+                
+            # Fuzzy match
+            ratio = calc_ratio(n1, n2)
+            if ratio >= 75:
+                return True, ratio
+            return False, ratio
+
         best_match = None
         best_score = 0
-        threshold = 75
 
         for fixture in fixtures:
-            home_similarity = calc_ratio(
-                tip_match.home_team.lower(),
-                fixture.home_team.name.lower()
-            )
-            away_similarity = calc_ratio(
-                tip_match.away_team.lower(),
-                fixture.away_team.name.lower()
-            )
+            home_matched, home_score = is_team_match(tip_match.home_team, fixture.home_team.name)
+            away_matched, away_score = is_team_match(tip_match.away_team, fixture.away_team.name)
 
-            avg_score = (home_similarity + away_similarity) / 2
-
-            if (home_similarity >= threshold and
-                away_similarity >= threshold and
-                avg_score > best_score):
-                best_score = avg_score
-                best_match = fixture
+            if home_matched and away_matched:
+                avg_score = (home_score + away_score) / 2
+                if avg_score > best_score:
+                    best_score = avg_score
+                    best_match = fixture
 
         if best_match:
             logger.info(

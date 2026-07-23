@@ -500,7 +500,7 @@ class LivescoreCzScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
 
-    def scrape_url(self, url: str) -> list:
+    def scrape_url(self, url: str, target_date=None) -> list:
         import re
         from bs4 import BeautifulSoup
 
@@ -571,6 +571,7 @@ class LivescoreCzScraper:
                                     'away_goals': away_goals,
                                     'status_short': status_short,
                                     'raw_score': score_text,
+                                    'date': target_date,
                                 })
 
             return matches
@@ -644,13 +645,21 @@ class LivescoreCzScraper:
                         defaults={'api_id': abs(hash(item['away_team'])) % 1000000}
                     )
 
-                    fake_api_id = abs(hash(f"{item['home_team']}_{item['away_team']}_{now.strftime('%Y-%m-%d')}")) % 2000000000
+                    match_date = item.get('date') or now.date()
+                    # Convert date to datetime at midnight
+                    if isinstance(match_date, datetime) or hasattr(match_date, 'strftime') and not isinstance(match_date, datetime):
+                        from django.utils.timezone import make_aware
+                        match_datetime = make_aware(datetime.combine(match_date, datetime.min.time()))
+                    else:
+                        match_datetime = match_date
+
+                    fake_api_id = abs(hash(f"{item['home_team']}_{item['away_team']}_{match_date.strftime('%Y-%m-%d')}")) % 2000000000
                     Fixture.objects.update_or_create(
                         api_id=fake_api_id,
                         defaults={
                             'timezone': 'UTC',
-                            'date': now,
-                            'timestamp': int(now.timestamp()),
+                            'date': match_datetime,
+                            'timestamp': int(match_datetime.timestamp()),
                             'status_long': 'Match Finished' if item['status_short'] == 'FT' else 'In Progress',
                             'status_short': item['status_short'],
                             'league': league,
@@ -668,8 +677,14 @@ class LivescoreCzScraper:
 
     def scrape_and_sync(self) -> dict:
         """Fetch today and yesterday scores from livescore.cz and sync to DB"""
-        today_matches = self.scrape_url(self.BASE_URL)
-        yesterday_matches = self.scrape_url(f"{self.BASE_URL}?d=-1")
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        today = timezone.now().date()
+        yesterday = today - timedelta(days=1)
+        
+        today_matches = self.scrape_url(self.BASE_URL, target_date=today)
+        yesterday_matches = self.scrape_url(f"{self.BASE_URL}?d=-1", target_date=yesterday)
 
         combined = today_matches + yesterday_matches
         return self.sync_scraped_scores(combined)
