@@ -10,7 +10,7 @@
             <h1 class="text-3xl font-bold text-foreground mb-2">Edit Profile</h1>
             <p class="text-muted-foreground">Update your account information</p>
         </div>
-        <a href="{% url 'users:profile' %}" class="btn btn-secondary">
+        <a href="{% url 'users:profile' %}" class="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-xl font-medium text-sm transition-colors">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
@@ -19,7 +19,7 @@
     </div>
 
     <!-- Form Card -->
-    <div class="bg-card border border-border rounded-lg shadow-lg p-8">
+    <div class="bg-card border border-border rounded-2xl shadow-xl p-8">
         <form method="post" enctype="multipart/form-data" class="space-y-8">
             {% csrf_token %}
 
@@ -98,7 +98,7 @@
                         Profile Picture
                     </label>
                     {% if user.userprofile.profile_picture %}
-                        <div class="mb-3 p-4 bg-secondary/30 rounded-lg border border-border">
+                        <div class="mb-3 p-4 bg-secondary/30 rounded-xl border border-border">
                             <div class="flex items-center space-x-4">
                                 <img src="{{ user.userprofile.profile_picture.url }}" alt="Current profile picture"
                                      class="w-20 h-20 rounded-full object-cover border-2 border-primary">
@@ -118,14 +118,14 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border">
-                <button type="submit" class="flex-1 btn btn-primary">
+            <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border">
+                <button type="submit" class="flex-1 inline-flex items-center justify-center px-6 py-3.5 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 cursor-pointer text-base">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Save Changes
                 </button>
-                <a href="{% url 'users:profile' %}" class="flex-1 btn btn-secondary text-center">
+                <a href="{% url 'users:profile' %}" class="flex-1 inline-flex items-center justify-center px-6 py-3.5 bg-secondary text-secondary-foreground font-medium rounded-xl hover:bg-secondary/80 transition-all text-center text-base">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
