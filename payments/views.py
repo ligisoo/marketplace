@@ -260,9 +260,11 @@ class SubscriptionStatusView(APIView):
                         
                         user_profile.save()
 
-                    elif result_code in ['1', '1032', '1037', '2001']:
+                    # Definite failure result codes: 1 (Insufficient funds), 1032 (User cancelled), 2001 (Invalid PIN)
+                    # Note: 1037 / missing code means "request in progress" -> keep status as 'pending' so polling continues!
+                    elif str(result_code) in ['1', '1032', '2001']:
                         payment.status = 'failed'
-                        payment.response_description = query_result.get('result_desc', 'Payment failed')
+                        payment.response_description = query_result.get('result_desc', 'Payment failed or was cancelled.')
                         payment.save()
 
             return Response({
