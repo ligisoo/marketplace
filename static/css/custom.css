@@ -50,155 +50,138 @@
     border-color: hsl(120, 50%, 60%);
 }
 
-/* Form Input Styling - Higher specificity to override Tailwind */
+/* Form Input Styling - Class-scoped to avoid breaking Tailwind/native inputs */
 .form-input,
 .form-select,
 input.form-input,
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="tel"],
-input[type="file"],
-select,
-textarea {
-    width: 100% !important;
-    padding: 0.625rem 0.875rem !important;
-    background-color: hsl(227, 27%, 20%) !important;
-    border: 1px solid hsl(227, 27%, 22%) !important;
-    border-radius: 0.375rem !important;
-    color: hsl(0, 0%, 98%) !important;
-    font-size: 0.875rem !important;
-    transition: all 0.2s ease !important;
-    line-height: 1.5 !important;
+textarea.form-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    background-color: hsl(227, 27%, 20%);
+    border: 1px solid hsl(227, 27%, 22%);
+    border-radius: 0.375rem;
+    color: hsl(0, 0%, 98%);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    line-height: 1.5;
 }
 
 .form-input:focus,
 .form-select:focus,
 input.form-input:focus,
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
-input[type="number"]:focus,
-input[type="tel"]:focus,
-select:focus,
-textarea:focus {
-    outline: none !important;
-    border-color: hsl(120, 50%, 60%) !important;
-    box-shadow: 0 0 0 3px hsla(120, 50%, 60%, 0.1) !important;
+textarea.form-input:focus {
+    outline: none;
+    border-color: hsl(120, 50%, 60%);
+    box-shadow: 0 0 0 3px hsla(120, 50%, 60%, 0.1);
 }
 
 .form-input::placeholder,
-input::placeholder,
 textarea::placeholder {
-    color: hsl(0, 0%, 65%) !important;
+    color: hsl(0, 0%, 65%);
 }
 
 /* Special styling for file inputs */
-input[type="file"] {
-    padding: 0.5rem !important;
+input[type="file"].form-input {
+    padding: 0.5rem;
     cursor: pointer;
 }
 
-input[type="file"]::file-selector-button {
-    padding: 0.5rem 1rem !important;
-    background-color: hsl(227, 27%, 25%) !important;
-    border: 1px solid hsl(227, 27%, 22%) !important;
-    border-radius: 0.375rem !important;
-    color: hsl(0, 0%, 98%) !important;
+input[type="file"].form-input::file-selector-button {
+    padding: 0.5rem 1rem;
+    background-color: hsl(227, 27%, 25%);
+    border: 1px solid hsl(227, 27%, 22%);
+    border-radius: 0.375rem;
+    color: hsl(0, 0%, 98%);
     cursor: pointer;
     margin-right: 1rem;
     transition: all 0.2s ease;
 }
 
-input[type="file"]::file-selector-button:hover {
-    background-color: hsl(120, 50%, 60%) !important;
-    color: hsl(227, 27%, 14%) !important;
+input[type="file"].form-input::file-selector-button:hover {
+    background-color: hsl(120, 50%, 60%);
+    color: hsl(227, 27%, 14%);
 }
 
 /* Price input with KES prefix */
 .price-input {
-    padding-left: 4.5rem !important;
+    padding-left: 4.5rem;
 }
 
 /* Form Labels */
-.form-label,
-label {
-    display: block !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    color: hsl(0, 0%, 98%) !important;
-    margin-bottom: 0.375rem !important;
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: hsl(0, 0%, 98%);
+    margin-bottom: 0.375rem;
 }
 
-/* Select dropdown arrow */
-.form-select,
-select {
-    appearance: none !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
-    background-position: right 0.5rem center !important;
-    background-repeat: no-repeat !important;
-    background-size: 1.5em 1.5em !important;
-    padding-right: 2.5rem !important;
+/* Select dropdown arrow for form-select */
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
 }
 
 /* Button Styling */
 .btn {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0.625rem 1.25rem !important;
-    font-size: 0.875rem !important;
-    font-weight: 600 !important;
-    border-radius: 0.375rem !important;
-    transition: all 0.2s ease !important;
-    cursor: pointer !important;
-    border: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .btn-primary {
-    background-color: hsl(120, 50%, 60%) !important;
-    color: hsl(227, 27%, 14%) !important;
+    background-color: hsl(120, 50%, 60%);
+    color: hsl(227, 27%, 14%);
 }
 
 .btn-primary:hover {
-    background-color: hsl(120, 50%, 55%) !important;
+    background-color: hsl(120, 50%, 55%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px hsla(120, 50%, 60%, 0.3);
 }
 
 .btn-secondary {
-    background-color: hsl(227, 27%, 20%) !important;
-    color: hsl(0, 0%, 98%) !important;
-    border: 1px solid hsl(227, 27%, 22%) !important;
+    background-color: hsl(227, 27%, 20%);
+    color: hsl(0, 0%, 98%);
+    border: 1px solid hsl(227, 27%, 22%);
 }
 
 .btn-secondary:hover {
-    background-color: hsl(227, 27%, 25%) !important;
+    background-color: hsl(227, 27%, 25%);
 }
 
 .btn-accent {
-    background-color: hsl(39, 86%, 62%) !important; /* Gold/Yellow */
-    color: hsl(227, 27%, 14%) !important; /* Dark text for contrast */
-    font-weight: 700 !important; /* Extra bold for prominence */
-    border: 2px solid hsl(39, 86%, 72%) !important; /* Lighter gold border */
+    background-color: hsl(39, 86%, 62%);
+    color: hsl(227, 27%, 14%);
+    font-weight: 700;
+    border: 2px solid hsl(39, 86%, 72%);
 }
 
 .btn-accent:hover {
-    background-color: hsl(39, 86%, 68%) !important; /* Lighter on hover */
+    background-color: hsl(39, 86%, 68%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsla(39, 86%, 62%, 0.4) !important; /* Golden glow */
-    border-color: hsl(39, 86%, 75%) !important;
+    box-shadow: 0 4px 12px hsla(39, 86%, 62%, 0.4);
+    border-color: hsl(39, 86%, 75%);
 }
 
 .btn-accent:active {
-    transform: translateY(0) !important;
-    box-shadow: 0 2px 6px hsla(39, 86%, 62%, 0.3) !important;
+    transform: translateY(0);
+    box-shadow: 0 2px 6px hsla(39, 86%, 62%, 0.3);
 }
 
 /* Form Group */
 .form-group {
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 1.25rem;
 }
 
 /* Alert/Error Styling */

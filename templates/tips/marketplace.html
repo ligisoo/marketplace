@@ -5,10 +5,6 @@
 {% block content %}
 <style>
   [x-cloak] { display: none !important; }
-  /* Single line form styling */
-  .filter-input, .filter-select {
-    @apply bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none placeholder-muted-foreground w-full h-10;
-  }
 </style>
 
 <!-- Header -->
@@ -32,13 +28,13 @@
     
     <!-- Search -->
     <div class="relative flex-grow w-full lg:w-auto">
-      <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search teams, analysts..." class="filter-input min-w-[200px]" style="padding-right: 2.25rem;">
-      <svg class="w-4 h-4 absolute right-3 top-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search teams, analysts..." class="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none placeholder-muted-foreground w-full h-10 min-w-[200px]" style="padding-right: 2.25rem;">
+      <svg class="w-4 h-4 absolute right-3 top-3 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
     </div>
 
     <!-- Sort By -->
     <div class="w-full lg:w-40 shrink-0">
-      <select name="sort_by" class="filter-select">
+      <select name="sort_by" class="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none w-full h-10">
         {% for value, label in form.sort_by.field.choices %}
           <option value="{{ value }}" {% if request.GET.sort_by == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
@@ -47,7 +43,7 @@
 
     <!-- Bookmaker -->
     <div class="w-full lg:w-40 shrink-0">
-      <select name="bookmaker" class="filter-select">
+      <select name="bookmaker" class="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none w-full h-10">
         {% for value, label in form.bookmaker.field.choices %}
           <option value="{{ value }}" {% if request.GET.bookmaker == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
@@ -56,9 +52,9 @@
 
     <!-- Odds Range -->
     <div class="flex items-center gap-2 w-full lg:w-auto shrink-0">
-      <input type="number" step="0.1" name="min_odds" value="{{ request.GET.min_odds|default:'' }}" placeholder="Min Odds" class="filter-input w-24">
+      <input type="number" step="0.1" name="min_odds" value="{{ request.GET.min_odds|default:'' }}" placeholder="Min Odds" class="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none placeholder-muted-foreground w-24 h-10">
       <span class="text-muted-foreground">-</span>
-      <input type="number" step="0.1" name="max_odds" value="{{ request.GET.max_odds|default:'' }}" placeholder="Max Odds" class="filter-input w-24">
+      <input type="number" step="0.1" name="max_odds" value="{{ request.GET.max_odds|default:'' }}" placeholder="Max Odds" class="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none placeholder-muted-foreground w-24 h-10">
     </div>
     
     <button type="submit" class="w-full lg:w-auto bg-primary text-primary-foreground font-semibold px-6 h-10 rounded-lg hover:opacity-90 transition-opacity shrink-0">
