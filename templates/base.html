@@ -13,38 +13,6 @@
     <!-- Google Fonts - PT Sans -->
     <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS CDN (temporary fallback) -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        background: 'hsl(227, 27%, 14%)',
-                        foreground: 'hsl(0, 0%, 98%)',
-                        card: 'hsl(227, 27%, 18%)',
-                        'card-foreground': 'hsl(0, 0%, 98%)',
-                        border: 'hsl(227, 27%, 22%)',
-                        primary: 'hsl(120, 50%, 60%)',
-                        'primary-foreground': 'hsl(227, 27%, 14%)',
-                        secondary: 'hsl(227, 27%, 20%)',
-                        'secondary-foreground': 'hsl(0, 0%, 98%)',
-                        accent: 'hsl(39, 86%, 62%)',
-                        'accent-foreground': 'hsl(227, 27%, 14%)',
-                        muted: 'hsl(227, 27%, 25%)',
-                        'muted-foreground': 'hsl(0, 0%, 65%)'
-                    },
-                    fontFamily: {
-                        body: ['"PT Sans"', 'sans-serif'],
-                        headline: ['"PT Sans"', 'serif'],
-                        sans: ['"PT Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    
     <!-- Compiled Production Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/tailwind-output.css' %}">
 
