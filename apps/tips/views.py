@@ -172,7 +172,6 @@ def create_tip(request):
 
                 if not extraction_result.get('success'):
                     error_msg = extraction_result.get('error', 'Failed to extract prediction slip data')
-                    messages.error(request, error_msg)
                     form.add_error(None, error_msg)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
@@ -182,7 +181,6 @@ def create_tip(request):
 
                 if not matches:
                     error_msg = 'No matches found in the prediction slip. Please upload a clear image.'
-                    messages.error(request, error_msg)
                     form.add_error(None, error_msg)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
@@ -212,7 +210,6 @@ def create_tip(request):
 
                 if has_invalid_dates or not latest_match_date:
                     error_msg = 'Invalid Prediction Slip: The uploaded image is missing match kickoff dates and times. Please upload a prediction slip screenshot from your account history that clearly displays match dates and kickoff times.'
-                    messages.error(request, error_msg)
                     form.add_error(None, error_msg)
                     return render(request, 'tips/create_tip.html', {'form': form})
 

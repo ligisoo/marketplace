@@ -23,7 +23,9 @@ module.exports = {
         accent: 'hsl(39, 86%, 62%)', // Gold/Yellow
         'accent-foreground': 'hsl(227, 27%, 14%)',
         muted: 'hsl(227, 27%, 25%)',
-        'muted-foreground': 'hsl(0, 0%, 65%)'
+        'muted-foreground': 'hsl(0, 0%, 65%)',
+        destructive: 'hsl(0, 84%, 60%)',
+        'destructive-foreground': 'hsl(210, 40%, 98%)'
       },
       fontFamily: {
         body: ['"PT Sans"', 'sans-serif'],

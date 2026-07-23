@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Tailwind CSS Build Script for Production
-echo "Building Tailwind CSS for production..."
+# Tailwind CSS Build Script for Production & Development
+echo "Building Tailwind CSS..."
 
 # Ensure static/css directory and tailwind-input.css exist
 mkdir -p static/css
@@ -26,19 +26,21 @@ if [ ! -f "static/css/tailwind-input.css" ]; then
 EOF
 fi
 
-# Determine Tailwind command (npx, system tailwindcss, or v3 standalone binary)
-if command -v npx &> /dev/null; then
-    TAILWIND_CMD="npx tailwindcss"
-elif command -v tailwindcss &> /dev/null; then
-    TAILWIND_CMD="tailwindcss"
-elif [ -f "./tailwindcss" ]; then
-    TAILWIND_CMD="./tailwindcss"
-else
-    echo "Downloading Tailwind v3.4.17 CLI binary..."
+# Ensure standalone binary exists as a reliable fallback (bypasses Node/npx WSL 1 restrictions)
+if [ ! -f "./tailwindcss" ]; then
+    echo "Downloading Tailwind v3.4.17 standalone CLI binary..."
     curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.17/tailwindcss-linux-x64
     chmod +x tailwindcss-linux-x64
     mv tailwindcss-linux-x64 tailwindcss
+fi
+
+# Use standalone binary if available, otherwise npx/system binary
+if [ -f "./tailwindcss" ]; then
     TAILWIND_CMD="./tailwindcss"
+elif command -v npx &> /dev/null; then
+    TAILWIND_CMD="npx tailwindcss"
+elif command -v tailwindcss &> /dev/null; then
+    TAILWIND_CMD="tailwindcss"
 fi
 
 echo "Executing: $TAILWIND_CMD -i static/css/tailwind-input.css -o static/css/tailwind-output.css --minify"

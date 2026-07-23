@@ -152,6 +152,7 @@ do_django_setup() {
     set -a; source "${APP_DIR}/.env"; set +a
     export DJANGO_SETTINGS_MODULE=config.settings.production
 
+    as_app "cd ${APP_DIR} && ./build-css.sh"
     as_app "cd ${APP_DIR} && ${VENV_DIR}/bin/python manage.py migrate --noinput"
     as_app "cd ${APP_DIR} && ${VENV_DIR}/bin/python manage.py collectstatic --noinput --clear"
 
