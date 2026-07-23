@@ -100,9 +100,11 @@ def extract_betslip_turbo(image_path_or_bytes) -> dict:
 
     # 2. Optimized Prompt
     prompt = (
-        "Extract match details from this prediction slip. "
-        "CRITICAL RULE: Set is_placed_slip to TRUE ONLY if this image is a PLACED bet slip from bet history (containing match dates/times for each match). "
-        "Set is_placed_slip to FALSE if this image is an unplaced draft or bet builder selection missing match dates."
+        "Analyze this prediction slip image and extract match details.\n"
+        "STRICT VALIDATION RULES:\n"
+        "1. Set is_placed_slip to FALSE if the image contains 'BET AMOUNT', 'POSSIBLE WIN', '- / +' buttons, 'LIVE MULTI BET', or lacks explicit match dates/times for each selection.\n"
+        "2. Set is_placed_slip to TRUE ONLY if this image is a placed bet history statement containing explicit dates (e.g. DD/MM/YY HH:MM) for every match.\n"
+        "3. For match_date: extract ONLY the date string printed on that match row (e.g. '23/07/26'). If no date is printed for a match, set match_date to an empty string \"\"."
     )
 
     # 3. API Call
@@ -191,16 +193,19 @@ def process_betslip_image(image_file) -> dict:
 
         # Convert to expected format for background_tasks.py
         betslip_data = result['data']
-        is_placed = betslip_data.get('is_placed_slip', True)
+        is_placed = betslip_data.get('is_placed_slip', False)
         matches = betslip_data.get('matches', [])
 
         # Validate that the slip is a PLACED bet slip containing match dates/times
         missing_dates = False
-        for m in matches:
-            d_str = str(m.get('match_date') or '').strip()
-            if not d_str:
-                missing_dates = True
-                break
+        if not matches:
+            missing_dates = True
+        else:
+            for m in matches:
+                d_str = str(m.get('match_date') or '').strip()
+                if not d_str:
+                    missing_dates = True
+                    break
 
         if not is_placed or missing_dates:
             return {

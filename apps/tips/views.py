@@ -167,31 +167,13 @@ def create_tip(request):
                 screenshot = form.cleaned_data['screenshot']
                 bet_code = form.cleaned_data['bet_code']  # From user input
 
-                # Check cache first (MD5 hash-based caching)
-                screenshot.seek(0)
-                file_data = screenshot.read()
-                screenshot.seek(0)
-
-                file_hash = hashlib.md5(file_data).hexdigest()
-                cache_key = f'betslip_{file_hash}'
-
-                cached_result = cache.get(cache_key)
-                if cached_result:
-                    logger.info(f"✓ Cache hit! Using cached extraction result.")
-                    extraction_result = copy.deepcopy(cached_result)
-                else:
-                    logger.info(f"Cache miss. Processing with Gemini...")
-                    extraction_result = process_betslip_image(screenshot)
-
-                    # Cache successful results for 24 hours
-                    if extraction_result.get('success'):
-                        cache.set(cache_key, extraction_result, 86400)
+                logger.info("Processing betslip image with Gemini...")
+                extraction_result = process_betslip_image(screenshot)
 
                 if not extraction_result.get('success'):
                     error_msg = extraction_result.get('error', 'Failed to extract prediction slip data')
                     messages.error(request, error_msg)
                     form.add_error(None, error_msg)
-                    cache.delete(cache_key)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 # Extract data
@@ -202,7 +184,6 @@ def create_tip(request):
                     error_msg = 'No matches found in the prediction slip. Please upload a clear image.'
                     messages.error(request, error_msg)
                     form.add_error(None, error_msg)
-                    cache.delete(cache_key)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 # Create tip with extracted data
@@ -233,7 +214,6 @@ def create_tip(request):
                     error_msg = 'Invalid Prediction Slip: The uploaded image is missing match kickoff dates and times. Please upload a prediction slip screenshot from your account history that clearly displays match dates and kickoff times.'
                     messages.error(request, error_msg)
                     form.add_error(None, error_msg)
-                    cache.delete(cache_key)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 tip.expires_at = latest_match_date
