@@ -106,11 +106,10 @@ def process_betslip_async(tip_id: int):
             matches = tip.match_details.get('matches', [])
 
             for match_data in matches:
-                # Try to get match date from data, otherwise use a default
+                # Try to get match date from data, otherwise default to current time (for live/today's slips)
                 match_date = match_data.get('match_date')
                 if not match_date:
-                    # Default to tomorrow if no date provided (will be updated by enrichment)
-                    match_date = timezone.now() + timedelta(days=1)
+                    match_date = timezone.now()
 
                 TipMatch.objects.create(
                     tip=tip,

@@ -210,14 +210,26 @@ def create_tip(request):
                 tip.ocr_confidence = extraction_result.get('confidence', 95.0)
 
                 # Calculate expires_at from latest match date
-                latest_match_date = timezone.now() + timedelta(days=1)
+                latest_match_date = None
+                has_invalid_dates = False
+
                 for match_data in matches:
-                    match_date = parse_match_date(
+                    parsed_date = parse_match_date(
                         match_data.get('match_date'),
                         match_data.get('match_time')
                     )
-                    if match_date > latest_match_date:
-                        latest_match_date = match_date
+                    if not parsed_date:
+                        has_invalid_dates = True
+                        break
+                    if latest_match_date is None or parsed_date > latest_match_date:
+                        latest_match_date = parsed_date
+
+                if has_invalid_dates or not latest_match_date:
+                    messages.error(
+                        request,
+                        'Invalid Prediction Slip: The uploaded image is missing match kickoff dates and times. Please upload a prediction slip screenshot from your account history that clearly displays match dates and kickoff times.'
+                    )
+                    return render(request, 'tips/create_tip.html', {'form': form})
 
                 tip.expires_at = latest_match_date
                 tip.status = 'draft'  # Draft status for verification step
@@ -228,7 +240,7 @@ def create_tip(request):
                     match_date = parse_match_date(
                         match_data.get('match_date'),
                         match_data.get('match_time')
-                    )
+                    ) or timezone.now()
 
                     TipMatch.objects.create(
                         tip=tip,

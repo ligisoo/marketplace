@@ -32,8 +32,8 @@ client = genai.Client(api_key=api_key) if api_key else None
 
 # --- PYDANTIC SCHEMAS FOR STRUCTURED OUTPUT ---
 class Match(BaseModel):
-    match_date: str = Field(description="Date of the match (e.g. DD/MM/YY)")
-    match_time: str = Field(description="Kickoff time (e.g. HH:MM)")
+    match_date: str = Field(description="Date of the match (e.g. DD/MM/YY or DD/MM/YYYY). Must be empty string if date is not explicitly shown on the slip.")
+    match_time: str = Field(description="Kickoff time (e.g. HH:MM). Must be empty string if time is not explicitly shown.")
     home_team: str
     away_team: str
     bet_type: str = Field(description="Betting market or type (e.g. 3 Way, Over/Under)")
@@ -44,6 +44,7 @@ class PredictionSlipSummary(BaseModel):
     total_odds: float = Field(description="The total multiplier/odds for the entire slip")
 
 class PredictionSlip(BaseModel):
+    is_placed_slip: bool = Field(description="True ONLY if the screenshot is a PLACED bet slip from bet history containing match dates/times for each selection. False if it is an unplaced draft or bet builder selection without match dates.")
     matches: list[Match]
     summary: PredictionSlipSummary
 
@@ -98,7 +99,11 @@ def extract_betslip_turbo(image_path_or_bytes) -> dict:
         return {"success": False, "error": str(e)}
 
     # 2. Optimized Prompt
-    prompt = "Extract the match details and odds from this prediction slip."
+    prompt = (
+        "Extract match details from this prediction slip. "
+        "CRITICAL RULE: Set is_placed_slip to TRUE ONLY if this image is a PLACED bet slip from bet history (containing match dates/times for each match). "
+        "Set is_placed_slip to FALSE if this image is an unplaced draft or bet builder selection missing match dates."
+    )
 
     # 3. API Call
     max_retries = 2
@@ -186,6 +191,25 @@ def process_betslip_image(image_file) -> dict:
 
         # Convert to expected format for background_tasks.py
         betslip_data = result['data']
+        is_placed = betslip_data.get('is_placed_slip', True)
+        matches = betslip_data.get('matches', [])
+
+        # Validate that the slip is a PLACED bet slip containing match dates/times
+        missing_dates = False
+        for m in matches:
+            d_str = str(m.get('match_date') or '').strip()
+            if not d_str:
+                missing_dates = True
+                break
+
+        if not is_placed or missing_dates:
+            return {
+                'success': False,
+                'error': (
+                    "Invalid Prediction Slip: The uploaded image is missing match kickoff dates and times. "
+                    "Please upload a prediction slip screenshot from your account history that clearly displays match dates and kickoff times."
+                )
+            }
 
         # Format matches
         formatted_matches = []
