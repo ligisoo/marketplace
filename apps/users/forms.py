@@ -9,7 +9,7 @@ class RegistrationForm(UserCreationForm):
     phone_number = forms.CharField(
         max_length=15,
         widget=forms.TextInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': '0712345678'
         })
     )
@@ -17,26 +17,26 @@ class RegistrationForm(UserCreationForm):
         max_length=150,
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': 'Optional username'
         })
     )
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': 'Password'
         })
     )
     password2 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': 'Confirm Password'
         })
     )
     terms_of_service = forms.BooleanField(
         required=True,
         initial=False,
-        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox w-4 h-4 rounded border-border text-primary focus:ring-primary bg-secondary/80 cursor-pointer'}),
     )
     
     class Meta:
@@ -72,13 +72,13 @@ class LoginForm(forms.Form):
     phone_number = forms.CharField(
         max_length=15,
         widget=forms.TextInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': '0712345678'
         })
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': 'Password'
         })
     )
@@ -104,14 +104,14 @@ class ProfileEditForm(forms.ModelForm):
         max_length=150,
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': 'Username'
         })
     )
     email = forms.EmailField(
         required=False,
         widget=forms.EmailInput(attrs={
-            'class': 'form-input',
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': 'Email address'
         })
     )
@@ -121,12 +121,12 @@ class ProfileEditForm(forms.ModelForm):
         fields = ['bio', 'profile_picture']
         widgets = {
             'bio': forms.Textarea(attrs={
-                'class': 'form-textarea',
+                'class': 'form-textarea w-full block p-4 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
                 'rows': 4,
                 'placeholder': 'Tell us about yourself...'
             }),
             'profile_picture': forms.FileInput(attrs={
-                'class': 'form-input',
+                'class': 'form-input w-full block p-2 bg-secondary/80 border border-border rounded-xl text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 text-sm cursor-pointer',
                 'accept': 'image/*'
             })
         }
