@@ -219,7 +219,7 @@
     {% if messages %}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
             {% for message in messages %}
-                <div class="mb-4 p-4 rounded-md border {% if message.tags == 'error' %}bg-red-900/20 border-red-700 text-red-200{% elif message.tags == 'success' %}bg-green-900/20 border-green-700 text-green-200{% elif message.tags == 'warning' %}bg-yellow-900/20 border-yellow-700 text-yellow-200{% else %}bg-blue-900/20 border-blue-700 text-blue-200{% endif %}">
+                <div class="mb-4 p-4 rounded-xl border font-medium text-sm {% if 'error' in message.tags or 'danger' in message.tags %}bg-red-900/40 border-red-500/50 text-red-200 shadow-lg shadow-red-950/30{% elif 'success' in message.tags %}bg-green-900/40 border-green-500/50 text-green-200 shadow-lg shadow-green-950/30{% elif 'warning' in message.tags %}bg-yellow-900/40 border-yellow-500/50 text-yellow-200{% else %}bg-blue-900/40 border-blue-500/50 text-blue-200{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}

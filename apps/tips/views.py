@@ -189,7 +189,9 @@ def create_tip(request):
 
                 if not extraction_result.get('success'):
                     error_msg = extraction_result.get('error', 'Failed to extract prediction slip data')
-                    messages.error(request, f'Error: {error_msg}')
+                    messages.error(request, error_msg)
+                    form.add_error(None, error_msg)
+                    cache.delete(cache_key)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 # Extract data
@@ -197,7 +199,10 @@ def create_tip(request):
                 matches = betslip_data.get('matches', [])
 
                 if not matches:
-                    messages.error(request, 'No matches found in the prediction slip. Please upload a clear image.')
+                    error_msg = 'No matches found in the prediction slip. Please upload a clear image.'
+                    messages.error(request, error_msg)
+                    form.add_error(None, error_msg)
+                    cache.delete(cache_key)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 # Create tip with extracted data
@@ -225,10 +230,10 @@ def create_tip(request):
                         latest_match_date = parsed_date
 
                 if has_invalid_dates or not latest_match_date:
-                    messages.error(
-                        request,
-                        'Invalid Prediction Slip: The uploaded image is missing match kickoff dates and times. Please upload a prediction slip screenshot from your account history that clearly displays match dates and kickoff times.'
-                    )
+                    error_msg = 'Invalid Prediction Slip: The uploaded image is missing match kickoff dates and times. Please upload a prediction slip screenshot from your account history that clearly displays match dates and kickoff times.'
+                    messages.error(request, error_msg)
+                    form.add_error(None, error_msg)
+                    cache.delete(cache_key)
                     return render(request, 'tips/create_tip.html', {'form': form})
 
                 tip.expires_at = latest_match_date
