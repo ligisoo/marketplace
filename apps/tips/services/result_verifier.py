@@ -312,11 +312,17 @@ class ResultVerifier:
 
         # 1X2 / Match Result
         if '1x2' in market_lower or 'match result' in market_lower or 'full time result' in market_lower or '3 way' in market_lower:
-            if '1' in selection or 'home' in selection_lower:
+            if selection_lower in ['1x', 'home/draw', 'home or draw']:
+                return home_score >= away_score
+            elif selection_lower in ['x2', 'draw/away', 'away or draw']:
+                return away_score >= home_score
+            elif selection_lower in ['12', 'home/away', 'home or away']:
+                return home_score != away_score
+            elif selection_lower in ['1', 'home'] or selection.strip() == '1':
                 return home_score > away_score
-            elif 'x' in selection_lower or 'draw' in selection_lower:
+            elif selection_lower in ['x', 'draw'] or selection.strip().upper() == 'X':
                 return home_score == away_score
-            elif '2' in selection or 'away' in selection_lower:
+            elif selection_lower in ['2', 'away'] or selection.strip() == '2':
                 return away_score > home_score
 
         # Both Teams to Score (BTTS/GG)
