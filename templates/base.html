@@ -98,8 +98,12 @@
                     <!-- User Avatar Dropdown -->
                     <div x-data="{ open: false }" class="relative hidden md:block">
                         <button @click="open = !open"
-                                class="relative h-8 w-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors">
-                            <span class="text-sm font-medium">{{ user.userprofile.display_name|first|upper }}</span>
+                                class="relative h-9 w-9 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors overflow-hidden border border-border">
+                            {% if user.userprofile.profile_picture %}
+                                <img src="{{ user.userprofile.profile_picture.url }}" alt="{{ user.userprofile.display_name }}" class="w-full h-full object-cover rounded-full">
+                            {% else %}
+                                <span class="text-sm font-medium text-foreground">{{ user.userprofile.display_name|first|upper }}</span>
+                            {% endif %}
                         </button>
                         <div x-show="open" @click.away="open = false"
                              x-transition:enter="transition ease-out duration-100"
