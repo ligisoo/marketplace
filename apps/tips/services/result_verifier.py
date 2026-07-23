@@ -158,7 +158,9 @@ class ResultVerifier:
                     tip_match.market,
                     tip_match.selection,
                     fixture.home_goals,
-                    fixture.away_goals
+                    fixture.away_goals,
+                    home_team=tip_match.home_team,
+                    away_team=tip_match.away_team
                 )
 
                 # Update tip match
@@ -276,7 +278,7 @@ class ResultVerifier:
 
         return best_match
 
-    def _check_market_result(self, market: str, selection: str, home_score: int, away_score: int) -> bool:
+    def _check_market_result(self, market: str, selection: str, home_score: int, away_score: int, home_team: str = "", away_team: str = "") -> bool:
         """
         Check if a bet won based on market type, selection, and final score.
 
@@ -285,6 +287,8 @@ class ResultVerifier:
             selection: The bet selection (e.g., "Over", "1", "Yes")
             home_score: Final home team score
             away_score: Final away team score
+            home_team: Home team name
+            away_team: Away team name
 
         Returns:
             True if bet won, False if lost
@@ -314,6 +318,16 @@ class ResultVerifier:
 
         # 1X2 / Match Result
         if '1x2' in market_lower or 'match result' in market_lower or 'full time result' in market_lower or '3 way' in market_lower:
+            # Check team names first if provided
+            if home_team and away_team:
+                h_name = home_team.lower().strip()
+                a_name = away_team.lower().strip()
+                # Check for exact or substring match of team names in selection
+                if selection_lower == h_name or (len(h_name) > 3 and h_name in selection_lower) or (len(selection_lower) > 3 and selection_lower in h_name):
+                    return home_score > away_score
+                elif selection_lower == a_name or (len(a_name) > 3 and a_name in selection_lower) or (len(selection_lower) > 3 and selection_lower in a_name):
+                    return away_score > home_score
+
             if selection_lower in ['1x', 'home/draw', 'home or draw']:
                 return home_score >= away_score
             elif selection_lower in ['x2', 'draw/away', 'away or draw']:
@@ -338,6 +352,17 @@ class ResultVerifier:
 
         # Double Chance
         if 'double chance' in market_lower:
+            # Check team names first if provided
+            if home_team and away_team:
+                h_name = home_team.lower().strip()
+                a_name = away_team.lower().strip()
+                if h_name in selection_lower and ('draw' in selection_lower or 'x' in selection_lower):
+                    return home_score >= away_score
+                elif a_name in selection_lower and ('draw' in selection_lower or 'x' in selection_lower):
+                    return away_score >= home_score
+                elif h_name in selection_lower and a_name in selection_lower:
+                    return home_score != away_score
+
             if '1x' in selection_lower or 'home or draw' in selection_lower:
                 return home_score >= away_score
             elif 'x2' in selection_lower or 'away or draw' in selection_lower:
