@@ -260,9 +260,9 @@ class SubscriptionStatusView(APIView):
                         
                         user_profile.save()
 
-                    # Definite failure result codes: 1 (Insufficient funds), 1032 (User cancelled), 2001 (Invalid PIN)
-                    # Note: 1037 / missing code means "request in progress" -> keep status as 'pending' so polling continues!
-                    elif str(result_code) in ['1', '1032', '2001']:
+                    # Definite failure result codes: 1 (Insufficient funds), 1032 (User cancelled), 1037 (Timeout), 2001 (Invalid PIN)
+                    # Note: missing code means "request in progress" -> keep status as 'pending' so polling continues!
+                    elif str(result_code) in ['1', '1032', '1037', '2001']:
                         payment.status = 'failed'
                         payment.response_description = query_result.get('result_desc', 'Payment failed or was cancelled.')
                         payment.save()
@@ -273,6 +273,7 @@ class SubscriptionStatusView(APIView):
                 'amount': payment.amount,
                 'tier': payment.tier,
                 'mpesa_receipt_number': payment.mpesa_receipt_number,
+                'response_description': payment.response_description,
                 'created_at': payment.created_at,
                 'completed_at': payment.completed_at
             })
