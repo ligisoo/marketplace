@@ -196,8 +196,8 @@ def fetch_upcoming_fixtures():
 
 def fetch_live_fixtures():
     """
-    Fetch currently live fixtures for real-time score updates.
-    Runs every 15 minutes during match times.
+    Fetch currently live fixtures for real-time score updates using API-Football 
+    and livescore.cz scraper as a complementary source.
     """
     logger.info("=" * 60)
     logger.info("LIVE FIXTURES FETCH STARTED")
@@ -205,33 +205,38 @@ def fetch_live_fixtures():
     logger.info("=" * 60)
 
     try:
+        from apps.fixtures.services import APIFootballService, LivescoreCzScraper
         api_service = APIFootballService()
 
-        # Check API usage
+        # Step 1: Check API-Football usage
         stats = api_service.get_api_usage_stats()
         logger.info(f"API Usage: {stats['api_requests']}/{stats['limit']} requests today")
 
-        if stats['remaining'] < 5:
-            logger.warning("API limit nearly reached, skipping live fixtures fetch")
-            return
-
-        # Fetch live fixtures
-        logger.info("Fetching live fixtures...")
-        response = api_service.fetch_live_fixtures()
-
-        if response:
-            created, updated = api_service.save_fixtures(response)
-            logger.info(f"✓ Live fixtures: {created} created, {updated} updated")
-
-            # Log any live matches
-            from apps.fixtures.models import Fixture
-            live_matches = Fixture.objects.filter(status_short__in=['1H', '2H', 'HT', 'ET', 'P'])[:5]
-            if live_matches.exists():
-                logger.info("Currently live matches:")
-                for match in live_matches:
-                    logger.info(f"  {match.home_team.name} {match.home_goals}-{match.away_goals} {match.away_team.name} ({match.status_short})")
+        if stats['remaining'] >= 5:
+            logger.info("Fetching live fixtures from API-Football...")
+            response = api_service.fetch_live_fixtures()
+            if response:
+                created, updated = api_service.save_fixtures(response)
+                logger.info(f"✓ API-Football: {created} created, {updated} updated")
         else:
-            logger.info("No live fixtures data returned")
+            logger.warning("API limit nearly reached, relying on livescore.cz scraper")
+
+        # Step 2: Complement with free livescore.cz scraper
+        logger.info("Scraping real-time scores from livescore.cz...")
+        scraper = LivescoreCzScraper()
+        scrape_stats = scraper.scrape_and_sync()
+        logger.info(
+            f"✓ Livescore.cz: {scrape_stats['scraped']} matches scraped, "
+            f"{scrape_stats['updated']} updated, {scrape_stats['created']} created in DB"
+        )
+
+        # Log any live matches in DB
+        from apps.fixtures.models import Fixture
+        live_matches = Fixture.objects.filter(status_short__in=['1H', '2H', 'HT', 'ET', 'P'])[:5]
+        if live_matches.exists():
+            logger.info("Currently live matches in DB:")
+            for match in live_matches:
+                logger.info(f"  {match.home_team.name} {match.home_goals}-{match.away_goals} {match.away_team.name} ({match.status_short})")
 
     except Exception as e:
         logger.error(f"Error fetching live fixtures: {str(e)}", exc_info=True)

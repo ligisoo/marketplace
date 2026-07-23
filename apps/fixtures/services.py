@@ -486,3 +486,191 @@ class APIFootballService:
             stats['api_requests_used'] += 1
             
         return stats
+
+
+class LivescoreCzScraper:
+    """
+    Complementary free score scraper for https://www.livescore.cz/
+    Updates the local Fixture database without consuming API-Football quotas.
+    """
+    BASE_URL = "https://www.livescore.cz/"
+
+    def __init__(self):
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+
+    def scrape_url(self, url: str) -> list:
+        import re
+        from bs4 import BeautifulSoup
+
+        try:
+            resp = requests.get(url, headers=self.headers, timeout=10)
+            if resp.status_code != 200:
+                return []
+            
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            score_div = soup.find('div', id='score-data')
+            if not score_div:
+                return []
+
+            matches = []
+            current_league = "Unknown League"
+
+            for elem in score_div.find_all(['h4', 'a']):
+                if elem.name == 'h4':
+                    current_league = elem.get_text(strip=True)
+                elif elem.name == 'a' and elem.get('href', '').startswith('/match/'):
+                    match_class = elem.get('class', [])
+                    score_text = elem.get_text(strip=True)
+
+                    prev_text = ""
+                    curr = elem.previous_sibling
+                    while curr and curr.name not in ['br', 'h4']:
+                        if isinstance(curr, str):
+                            prev_text = curr + prev_text
+                        elif curr.name == 'span':
+                            prev_text = curr.get_text(strip=True) + " " + prev_text
+                        curr = curr.previous_sibling
+
+                    clean_text = prev_text.strip()
+                    if '-' in clean_text:
+                        clean_text = re.sub(r'^\d{1,2}:\d{2}', '', clean_text).strip()
+                        clean_text = re.sub(r'^\d+\+?\'', '', clean_text).strip()
+
+                        parts = clean_text.split('-')
+                        if len(parts) >= 2:
+                            home = parts[0].strip()
+                            away = '-'.join(parts[1:]).strip()
+
+                            home_name = re.sub(r'\s*\([A-Z][a-zA-Z]{1,3}\)$', '', home).strip()
+                            away_name = re.sub(r'\s*\([A-Z][a-zA-Z]{1,3}\)$', '', away).strip()
+
+                            status_short = 'NS'
+                            if 'fin' in match_class:
+                                status_short = 'FT'
+                            elif 'live' in match_class:
+                                status_short = '2H'
+
+                            home_goals = None
+                            away_goals = None
+                            if '-' in score_text and status_short in ['FT', '2H', '1H']:
+                                score_parts = score_text.split('-')
+                                try:
+                                    home_goals = int(score_parts[0].strip())
+                                    away_goals = int(score_parts[1].strip())
+                                except ValueError:
+                                    pass
+
+                            if home_name and away_name:
+                                matches.append({
+                                    'league': current_league,
+                                    'home_team': home_name,
+                                    'away_team': away_name,
+                                    'home_goals': home_goals,
+                                    'away_goals': away_goals,
+                                    'status_short': status_short,
+                                    'raw_score': score_text,
+                                })
+
+            return matches
+        except Exception as e:
+            print(f"Error scraping livescore.cz ({url}): {e}")
+            return []
+
+    def sync_scraped_scores(self, scraped_matches: list) -> dict:
+        """
+        Match scraped scores with database Fixtures and update them
+        """
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        from .models import Fixture, League, Team
+        try:
+            from fuzzywuzzy import fuzz
+            calc_ratio = fuzz.ratio
+        except ImportError:
+            from difflib import SequenceMatcher
+            def calc_ratio(s1, s2):
+                return int(SequenceMatcher(None, str(s1), str(s2)).ratio() * 100)
+
+        stats = {'scraped': len(scraped_matches), 'updated': 0, 'created': 0}
+        now = timezone.now()
+
+        for item in scraped_matches:
+            if item['home_goals'] is None or item['away_goals'] is None:
+                continue
+
+            start_date = now - timedelta(days=2)
+            end_date = now + timedelta(days=2)
+
+            fixtures = Fixture.objects.filter(
+                date__gte=start_date,
+                date__lte=end_date
+            ).select_related('home_team', 'away_team')
+
+            matched_fixture = None
+            best_score = 0
+            threshold = 70
+
+            for fix in fixtures:
+                home_sim = calc_ratio(item['home_team'].lower(), fix.home_team.name.lower())
+                away_sim = calc_ratio(item['away_team'].lower(), fix.away_team.name.lower())
+                avg_sim = (home_sim + away_sim) / 2
+
+                if home_sim >= threshold and away_sim >= threshold and avg_sim > best_score:
+                    best_score = avg_sim
+                    matched_fixture = fix
+
+            if matched_fixture:
+                matched_fixture.home_goals = item['home_goals']
+                matched_fixture.away_goals = item['away_goals']
+                matched_fixture.status_short = item['status_short']
+                if item['status_short'] == 'FT':
+                    matched_fixture.status_long = 'Match Finished'
+                matched_fixture.save()
+                stats['updated'] += 1
+            else:
+                try:
+                    league, _ = League.objects.get_or_create(
+                        name=item['league'][:100],
+                        defaults={'api_id': abs(hash(item['league'])) % 1000000, 'season': now.year, 'country': 'World'}
+                    )
+                    home_team, _ = Team.objects.get_or_create(
+                        name=item['home_team'][:100],
+                        defaults={'api_id': abs(hash(item['home_team'])) % 1000000}
+                    )
+                    away_team, _ = Team.objects.get_or_create(
+                        name=item['away_team'][:100],
+                        defaults={'api_id': abs(hash(item['away_team'])) % 1000000}
+                    )
+
+                    fake_api_id = abs(hash(f"{item['home_team']}_{item['away_team']}_{now.strftime('%Y-%m-%d')}")) % 2000000000
+                    Fixture.objects.update_or_create(
+                        api_id=fake_api_id,
+                        defaults={
+                            'timezone': 'UTC',
+                            'date': now,
+                            'timestamp': int(now.timestamp()),
+                            'status_long': 'Match Finished' if item['status_short'] == 'FT' else 'In Progress',
+                            'status_short': item['status_short'],
+                            'league': league,
+                            'home_team': home_team,
+                            'away_team': away_team,
+                            'home_goals': item['home_goals'],
+                            'away_goals': item['away_goals'],
+                        }
+                    )
+                    stats['created'] += 1
+                except Exception as create_err:
+                    print(f"Error creating fixture for {item['home_team']} vs {item['away_team']}: {create_err}")
+
+        return stats
+
+    def scrape_and_sync(self) -> dict:
+        """Fetch today and yesterday scores from livescore.cz and sync to DB"""
+        today_matches = self.scrape_url(self.BASE_URL)
+        yesterday_matches = self.scrape_url(f"{self.BASE_URL}?d=-1")
+
+        combined = today_matches + yesterday_matches
+        return self.sync_scraped_scores(combined)
+
