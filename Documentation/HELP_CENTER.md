@@ -7,11 +7,12 @@ Welcome to the Ligisoo Help Center. Find answers to frequently asked questions b
 ## For Buyers
 
 ### How do I buy a tip?
-1.  Browse the **Marketplace** to see available tips.
+1.  Browse **Community Predictions** to see available tips.
 2.  Visit the **Leaderboard** to see top-performing tipsters.
 3.  When you find a tip you like, click the "Buy" button.
 4.  You will be prompted to complete the payment using M-Pesa.
 5.  Once the payment is successful, the tip details will be revealed to you.
+
 
 ### How do I know if a tipster is reliable?
 We believe in transparency. Every tipster has a public profile with their historical performance, including win rate, total tips, and average odds. Our leaderboards are based on automatically verified match results, so you can trust the data.
@@ -43,7 +44,8 @@ Your win rate is calculated based on the results of your "resulted" tips (tips f
 ## General Questions
 
 ### Is Ligisoo a bookmaker?
-No, Ligisoo is not a bookmaker or a betting site. We are a marketplace that connects tipsters with users. We do not accept bets. Our platform is for informational and entertainment purposes only.
+No, Ligisoo is not a bookmaker or a betting site. We are a community analytics platform that connects tipsters with users. We do not accept bets. Our platform is for informational and entertainment purposes only.
+
 
 ### How are payments handled?
 All payments are processed securely through Safaricom's M-Pesa. We do not store your M-Pesa PIN.

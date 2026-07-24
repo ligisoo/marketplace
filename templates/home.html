@@ -64,20 +64,31 @@
         <div class="relative z-10 bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-6 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-300 w-80">
           <div class="flex justify-between items-center mb-4">
             <span class="text-xs font-bold uppercase tracking-widest text-muted-foreground">Platform Stats</span>
-            <span class="bg-green-500/10 text-green-500 px-2 py-1 rounded-full text-[10px] font-bold animate-pulse">LIVE</span>
+            <span class="bg-green-500/10 text-green-500 px-2.5 py-1 rounded-full text-[10px] font-bold animate-pulse">BETA LIVE</span>
           </div>
           <div class="space-y-4">
+            {% if has_sufficient_data %}
             <div class="bg-background/50 rounded-lg p-3">
-              <div class="text-[10px] text-muted-foreground uppercase">Win Rate (Top 10)</div>
+              <div class="text-[10px] text-muted-foreground uppercase tracking-wide">Win Rate (Top Analysts)</div>
               <div class="text-2xl font-black text-foreground">{{ win_rate_top_10 }}% <span class="text-green-500 text-sm">↑</span></div>
+              <div class="text-[10px] text-muted-foreground mt-0.5">Based on {{ win_rate_sample_size }} verified tips</div>
             </div>
+            {% else %}
             <div class="bg-background/50 rounded-lg p-3">
-              <div class="text-[10px] text-muted-foreground uppercase">Active Predictions</div>
+              <div class="text-[10px] text-muted-foreground uppercase tracking-wide">Active Analysts</div>
+              <div class="text-2xl font-black text-foreground">{{ active_analysts_count }} <span class="text-xs font-normal text-muted-foreground">tipsters</span></div>
+              <div class="text-[10px] text-muted-foreground mt-0.5">Verified analysts in Beta</div>
+            </div>
+            {% endif %}
+            <div class="bg-background/50 rounded-lg p-3">
+              <div class="text-[10px] text-muted-foreground uppercase tracking-wide">Active Predictions</div>
               <div class="text-2xl font-black text-primary">{{ active_predictions }}</div>
+              <div class="text-[10px] text-muted-foreground mt-0.5">Live community predictions</div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   </section>
 
