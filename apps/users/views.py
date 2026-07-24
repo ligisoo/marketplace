@@ -164,15 +164,17 @@ def password_reset_request(request):
                 if user.email:
                     try:
                         from django.core.mail import send_mail
+                        from django.conf import settings
                         send_mail(
                             subject="Ligisoo Password Reset Request",
                             message=f"Hi {user.userprofile.display_name},\n\nYou requested a password reset for your Ligisoo account. Click the link below to set a new password:\n\n{reset_url}\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nLigisoo Team",
-                            from_email=None,
+                            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'Ligisoo <support@ligisoo.co.ke>'),
                             recipient_list=[user.email],
-                            fail_silently=True,
+                            fail_silently=False,
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.error(f"Failed to send password reset email to {user.email}: {e}")
+
                 
                 # Store reset link in session ONLY in local DEBUG mode for developer testing
                 from django.conf import settings
