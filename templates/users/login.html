@@ -45,7 +45,11 @@
                 {% if form.password.errors %}
                     <div class="text-red-400 text-xs mt-1">{{ form.password.errors }}</div>
                 {% endif %}
+                <div class="text-right mt-1.5">
+                    <a href="{% url 'users:password_reset' %}" class="text-xs text-primary hover:text-primary/80 transition-colors font-medium">Forgot Password?</a>
+                </div>
             </div>
+
 
             <button type="submit" class="w-full bg-primary text-primary-foreground font-bold py-3 px-4 rounded-xl hover:bg-primary/90 transition-all flex items-center justify-center text-sm shadow-md group">
                 <svg class="w-5 h-5 mr-2 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

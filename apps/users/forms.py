@@ -152,3 +152,54 @@ class ProfileEditForm(forms.ModelForm):
                 profile.save()
         
         return profile
+
+
+class CustomPasswordResetForm(forms.Form):
+    """Form to request password reset by phone number or email"""
+    identifier = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
+            'placeholder': 'Phone number (e.g. 0712345678) or Email'
+        })
+    )
+
+    def clean_identifier(self):
+        identifier = self.cleaned_data.get('identifier', '').strip()
+        if not identifier:
+            raise forms.ValidationError("Please enter your registered phone number or email address.")
+        return identifier
+
+    def get_user(self):
+        identifier = self.cleaned_data.get('identifier', '').strip()
+        user = User.objects.filter(phone_number=identifier).first()
+        if not user and '@' in identifier:
+            user = User.objects.filter(email__iexact=identifier).first()
+        return user
+
+
+class CustomSetPasswordForm(forms.Form):
+    """Form to set a new password during password reset"""
+    new_password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
+            'placeholder': 'New Password'
+        })
+    )
+    new_password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
+            'placeholder': 'Confirm New Password'
+        })
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get('new_password1')
+        p2 = cleaned_data.get('new_password2')
+
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("The two password fields didn't match.")
+        if p1 and len(p1) < 6:
+            raise forms.ValidationError("Password must be at least 6 characters long.")
+        return cleaned_data
