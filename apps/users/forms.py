@@ -5,12 +5,19 @@ from .models import User, UserProfile
 
 
 class RegistrationForm(UserCreationForm):
-    """User registration form with phone number and user type"""
+    """User registration form with phone number, email and username"""
     phone_number = forms.CharField(
         max_length=15,
         widget=forms.TextInput(attrs={
             'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': '0712345678'
+        })
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
+            'placeholder': 'your-email@example.com'
         })
     )
     username = forms.CharField(
@@ -41,13 +48,19 @@ class RegistrationForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ['phone_number', 'username', 'password1', 'password2']
+        fields = ['phone_number', 'email', 'username', 'password1', 'password2']
     
     def clean_phone_number(self):
         phone_number = self.cleaned_data.get('phone_number')
         if User.objects.filter(phone_number=phone_number).exists():
             raise forms.ValidationError("This phone number is already registered.")
         return phone_number
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("This email address is already registered.")
+        return email
 
     def clean(self):
         cleaned_data = super().clean()
@@ -56,15 +69,15 @@ class RegistrationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.phone_number = self.cleaned_data['phone_number']
+        user.email = self.cleaned_data['email']
         if self.cleaned_data.get('username'):
             user.username = self.cleaned_data['username']
 
         if commit:
             user.save()
-            # User profile is automatically created via signal
-            # Any default roles or properties are handled there
 
         return user
+
 
 
 class LoginForm(forms.Form):
