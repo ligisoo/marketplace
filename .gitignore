@@ -242,3 +242,4 @@ ligisooke_backup_*/
 *.crt
 config.json
 secrets.jsonlegacy_archive/
+tailwindcss

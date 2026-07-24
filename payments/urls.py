@@ -12,4 +12,5 @@ urlpatterns = [
     # Frontend Views
     path('pricing/', views.pricing_view, name='pricing'),
     path('checkout/', views.checkout_view, name='checkout'),
+    path('redeem-promo/', views.redeem_promo_view, name='redeem_promo'),
 ]

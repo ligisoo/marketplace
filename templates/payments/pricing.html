@@ -94,5 +94,26 @@
             </a>
         </div>
     </div>
+
+    <!-- Promo Code Redemption Section -->
+    <div class="mt-12 max-w-xl mx-auto bg-card border border-border rounded-2xl p-6 shadow-md">
+        <div class="flex items-center space-x-3 mb-3">
+            <span class="text-2xl">🎟️</span>
+            <div>
+                <h3 class="text-lg font-bold text-foreground">Have a Promo or Beta Access Code?</h3>
+                <p class="text-xs text-muted-foreground">Enter your VIP or Beta welcome code below to unlock free Pro access.</p>
+            </div>
+        </div>
+        <form action="{% url 'payments:redeem_promo' %}" method="POST" class="flex flex-col sm:flex-row gap-3">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <input type="text" name="code" placeholder="e.g. BETA2026" required 
+                   class="flex-1 px-4 py-2.5 rounded-lg border border-input bg-background text-foreground uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-primary font-mono tracking-wider text-center sm:text-left">
+            <button type="submit" class="btn btn-primary px-6 py-2.5 font-bold rounded-lg flex items-center justify-center space-x-2">
+                <span>Redeem</span>
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}
+

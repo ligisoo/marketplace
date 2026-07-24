@@ -14,13 +14,14 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-from .models import SubscriptionPayment
+from .models import SubscriptionPayment, PromoCode, PromoCodeRedemption
 from .services import MpesaService
 from .security import mpesa_security_required
 from .throttles import PaymentInitiationThrottle, CallbackThrottle
 from apps.users.models import UserProfile
 
 User = get_user_model()
+
 
 
 class InitiateSubscriptionView(APIView):
@@ -284,8 +285,9 @@ class SubscriptionStatusView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 def pricing_view(request):
     """Render the pricing page"""
@@ -312,3 +314,63 @@ def checkout_view(request):
         'tier_display': tier.capitalize()
     }
     return render(request, 'payments/checkout.html', context)
+
+
+@login_required
+def redeem_promo_view(request):
+    """View to handle promo code redemptions"""
+    if request.method == 'POST':
+        code_input = request.POST.get('code', '').strip().upper()
+        next_url = request.POST.get('next', 'payments:pricing')
+        
+        if not code_input:
+            messages.error(request, 'Please enter a valid promo code.')
+            return redirect(next_url)
+        
+        try:
+            promo = PromoCode.objects.get(code=code_input)
+        except PromoCode.DoesNotExist:
+            messages.error(request, f'Promo code "{code_input}" is invalid.')
+            return redirect(next_url)
+            
+        if not promo.is_valid:
+            if not promo.is_active:
+                messages.error(request, f'Promo code "{code_input}" is no longer active.')
+            elif promo.used_count >= promo.max_uses:
+                messages.error(request, f'Promo code "{code_input}" has reached its maximum redemption limit.')
+            elif promo.expires_at and promo.expires_at <= timezone.now():
+                messages.error(request, f'Promo code "{code_input}" has expired.')
+            else:
+                messages.error(request, f'Promo code "{code_input}" cannot be redeemed.')
+            return redirect(next_url)
+
+        # Check if user already redeemed this promo code
+        if PromoCodeRedemption.objects.filter(promo_code=promo, user=request.user).exists():
+            messages.warning(request, f'You have already redeemed promo code "{code_input}".')
+            return redirect(next_url)
+
+        # Record redemption & update user profile Pro status
+        PromoCodeRedemption.objects.create(promo_code=promo, user=request.user)
+        promo.used_count += 1
+        promo.save(update_fields=['used_count'])
+
+        user_profile = request.user.userprofile
+        now = timezone.now()
+        
+        # Extend existing active pro expiration or set new expiration from now
+        if user_profile.is_pro_active and user_profile.pro_expires_at:
+            user_profile.pro_expires_at += timedelta(days=promo.pro_duration_days)
+        else:
+            user_profile.pro_expires_at = now + timedelta(days=promo.pro_duration_days)
+            
+        user_profile.is_pro = True
+        user_profile.save(update_fields=['is_pro', 'pro_expires_at'])
+
+        messages.success(
+            request, 
+            f'🎉 Success! Promo code "{promo.code}" applied. You now have Pro access for {promo.pro_duration_days} days!'
+        )
+        return redirect(next_url)
+
+    return redirect('payments:pricing')
+

@@ -59,3 +59,61 @@ class SubscriptionPayment(models.Model):
                 name='unique_subscription_idempotency'
             ),
         ]
+
+
+class PromoCode(models.Model):
+    """Promotional / Welcome discount codes granting free Pro membership"""
+
+    code = models.CharField(max_length=50, unique=True, db_index=True, help_text="Unique uppercase promo code (e.g. BETA2026)")
+    pro_duration_days = models.PositiveIntegerField(default=30, help_text="Number of Pro membership days granted upon redemption")
+    max_uses = models.PositiveIntegerField(default=100, help_text="Maximum allowed redemptions across all users")
+    used_count = models.PositiveIntegerField(default=0, help_text="Total number of times redeemed")
+    is_active = models.BooleanField(default=True, help_text="Whether code is active and redeemable")
+    expires_at = models.DateTimeField(null=True, blank=True, help_text="Optional expiration date for promo code")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'payments_promo_code'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.code} ({self.pro_duration_days} days) - {self.used_count}/{self.max_uses} used"
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+    @property
+    def is_valid(self):
+        """Check if promo code can be redeemed"""
+        if not self.is_active:
+            return False
+        if self.used_count >= self.max_uses:
+            return False
+        if self.expires_at and self.expires_at <= timezone.now():
+            return False
+        return True
+
+
+class PromoCodeRedemption(models.Model):
+    """Tracks user redemptions of promo codes"""
+
+    promo_code = models.ForeignKey(PromoCode, on_delete=models.CASCADE, related_name='redemptions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='promo_redemptions')
+    redeemed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'payments_promo_code_redemption'
+        ordering = ['-redeemed_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['promo_code', 'user'],
+                name='unique_user_promo_redemption'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user} redeemed {self.promo_code.code} at {self.redeemed_at.strftime('%Y-%m-%d %H:%M')}"
+
