@@ -174,9 +174,11 @@ def password_reset_request(request):
                     except Exception:
                         pass
                 
-                # Store reset link in session for beta/dev environment convenience
-                request.session['beta_password_reset_url'] = reset_url
-                request.session['beta_password_reset_phone'] = user.phone_number
+                # Store reset link in session ONLY in local DEBUG mode for developer testing
+                from django.conf import settings
+                if settings.DEBUG:
+                    request.session['beta_password_reset_url'] = reset_url
+                    request.session['beta_password_reset_phone'] = user.phone_number
 
             return redirect('users:password_reset_done')
     else:
@@ -187,12 +189,24 @@ def password_reset_request(request):
 
 def password_reset_done(request):
     """Confirmation page after requesting password reset"""
-    reset_url = request.session.get('beta_password_reset_url')
-    phone = request.session.get('beta_password_reset_phone')
+    from django.conf import settings
+    
+    # Strictly enforce DEBUG mode check - reset_url is NEVER passed in production
+    if settings.DEBUG:
+        reset_url = request.session.get('beta_password_reset_url')
+        phone = request.session.get('beta_password_reset_phone')
+    else:
+        reset_url = None
+        phone = None
+        # Purge any leftover debug session variables if switching to production
+        request.session.pop('beta_password_reset_url', None)
+        request.session.pop('beta_password_reset_phone', None)
+
     return render(request, 'users/password_reset_done.html', {
         'reset_url': reset_url,
         'phone': phone
     })
+
 
 
 def password_reset_confirm(request, uidb64, token):
