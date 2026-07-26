@@ -122,13 +122,47 @@ class RegistrationForm(UserCreationForm):
 
 
 
+def get_phone_variants(phone_input):
+    """
+    Generate phone format variants (e.g. +254712345678, 0712345678, 254712345678)
+    so authentication and user lookup succeed regardless of how the user typed or registered their phone number.
+    """
+    if not phone_input:
+        return []
+    
+    raw = phone_input.strip()
+    cleaned = re.sub(r'[\s\-\(\)]', '', raw)
+    candidates = [raw, cleaned]
+
+    if re.match(r'^(07|01)\d{8}$', cleaned):
+        e164 = '+254' + cleaned[1:]
+        local_254 = '254' + cleaned[1:]
+        candidates.extend([e164, local_254])
+    elif re.match(r'^\+254(7|1)\d{8}$', cleaned):
+        local_0 = '0' + cleaned[4:]
+        local_254 = cleaned[1:]
+        candidates.extend([local_0, local_254])
+    elif re.match(r'^254(7|1)\d{8}$', cleaned):
+        e164 = '+' + cleaned
+        local_0 = '0' + cleaned[3:]
+        candidates.extend([e164, local_0])
+
+    seen = set()
+    result = []
+    for c in candidates:
+        if c and c not in seen:
+            seen.add(c)
+            result.append(c)
+    return result
+
+
 class LoginForm(forms.Form):
-    """User login form using phone number"""
+    """User login form supporting multiple phone number formats"""
     phone_number = forms.CharField(
-        max_length=15,
+        max_length=20,
         widget=forms.TextInput(attrs={
             'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
-            'placeholder': '0712345678'
+            'placeholder': '0712345678 or +254712345678'
         })
     )
     password = forms.CharField(
@@ -144,13 +178,24 @@ class LoginForm(forms.Form):
         password = cleaned_data.get('password')
         
         if phone_number and password:
-            user = authenticate(username=phone_number, password=password)
+            candidates = get_phone_variants(phone_number)
+            user = None
+            for candidate in candidates:
+                user = authenticate(username=candidate, password=password)
+                if user:
+                    break
+
             if not user:
                 raise forms.ValidationError("Invalid phone number or password.")
             elif not user.is_active:
                 raise forms.ValidationError("This account is inactive.")
+            
+            self.user_cache = user
         
         return cleaned_data
+
+    def get_user(self):
+        return getattr(self, 'user_cache', None)
 
 
 class ProfileEditForm(forms.ModelForm):
@@ -227,10 +272,15 @@ class CustomPasswordResetForm(forms.Form):
 
     def get_user(self):
         identifier = self.cleaned_data.get('identifier', '').strip()
-        user = User.objects.filter(phone_number=identifier).first()
-        if not user and '@' in identifier:
-            user = User.objects.filter(email__iexact=identifier).first()
-        return user
+        if '@' in identifier:
+            return User.objects.filter(email__iexact=identifier).first()
+        
+        candidates = get_phone_variants(identifier)
+        for candidate in candidates:
+            user = User.objects.filter(phone_number=candidate).first()
+            if user:
+                return user
+        return None
 
 
 class CustomSetPasswordForm(forms.Form):

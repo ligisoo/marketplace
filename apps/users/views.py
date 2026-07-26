@@ -42,10 +42,7 @@ def user_login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            phone_number = form.cleaned_data['phone_number']
-            password = form.cleaned_data['password']
-            user = authenticate(request, username=phone_number, password=password)
-            
+            user = form.get_user()
             if user:
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.userprofile.display_name}!')

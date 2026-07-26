@@ -115,3 +115,32 @@ class RegistrationAntiSpamTestCase(TestCase):
         created_user = User.objects.get(username='validuser1')
         self.assertEqual(created_user.phone_number, '+254712345678')
 
+
+class PhoneLoginFlexibleTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.login_url = reverse('users:login')
+        # User registered with +254... format
+        self.user_plus = User.objects.create_user(
+            phone_number="+254799887766",
+            username="userplus",
+            password="MySecretPass123!"
+        )
+
+    def test_login_with_local_07_format(self):
+        # Registered as +254799887766, attempts login typing 0799887766
+        response = self.client.post(self.login_url, {
+            'phone_number': '0799887766',
+            'password': 'MySecretPass123!'
+        })
+        self.assertRedirects(response, reverse('tips:marketplace'))
+
+    def test_login_with_local_254_format(self):
+        # Registered as +254799887766, attempts login typing 254799887766
+        response = self.client.post(self.login_url, {
+            'phone_number': '254799887766',
+            'password': 'MySecretPass123!'
+        })
+        self.assertRedirects(response, reverse('tips:marketplace'))
+
+
