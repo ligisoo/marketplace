@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.contrib.auth.tokens import default_token_generator
@@ -8,6 +8,7 @@ from django.utils.encoding import force_bytes
 User = get_user_model()
 
 
+@override_settings(DEBUG=True)
 class PasswordResetTestCase(TestCase):
     def setUp(self):
         self.client = Client()
@@ -54,3 +55,63 @@ class PasswordResetTestCase(TestCase):
 
         login_success = self.client.login(username="254711223344", password="newsecurepass123")
         self.assertTrue(login_success)
+
+
+class RegistrationAntiSpamTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.register_url = reverse('users:register')
+
+    def test_registration_rejects_suspicious_phone_number(self):
+        response = self.client.post(self.register_url, {
+            'phone_number': '+1-483-775-5009',
+            'email': 'validuser@example.com',
+            'username': 'legituser',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context['form'], 'phone_number', 'Invalid phone number area code provided.')
+
+    def test_registration_rejects_disposable_email(self):
+        response = self.client.post(self.register_url, {
+            'phone_number': '0711002233',
+            'email': 'nvhvskjr@immenseignite.info',
+            'username': 'kqxwjiwndv',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context['form'], 'email', 'Registration using disposable email addresses is not permitted.')
+
+    def test_registration_rejects_honeypot_spambot(self):
+        response = self.client.post(self.register_url, {
+            'phone_number': '0711002233',
+            'email': 'spambot@example.com',
+            'username': 'botuser',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': 'http://spam-link.com'  # Honeypot filled by bot
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context['form'], None, 'Spam submission detected.')
+
+    def test_valid_registration_and_phone_normalization(self):
+        response = self.client.post(self.register_url, {
+            'phone_number': '0712345678',
+            'email': 'newvaliduser@example.com',
+            'username': 'validuser1',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': ''
+        })
+        self.assertRedirects(response, reverse('users:login'))
+        created_user = User.objects.get(username='validuser1')
+        self.assertEqual(created_user.phone_number, '+254712345678')
+

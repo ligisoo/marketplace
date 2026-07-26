@@ -1,13 +1,20 @@
+import re
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
 from .models import User, UserProfile
 
+DISPOSABLE_EMAIL_DOMAINS = {
+    'immenseignite.info', 'tempmail.com', '10minutemail.com', 'guerrillamail.com',
+    'mailinator.com', 'throwawaymail.com', 'trashmail.com', 'sharklasers.com',
+    'dispostable.com', 'getnada.com', 'bupkis.org', 'yopmail.com'
+}
+
 
 class RegistrationForm(UserCreationForm):
-    """User registration form with phone number, email and username"""
+    """User registration form with phone number, email, username and anti-spam protection"""
     phone_number = forms.CharField(
-        max_length=15,
+        max_length=20,
         widget=forms.TextInput(attrs={
             'class': 'form-input w-full block px-4 py-3 bg-secondary/80 border border-border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm',
             'placeholder': '0712345678'
@@ -40,6 +47,15 @@ class RegistrationForm(UserCreationForm):
             'placeholder': 'Confirm Password'
         })
     )
+    # Honeypot field - invisible to real human users, traps spam bots
+    website_url = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'style': 'position: absolute; left: -9999px; opacity: 0; height: 0; width: 0;',
+            'tabindex': '-1',
+            'autocomplete': 'off'
+        })
+    )
     terms_of_service = forms.BooleanField(
         required=True,
         initial=False,
@@ -51,19 +67,45 @@ class RegistrationForm(UserCreationForm):
         fields = ['phone_number', 'email', 'username', 'password1', 'password2']
     
     def clean_phone_number(self):
-        phone_number = self.cleaned_data.get('phone_number')
-        if User.objects.filter(phone_number=phone_number).exists():
+        phone_number = self.cleaned_data.get('phone_number', '').strip()
+        cleaned_phone = re.sub(r'[\s\-\(\)]', '', phone_number)
+
+        # Check basic digit and E.164 length structure
+        if not re.match(r'^\+?[0-9]{8,15}$', cleaned_phone):
+            raise forms.ValidationError("Please enter a valid phone number (e.g. 0712345678 or +254712345678).")
+
+        # Explicitly reject invalid NANP area codes (e.g. +1-483...)
+        if cleaned_phone.startswith('+1483') or cleaned_phone.startswith('1483'):
+            raise forms.ValidationError("Invalid phone number area code provided.")
+
+        # Standardize Kenyan phone formats (0712345678 / 0112345678 / 2547...) to +254...
+        if re.match(r'^(07|01)\d{8}$', cleaned_phone):
+            cleaned_phone = '+254' + cleaned_phone[1:]
+        elif re.match(r'^254(7|1)\d{8}$', cleaned_phone):
+            cleaned_phone = '+' + cleaned_phone
+
+        if User.objects.filter(phone_number=cleaned_phone).exists():
             raise forms.ValidationError("This phone number is already registered.")
-        return phone_number
+        return cleaned_phone
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email__iexact=email).exists():
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if not email:
+            return email
+
+        domain = email.split('@')[-1]
+        if domain in DISPOSABLE_EMAIL_DOMAINS:
+            raise forms.ValidationError("Registration using disposable email addresses is not permitted.")
+
+        if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("This email address is already registered.")
         return email
 
     def clean(self):
         cleaned_data = super().clean()
+        honeypot = cleaned_data.get('website_url')
+        if honeypot:
+            raise forms.ValidationError("Spam submission detected.")
         return cleaned_data
     
     def save(self, commit=True):

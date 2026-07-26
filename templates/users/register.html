@@ -14,6 +14,9 @@
     <div class="bg-card border border-border rounded-2xl shadow-xl p-6 sm:p-8">
         <form method="post" class="space-y-5">
             {% csrf_token %}
+            <div style="display:none; position:absolute; left:-9999px;" aria-hidden="true">
+                {{ form.website_url }}
+            </div>
 
             {% if form.non_field_errors %}
                 <div class="p-3.5 rounded-lg border bg-red-900/20 border-red-700 text-red-200 text-sm">
