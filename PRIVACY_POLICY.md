@@ -36,4 +36,4 @@ Under the Data Protection Act, you have the right to access, correct, or request
 
 ## Contact Us
 
-If you have any questions about this Privacy Policy, please contact us at privacy@ligisoo.co.ke.
+If you have any questions about this Privacy Policy, please contact us at support@ligisoo.co.ke.

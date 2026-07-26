@@ -27,4 +27,4 @@ Subscriptions are managed directly through your M-Pesa account and our automated
 If you are experiencing technical issues with your Ligisoo account or M-Pesa billing, please contact our support team:
 
 * **Email:** support@ligisoo.co.ke
-* **Phone:** +254 700 000 000 (Available Monday - Friday, 9am - 5pm EAT)
+* **X (Twitter):** [@LigisooKe](https://x.com/LigisooKe)
