@@ -88,6 +88,14 @@ class RegistrationForm(UserCreationForm):
             raise forms.ValidationError("This phone number is already registered.")
         return cleaned_phone
 
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if username:
+            if User.objects.filter(username__iexact=username).exists():
+                raise forms.ValidationError("This username is already taken. Please choose another.")
+            return username
+        return None
+
     def clean_email(self):
         email = self.cleaned_data.get('email', '').strip().lower()
         if not email:
@@ -112,8 +120,7 @@ class RegistrationForm(UserCreationForm):
         user = super().save(commit=False)
         user.phone_number = self.cleaned_data['phone_number']
         user.email = self.cleaned_data['email']
-        if self.cleaned_data.get('username'):
-            user.username = self.cleaned_data['username']
+        user.username = self.cleaned_data.get('username') or None
 
         if commit:
             user.save()

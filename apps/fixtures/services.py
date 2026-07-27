@@ -475,14 +475,21 @@ class APIFootballService:
             
         print(f"Found {stats['stuck_matches_found']} potentially stuck matches")
         
-        # Limit recovery attempts to preserve API quota
-        max_recoveries = min(20, self.daily_limit - APIUsageLog.get_daily_count())
+        # Limit recovery attempts to preserve API quota (max 5 per run with 1s throttling)
+        max_recoveries = min(5, max(0, self.daily_limit - APIUsageLog.get_daily_count()))
         
         for fixture in stuck_matches[:max_recoveries]:
+            import time
+            time.sleep(1)  # Rate limit throttle to prevent HTTP 429 errors
             if self.recover_stuck_match(fixture):
                 stats['recovered_successfully'] += 1
             else:
                 stats['recovery_failed'] += 1
+                # If match is stuck for > 6 hours and API fails, mark as FT to clear queue
+                if fixture.date and (timezone.now() - fixture.date) > timedelta(hours=6):
+                    fixture.status_short = 'FT'
+                    fixture.status_long = 'Match Finished'
+                    fixture.save()
             stats['api_requests_used'] += 1
             
         return stats

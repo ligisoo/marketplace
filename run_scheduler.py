@@ -163,11 +163,11 @@ def fetch_upcoming_fixtures():
             logger.warning("API limit nearly reached, skipping upcoming fixtures fetch")
             return
 
-        # Fetch fixtures for next 3 days
+        # Fetch fixtures for next 2 days (today and tomorrow - API-Football Free plan limit)
         total_created = 0
         total_updated = 0
 
-        for days_ahead in range(3):
+        for days_ahead in range(2):
             fetch_date = (datetime.now().date() + timedelta(days=days_ahead))
 
             if not api_service._can_make_request():

@@ -115,6 +115,47 @@ class RegistrationAntiSpamTestCase(TestCase):
         created_user = User.objects.get(username='validuser1')
         self.assertEqual(created_user.phone_number, '+254712345678')
 
+    def test_registration_rejects_duplicate_username(self):
+        User.objects.create_user(phone_number='+254700000001', username='taken_username', password='Password123!')
+        response = self.client.post(self.register_url, {
+            'phone_number': '0700000002',
+            'email': 'user2@example.com',
+            'username': 'TAKEN_USERNAME',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context['form'], 'username', 'This username is already taken. Please choose another.')
+
+    def test_registration_multiple_users_without_username(self):
+        # First user without username
+        r1 = self.client.post(self.register_url, {
+            'phone_number': '0700000010',
+            'email': 'nousername1@example.com',
+            'username': '',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': ''
+        })
+        self.assertRedirects(r1, reverse('users:login'))
+
+        # Second user without username (verifies no IntegrityError on NULL username)
+        r2 = self.client.post(self.register_url, {
+            'phone_number': '0700000011',
+            'email': 'nousername2@example.com',
+            'username': '',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+            'terms_of_service': True,
+            'website_url': ''
+        })
+        self.assertRedirects(r2, reverse('users:login'))
+        self.assertIsNone(User.objects.get(phone_number='+254700000010').username)
+        self.assertIsNone(User.objects.get(phone_number='+254700000011').username)
+
 
 class PhoneLoginFlexibleTestCase(TestCase):
     def setUp(self):
