@@ -639,22 +639,40 @@ class LivescoreCzScraper:
                 stats['updated'] += 1
             else:
                 try:
-                    league, _ = League.objects.get_or_create(
-                        name=item['league'][:100],
-                        defaults={'api_id': abs(hash(item['league'])) % 1000000, 'season': now.year, 'country': 'World'}
-                    )
-                    home_team, _ = Team.objects.get_or_create(
-                        name=item['home_team'][:100],
-                        defaults={'api_id': abs(hash(item['home_team'])) % 1000000}
-                    )
-                    away_team, _ = Team.objects.get_or_create(
-                        name=item['away_team'][:100],
-                        defaults={'api_id': abs(hash(item['away_team'])) % 1000000}
-                    )
+                    league = League.objects.filter(name=item['league'][:100]).first()
+                    if not league:
+                        fake_league_id = abs(hash(item['league'])) % 1000000
+                        league = League.objects.filter(api_id=fake_league_id).first()
+                        if not league:
+                            league = League.objects.create(
+                                api_id=fake_league_id,
+                                name=item['league'][:100],
+                                season=now.year,
+                                country='World'
+                            )
+
+                    home_team = Team.objects.filter(name=item['home_team'][:100]).first()
+                    if not home_team:
+                        fake_home_id = abs(hash(f"team_{item['home_team']}")) % 1000000000
+                        home_team = Team.objects.filter(api_id=fake_home_id).first()
+                        if not home_team:
+                            home_team = Team.objects.create(
+                                api_id=fake_home_id,
+                                name=item['home_team'][:100]
+                            )
+
+                    away_team = Team.objects.filter(name=item['away_team'][:100]).first()
+                    if not away_team:
+                        fake_away_id = abs(hash(f"team_{item['away_team']}")) % 1000000000
+                        away_team = Team.objects.filter(api_id=fake_away_id).first()
+                        if not away_team:
+                            away_team = Team.objects.create(
+                                api_id=fake_away_id,
+                                name=item['away_team'][:100]
+                            )
 
                     match_date = item.get('date') or now.date()
-                    # Convert date to datetime at midnight
-                    if isinstance(match_date, datetime) or hasattr(match_date, 'strftime') and not isinstance(match_date, datetime):
+                    if isinstance(match_date, datetime) or (hasattr(match_date, 'strftime') and not isinstance(match_date, datetime)):
                         from django.utils.timezone import make_aware
                         match_datetime = make_aware(datetime.combine(match_date, datetime.min.time()))
                     else:
