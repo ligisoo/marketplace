@@ -604,30 +604,53 @@ class LivescoreCzScraper:
         stats = {'scraped': len(scraped_matches), 'updated': 0, 'created': 0}
         now = timezone.now()
 
+        # Query database fixtures ONCE for the date range instead of 700+ times inside the loop
+        start_date = now - timedelta(days=2)
+        end_date = now + timedelta(days=2)
+        fixtures = list(Fixture.objects.filter(
+            date__gte=start_date,
+            date__lte=end_date
+        ).select_related('home_team', 'away_team'))
+
+        # Build fast O(1) dictionary map of exact team name pairs
+        fixture_map = {}
+        for fix in fixtures:
+            h_name = fix.home_team.name.lower().strip()
+            a_name = fix.away_team.name.lower().strip()
+            fixture_map[(h_name, a_name)] = fix
+
         for item in scraped_matches:
             if item['home_goals'] is None or item['away_goals'] is None:
                 continue
 
-            start_date = now - timedelta(days=2)
-            end_date = now + timedelta(days=2)
+            h_lower = item['home_team'].lower().strip()
+            a_lower = item['away_team'].lower().strip()
 
-            fixtures = Fixture.objects.filter(
-                date__gte=start_date,
-                date__lte=end_date
-            ).select_related('home_team', 'away_team')
+            # 1. Try instant O(1) exact team name match
+            matched_fixture = fixture_map.get((h_lower, a_lower))
 
-            matched_fixture = None
-            best_score = 0
-            threshold = 70
+            # 2. If exact lookup fails, try pre-filtered fuzzy match
+            if not matched_fixture:
+                best_score = 0
+                threshold = 70
 
-            for fix in fixtures:
-                home_sim = calc_ratio(item['home_team'].lower(), fix.home_team.name.lower())
-                away_sim = calc_ratio(item['away_team'].lower(), fix.away_team.name.lower())
-                avg_sim = (home_sim + away_sim) / 2
+                for fix in fixtures:
+                    f_home = fix.home_team.name.lower().strip()
+                    f_away = fix.away_team.name.lower().strip()
 
-                if home_sim >= threshold and away_sim >= threshold and avg_sim > best_score:
-                    best_score = avg_sim
-                    matched_fixture = fix
+                    # Quick pre-filter: skip if first letter differs AND neither is a substring of the other
+                    if h_lower and f_home and h_lower[0] != f_home[0] and h_lower not in f_home and f_home not in h_lower:
+                        continue
+                    if a_lower and f_away and a_lower[0] != f_away[0] and a_lower not in f_away and f_away not in a_lower:
+                        continue
+
+                    home_sim = calc_ratio(h_lower, f_home)
+                    away_sim = calc_ratio(a_lower, f_away)
+                    avg_sim = (home_sim + away_sim) / 2
+
+                    if home_sim >= threshold and away_sim >= threshold and avg_sim > best_score:
+                        best_score = avg_sim
+                        matched_fixture = fix
 
             if matched_fixture:
                 matched_fixture.home_goals = item['home_goals']
