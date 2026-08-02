@@ -150,6 +150,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom user model
 AUTH_USER_MODEL = 'users.User'
 
+# Authentication URLs
+LOGIN_URL = 'users:login'
+LOGIN_REDIRECT_URL = 'tips:tip_list'
+LOGOUT_REDIRECT_URL = 'tips:tip_list'
+
 # M-Pesa Configuration
 MPESA_CONSUMER_KEY = config('MPESA_CONSUMER_KEY', default='')
 MPESA_CONSUMER_SECRET = config('MPESA_CONSUMER_SECRET', default='')
