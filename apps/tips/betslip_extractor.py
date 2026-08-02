@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # --- CONFIGURATION FOR SPEED (from langextract) ---
-MODEL_ID = 'gemini-3.1-flash-lite'
+MODEL_ID = 'gemini-2.5-flash'
 MAX_DIMENSION = 800   # 800px is the sweet spot for speed/readability
 JPEG_QUALITY = 60     # Lower quality (60) is fine for high-contrast text
 RETRY_DELAY = 1.0     # Start retries quicker
