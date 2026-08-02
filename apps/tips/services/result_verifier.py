@@ -129,6 +129,13 @@ class ResultVerifier:
         not_found_matches = 0
 
         for tip_match in matches:
+            # If already resulted, use existing result
+            if tip_match.is_resulted:
+                verified_matches += 1
+                if tip_match.is_won:
+                    won_matches += 1
+                continue
+
             # Try to find fixture by api_match_id first (if enriched)
             fixture = None
 
@@ -148,38 +155,54 @@ class ResultVerifier:
                     tip_match.api_match_id = str(fixture.api_id)
                     tip_match.save(update_fields=['api_match_id'])
                     
-                # Check if match is finished
-                if not fixture.is_finished:
+                # Check if match is finished or concluded (postponed, cancelled, abandoned, etc.)
+                is_concluded = fixture.is_finished or fixture.status_short in ['PST', 'CANC', 'ABD', 'AWD', 'WO']
+                if not is_concluded:
                     logger.info(f"Match {tip_match.home_team} vs {tip_match.away_team} not yet finished (Status: {fixture.status_short})")
                     continue
 
-                # Verify this specific match
-                match_won = self._check_market_result(
-                    tip_match.market,
-                    tip_match.selection,
-                    fixture.home_goals,
-                    fixture.away_goals,
-                    home_team=tip_match.home_team,
-                    away_team=tip_match.away_team
-                )
+                # Check if the match is voided (postponed, cancelled, abandoned, etc.)
+                is_void = fixture.status_short in ['PST', 'CANC', 'ABD', 'AWD', 'WO']
+                match_won = False
+
+                if not is_void:
+                    # Verify this specific match
+                    match_result = self._check_market_result(
+                        tip_match.market,
+                        tip_match.selection,
+                        fixture.home_goals,
+                        fixture.away_goals,
+                        home_team=tip_match.home_team,
+                        away_team=tip_match.away_team
+                    )
+                    
+                    if match_result == 'void':
+                        is_void = True
+                    else:
+                        match_won = bool(match_result)
 
                 # Update tip match
                 tip_match.is_resulted = True
-                tip_match.is_won = match_won
-                tip_match.actual_result = fixture.get_result_string()
-                if not tip_match.api_match_id:
-                    tip_match.api_match_id = str(fixture.api_id)
+                if is_void:
+                    from decimal import Decimal
+                    tip_match.is_won = True  # Treat void as won so accumulator continues
+                    tip_match.actual_result = f"Void / Push ({fixture.status_short})"
+                    tip_match.odds = Decimal('1.00')  # Reset odds to 1.0
+                else:
+                    tip_match.is_won = match_won
+                    tip_match.actual_result = fixture.get_result_string()
+                
                 tip_match.save()
 
                 verified_matches += 1
-                if match_won:
+                if tip_match.is_won:
                     won_matches += 1
 
                 logger.info(
                     f"Match verified: {tip_match.home_team} vs {tip_match.away_team} "
                     f"Result: {fixture.home_goals}-{fixture.away_goals} "
                     f"Market: {tip_match.market} Selection: {tip_match.selection} "
-                    f"Won: {match_won}"
+                    f"Won: {tip_match.is_won} (Void: {is_void})"
                 )
             else:
                 not_found_matches += 1
@@ -196,12 +219,20 @@ class ResultVerifier:
             tip.is_won = tip_won
             tip.result_verified_at = timezone.now()
             tip.status = 'archived'  # Mark as archived after verification
+            
+            # Recalculate tip odds in case of any voided matches
+            from decimal import Decimal
+            total_odds = Decimal('1.00')
+            for m in tip.matches.all():
+                total_odds *= m.odds
+            tip.odds = round(total_odds, 2)
+            
             tip.save()
 
             logger.info(
                 f"Tip {tip.id} verified: "
                 f"Won {won_matches}/{total_matches} matches - "
-                f"Betslip {'WON' if tip_won else 'LOST'}"
+                f"Betslip {'WON' if tip_won else 'LOST'} - New Odds: {tip.odds}"
             )
 
             return {
@@ -287,7 +318,7 @@ class ResultVerifier:
 
         return best_match
 
-    def _check_market_result(self, market: str, selection: str, home_score: int, away_score: int, home_team: str = "", away_team: str = "") -> bool:
+    def _check_market_result(self, market: str, selection: str, home_score: int, away_score: int, home_team: str = "", away_team: str = ""):
         """
         Check if a bet won based on market type, selection, and final score.
 
@@ -300,7 +331,7 @@ class ResultVerifier:
             away_team: Away team name
 
         Returns:
-            True if bet won, False if lost
+            True if bet won, False if lost, 'void' if bet is push/voided
         """
         if home_score is None or away_score is None:
             return False
@@ -320,9 +351,32 @@ class ResultVerifier:
                 goal_line = self._extract_goal_line(selection)
 
             if goal_line:
-                if 'over' in selection_lower:
+                is_over = False
+                is_under = False
+                
+                if 'over' in selection_lower or '+' in selection_lower or '>' in selection_lower:
+                    is_over = True
+                elif 'under' in selection_lower or '-' in selection_lower or '<' in selection_lower:
+                    is_under = True
+                elif 'yes' in selection_lower:
+                    if 'over' in market_lower:
+                        is_over = True
+                    elif 'under' in market_lower:
+                        is_under = True
+                elif 'no' in selection_lower:
+                    if 'over' in market_lower:
+                        is_under = True
+                    elif 'under' in market_lower:
+                        is_over = True
+                else:
+                    if 'over' in market_lower:
+                        is_over = True
+                    elif 'under' in market_lower:
+                        is_under = True
+                
+                if is_over:
                     return total_goals > goal_line
-                elif 'under' in selection_lower:
+                elif is_under:
                     return total_goals < goal_line
 
         # 1X2 / Match Result
@@ -350,13 +404,31 @@ class ResultVerifier:
             elif selection_lower in ['2', 'away'] or selection.strip() == '2':
                 return away_score > home_score
 
+        # Draw No Bet (DNB)
+        if 'draw no bet' in market_lower or 'dnb' in market_lower:
+            if home_score == away_score:
+                return 'void'
+            
+            if home_team and away_team:
+                h_name = home_team.lower().strip()
+                a_name = away_team.lower().strip()
+                if selection_lower == h_name or (len(h_name) > 3 and h_name in selection_lower) or (len(selection_lower) > 3 and selection_lower in h_name):
+                    return home_score > away_score
+                elif selection_lower == a_name or (len(a_name) > 3 and a_name in selection_lower) or (len(selection_lower) > 3 and selection_lower in a_name):
+                    return away_score > home_score
+
+            if selection_lower in ['1', 'home'] or selection.strip() == '1':
+                return home_score > away_score
+            elif selection_lower in ['2', 'away'] or selection.strip() == '2':
+                return away_score > home_score
+
         # Both Teams to Score (BTTS/GG)
         if 'both teams' in market_lower or 'btts' in market_lower or 'gg' in market_lower:
             both_scored = (home_score > 0 and away_score > 0)
 
-            if 'yes' in selection_lower or 'gg' in selection_lower:
+            if 'yes' in selection_lower or 'gg' in selection_lower or selection_lower == '1' or selection_lower == 'y':
                 return both_scored
-            elif 'no' in selection_lower or 'ng' in selection_lower:
+            elif 'no' in selection_lower or 'ng' in selection_lower or selection_lower == '2' or selection_lower == 'n':
                 return not both_scored
 
         # Double Chance
@@ -365,18 +437,18 @@ class ResultVerifier:
             if home_team and away_team:
                 h_name = home_team.lower().strip()
                 a_name = away_team.lower().strip()
-                if h_name in selection_lower and ('draw' in selection_lower or 'x' in selection_lower):
+                if h_name in selection_lower and ('draw' in selection_lower or 'x' in selection_lower or '1' in selection_lower):
                     return home_score >= away_score
-                elif a_name in selection_lower and ('draw' in selection_lower or 'x' in selection_lower):
+                elif a_name in selection_lower and ('draw' in selection_lower or 'x' in selection_lower or '2' in selection_lower):
                     return away_score >= home_score
                 elif h_name in selection_lower and a_name in selection_lower:
                     return home_score != away_score
 
-            if '1x' in selection_lower or 'home or draw' in selection_lower:
+            if '1x' in selection_lower or 'home or draw' in selection_lower or 'home/draw' in selection_lower or '1 or x' in selection_lower or 'draw or home' in selection_lower:
                 return home_score >= away_score
-            elif 'x2' in selection_lower or 'away or draw' in selection_lower:
+            elif 'x2' in selection_lower or 'away or draw' in selection_lower or 'draw/away' in selection_lower or 'x or 2' in selection_lower or '2 or x' in selection_lower:
                 return away_score >= home_score
-            elif '12' in selection_lower or 'home or away' in selection_lower:
+            elif '12' in selection_lower or 'home or away' in selection_lower or 'home/away' in selection_lower or '1 or 2' in selection_lower or 'away or home' in selection_lower:
                 return home_score != away_score
 
         # Correct Score
@@ -391,7 +463,15 @@ class ResultVerifier:
             handicap = self._extract_handicap(selection)
             if handicap is not None:
                 # Determine which team has handicap
-                if 'home' in selection_lower or selection.startswith(str(home_score)[0]):
+                is_home_handicap = False
+                if home_team and home_team.lower().strip() in selection_lower:
+                    is_home_handicap = True
+                elif away_team and away_team.lower().strip() in selection_lower:
+                    is_home_handicap = False
+                elif 'home' in selection_lower or '1' in selection_lower:
+                    is_home_handicap = True
+                
+                if is_home_handicap:
                     adjusted_home = home_score + handicap
                     return adjusted_home > away_score
                 else:
