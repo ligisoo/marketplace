@@ -16,11 +16,12 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 load_dotenv()
 
-# --- CONFIGURATION FOR SPEED (from langextract) ---
-MODEL_ID = 'gemini-1.5-flash'
+# --- CONFIGURATION FOR SPEED ---
+MODEL_ID = 'gemini-flash-latest'
+FALLBACK_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
 MAX_DIMENSION = 800   # 800px is the sweet spot for speed/readability
 JPEG_QUALITY = 60     # Lower quality (60) is fine for high-contrast text
-RETRY_DELAY = 1.0     # Start retries quicker
+RETRY_DELAY = 0.5     # Start retries quicker
 
 # Initialize Client ONCE (Global Scope) to save setup time
 api_key = os.getenv('GEMINI_API_KEY')
@@ -79,13 +80,7 @@ def _optimize_image_turbo(image_path_or_bytes) -> tuple[bytes, str]:
 
 def extract_betslip_turbo(image_path_or_bytes) -> dict:
     """
-    Fast betslip extraction (Exactly from langextract/betslip_fast_extractor.py)
-
-    Args:
-        image_path_or_bytes: Path to image file or bytes
-
-    Returns:
-        dict: {"success": bool, "data": dict} or {"success": False, "error": str}
+    Fast betslip extraction with model fallback support.
     """
     start_total = time.time()
 
@@ -107,40 +102,46 @@ def extract_betslip_turbo(image_path_or_bytes) -> dict:
         "3. For match_date: extract ONLY the date string printed on that match row (e.g. '23/07/26'). If no date is printed for a match, set match_date to an empty string \"\"."
     )
 
-    # 3. API Call
-    max_retries = 2
+    # 3. API Call with Fallback Model Support
     result_dict = None
+    last_error = ""
 
-    for attempt in range(max_retries):
+    for target_model in FALLBACK_MODELS:
         try:
             t_req_start = time.time()
             response = client.models.generate_content(
-                model=MODEL_ID,
+                model=target_model,
                 contents=[prompt, types.Part.from_bytes(data=image_data, mime_type=mime_type)],
                 config=types.GenerateContentConfig(
-                    temperature=0.0, # Deterministic = usually faster caching
+                    temperature=0.0,
                     response_mime_type='application/json',
                     response_schema=PredictionSlip,
                 )
             )
-            # Response is parsed into Pydantic model automatically if SDK supports it,
-            # but we can fallback to json.loads if .parsed isn't populated
             if hasattr(response, 'parsed') and response.parsed:
                 result_dict = response.parsed.model_dump()
             else:
                 result_dict = json.loads(response.text)
                 
-            logger.info(f"API Call Time: {time.time() - t_req_start:.2f}s")
+            logger.info(f"✓ Gemini Model ({target_model}) API Call Time: {time.time() - t_req_start:.2f}s")
             break
         except Exception as e:
-            logger.warning(f"Retry {attempt+1}/{max_retries}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(RETRY_DELAY)
-            else:
-                return {"success": False, "error": f"Extraction failed: {str(e)}"}
+            err_str = str(e)
+            last_error = err_str
+            logger.warning(f"Model {target_model} failed: {err_str[:150]}")
+            if "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
+                # Quota hit on this model, try fallback
+                continue
+            elif "NOT_FOUND" in err_str or "404" in err_str:
+                continue
 
     if not result_dict:
-        return {"success": False, "error": "Failed to parse API response"}
+        if "RESOURCE_EXHAUSTED" in last_error or "429" in last_error:
+            return {
+                "success": False,
+                "error": "Gemini AI daily rate limit exceeded. Please wait a moment or upgrade your Google AI Studio API key quota."
+            }
+        return {"success": False, "error": f"Extraction failed: {last_error}"}
 
     # 4. Fast Parsing & Math Check
     # Quick Math Validation
