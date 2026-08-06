@@ -1,339 +1,232 @@
-"""
-Service for interacting with the API-Football API with caching support
-"""
+from datetime import datetime
+import json
+import os
+import time
 import requests
-from datetime import datetime, date as dt_date, timedelta
-from django.conf import settings
-from django.conf import settings
-from django.core.cache import cache
-from .models import League, Team, Venue, Fixture, APIUsageLog
+
+API_KEY = os.getenv("FOOTBALL_API_KEY", "69db687a2df6b40ad9691d5d08063801")
+API_URL = "https://v3.football.api-sports.io/fixtures"
+CACHE_FILE = ".fixtures_cache.json"
+
+
+def get_todays_fixtures(api_key: str = API_KEY, cache_ttl_seconds: int = 300):
+    """Fetch today's fixtures (live, finished, and upcoming) from API-Football."""
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    # 1. Read from local cache if fresh (< cache_ttl_seconds)
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r") as f:
+                cached = json.load(f)
+                age = time.time() - cached.get("timestamp", 0)
+                if cached.get("date") == today_str and age < cache_ttl_seconds:
+                    print(f"📦 [CACHE] Using local response ({int(age)}s old)")
+                    return cached.get("payload", [])
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # 2. Make fresh API request for today's date
+    headers = {"x-apisports-key": api_key}
+    params = {"date": today_str}
+
+    try:
+        response = requests.get(API_URL, headers=headers, params=params, timeout=10)
+        remaining = response.headers.get("x-ratelimit-requests-remaining", "N/A")
+        print(f"📡 API Request OK | Daily Quota Remaining: {remaining}/100")
+
+        response.raise_for_status()
+        payload = response.json().get("response", [])
+
+        # Save to local cache
+        try:
+            with open(CACHE_FILE, "w") as f:
+                json.dump({"date": today_str, "timestamp": time.time(), "payload": payload}, f)
+        except OSError:
+            pass
+
+        return payload
+
+    except requests.exceptions.RequestException as err:
+        print(f"❌ Request Error: {err}")
+        return []
+
+
+def display_fixtures(fixtures):
+    """Display categorized summary of today's matches."""
+    if not fixtures:
+        print("No matches found for today.")
+        return
+
+    live, finished, upcoming = [], [], []
+
+    for item in fixtures:
+        status = item["fixture"]["status"]["short"]
+        home = item["teams"]["home"]["name"]
+        away = item["teams"]["away"]["name"]
+        gh = item["goals"]["home"]
+        ga = item["goals"]["away"]
+
+        score = f"{gh} - {ga}" if gh is not None else "vs"
+        match_str = f"{home} {score} {away} ({status})"
+
+        if status in ["1H", "HT", "2H", "ET", "P", "LIVE"]:
+            live.append(match_str)
+        elif status in ["FT", "AET", "PEN"]:
+            finished.append(match_str)
+        else:
+            upcoming.append(match_str)
+
+    print(f"\n🔴 LIVE MATCHES ({len(live)}):")
+    for m in live:
+        print(f"  • {m}")
+
+    print(f"\n🏁 FINISHED MATCHES ({len(finished)}):")
+    for m in finished[:10]:
+        print(f"  • {m}")
+    if len(finished) > 10:
+        print(f"  ... and {len(finished) - 10} more finished matches")
+
+    print(f"\n📅 UPCOMING MATCHES ({len(upcoming)}):")
+    for m in upcoming[:5]:
+        print(f"  • {m}")
 
 
 class APIFootballService:
-    """Service class to handle API-Football API requests with caching"""
+    """Lightweight API-Football Service wrapper for Django models integration."""
 
-    BASE_URL = "https://v3.football.api-sports.io"
-    CACHE_TIMEOUT_UPCOMING = 86400  # 24 hours for upcoming fixtures
-    CACHE_TIMEOUT_LIVE = 900  # 15 minutes for live matches
-    CACHE_TIMEOUT_FINISHED = None  # Never expire finished matches
-
-    def __init__(self):
-        self.api_key = settings.API_FOOTBALL_KEY
-        self.daily_limit = settings.API_FOOTBALL_DAILY_LIMIT
-        self.headers = {
-            'x-rapidapi-host': 'v3.football.api-sports.io',
-            'x-rapidapi-key': self.api_key
-        }
-
-    def _get_cache_key(self, endpoint, params):
-        """Generate cache key from endpoint and params"""
-        param_str = '_'.join([f"{k}_{v}" for k, v in sorted(params.items())])
-        return f"apifootball_{endpoint}_{param_str}"
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or API_KEY
 
     def _can_make_request(self):
-        """Check if we can make another API request"""
-        return APIUsageLog.can_make_request(self.daily_limit)
+        return True
 
-    def _log_request(self, endpoint, params, cached=False):
-        """Log API request for tracking"""
-        APIUsageLog.objects.create(
-            endpoint=endpoint,
-            request_params=params,
-            response_cached=cached
-        )
+    def get_api_usage_stats(self):
+        return {
+            'total_requests': 0,
+            'api_requests': 0,
+            'cached_requests': 0,
+            'remaining': 100,
+            'limit': 100,
+            'percentage_used': 0.0
+        }
 
     def fetch_fixtures(self, date=None, use_cache=True, force_refresh=False):
-        """
-        Fetch fixtures for a specific date with caching support
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        date_str = date.strftime("%Y-%m-%d") if hasattr(date, "strftime") else (str(date) if date else today_str)
 
-        Args:
-            date: Date string in format YYYY-MM-DD or date object. If None, uses today's date.
-            use_cache: Whether to use cached data if available
-            force_refresh: Force refresh from API even if cached
+        if date_str == today_str:
+            payload = get_todays_fixtures(api_key=self.api_key, cache_ttl_seconds=0 if force_refresh else 300)
+            return {"response": payload}
 
-        Returns:
-            dict: API response data or cached data
-        """
-        # Convert date to string if needed
-        if isinstance(date, dt_date):
-            date = date.strftime('%Y-%m-%d')
-        elif date is None:
-            date = datetime.now().strftime('%Y-%m-%d')
-
-        params = {'date': date}
-        cache_key = self._get_cache_key('fixtures', params)
-
-        # Check cache first
-        if use_cache and not force_refresh:
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                self._log_request('fixtures', params, cached=True)
-                return cached_data
-
-        # Check API limit
-        if not self._can_make_request():
-            # Try to return cached data even if expired
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                self._log_request('fixtures', params, cached=True)
-                return cached_data
-            else:
-                print(f"WARNING: API limit reached and no cached data available for {date}")
-                return None
-
-        # Fetch from API
-        url = f"{self.BASE_URL}/fixtures"
+        headers = {"x-apisports-key": self.api_key}
+        params = {"date": date_str}
         try:
-            response = requests.get(url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-
-            # Check for API-specific errors (like rate limit exceeded)
-            if 'errors' in data and data['errors']:
-                error_msg = str(data['errors'])
-                if 'request limit' in error_msg.lower():
-                    print(f"API rate limit exceeded: {error_msg}")
-                    return None
-                else:
-                    print(f"API error: {error_msg}")
-
-            # Cache the response only if no errors
-            cache.set(cache_key, data, self.CACHE_TIMEOUT_UPCOMING)
-            self._log_request('fixtures', params, cached=False)
-
-            return data
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching fixtures: {e}")
-            # Try to return cached data on error
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                return cached_data
-            return None
+            res = requests.get(API_URL, headers=headers, params=params, timeout=10)
+            res.raise_for_status()
+            return res.json()
+        except requests.exceptions.RequestException as err:
+            print(f"❌ Request Error: {err}")
+            return {"response": []}
 
     def fetch_live_fixtures(self, use_cache=True):
-        """
-        Fetch currently live fixtures
-
-        Args:
-            use_cache: Whether to use cached data (shorter cache time)
-
-        Returns:
-            dict: API response data
-        """
-        params = {'live': 'all'}
-        cache_key = self._get_cache_key('fixtures_live', params)
-
-        # Check cache with shorter timeout
-        if use_cache:
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                self._log_request('fixtures', params, cached=True)
-                return cached_data
-
-        # Check API limit
-        if not self._can_make_request():
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                return cached_data
-            print("WARNING: API limit reached for live fixtures")
-            return None
-
-        # Fetch from API
-        url = f"{self.BASE_URL}/fixtures"
+        headers = {"x-apisports-key": self.api_key}
+        params = {"live": "all"}
         try:
-            response = requests.get(url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-
-            # Check for API-specific errors (like rate limit exceeded)
-            if 'errors' in data and data['errors']:
-                error_msg = str(data['errors'])
-                if 'request limit' in error_msg.lower():
-                    print(f"API rate limit exceeded for live fixtures: {error_msg}")
-                    return None
-                else:
-                    print(f"API error in live fixtures: {error_msg}")
-
-            # Cache with shorter timeout for live matches only if no errors
-            cache.set(cache_key, data, self.CACHE_TIMEOUT_LIVE)
-            self._log_request('fixtures', params, cached=False)
-
-            return data
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching live fixtures: {e}")
-            return None
-
-    def fetch_recent_finished_fixtures(self):
-        """
-        Fetch fixtures that finished in the last 2 hours to catch any that 
-        dropped out of the live feed before we got their final status
-        
-        Returns:
-            dict: API response data
-        """
-        from datetime import datetime, timedelta
-        
-        # Get fixtures from 2 hours ago to now that are finished
-        end_time = datetime.now()
-        start_time = end_time - timedelta(hours=2)
-        
-        params = {
-            'from': start_time.strftime('%Y-%m-%d'),
-            'to': end_time.strftime('%Y-%m-%d'),
-            'status': 'FT'  # Only finished matches
-        }
-        
-        if not self._can_make_request():
-            print("WARNING: API limit reached for recent finished fixtures")
-            return None
-            
-        url = f"{self.BASE_URL}/fixtures"
-        try:
-            response = requests.get(url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-            
-            self._log_request('fixtures_recent_finished', params, cached=False)
-            return data
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching recent finished fixtures: {e}")
-            return None
-
-    def enhanced_live_fixtures_update(self):
-        """
-        Enhanced live fixtures update that also checks for recently finished matches
-        
-        Returns:
-            dict: Combined statistics from live and recent finished updates
-        """
-        stats = {
-            'live_fixtures_created': 0,
-            'live_fixtures_updated': 0,
-            'recent_finished_created': 0,
-            'recent_finished_updated': 0,
-            'api_requests_used': 0,
-            'errors': []
-        }
-        
-        # Fetch live fixtures
-        try:
-            live_data = self.fetch_live_fixtures()
-            if live_data:
-                created, updated = self.save_fixtures(live_data)
-                stats['live_fixtures_created'] = created
-                stats['live_fixtures_updated'] = updated
-                stats['api_requests_used'] += 1
-        except Exception as e:
-            stats['errors'].append(f"Live fixtures error: {e}")
-        
-        # Only fetch recent finished if we have API quota remaining
-        if self.get_api_usage_stats()['remaining'] > 10:
-            try:
-                finished_data = self.fetch_recent_finished_fixtures()
-                if finished_data:
-                    created, updated = self.save_fixtures(finished_data)
-                    stats['recent_finished_created'] = created
-                    stats['recent_finished_updated'] = updated
-                    stats['api_requests_used'] += 1
-            except Exception as e:
-                stats['errors'].append(f"Recent finished fixtures error: {e}")
-        
-        return stats
+            res = requests.get(API_URL, headers=headers, params=params, timeout=10)
+            res.raise_for_status()
+            return res.json()
+        except requests.exceptions.RequestException as err:
+            print(f"❌ Request Error: {err}")
+            return {"response": []}
 
     def save_fixtures(self, api_response):
-        """
-        Parse and save fixtures from API response to database
+        """Save fixtures list or API response dict into Django database models."""
+        from .models import League, Team, Venue, Fixture
 
-        Args:
-            api_response: JSON response from API-Football
-
-        Returns:
-            tuple: (created_count, updated_count)
-        """
-        if not api_response or 'response' not in api_response:
+        if not api_response:
             return 0, 0
+
+        if isinstance(api_response, dict):
+            items = api_response.get("response", [])
+        elif isinstance(api_response, list):
+            items = api_response
+        else:
+            items = []
 
         created_count = 0
         updated_count = 0
 
-        for fixture_data in api_response['response']:
+        for fixture_data in items:
             try:
-                # Extract data from API response
-                fixture_info = fixture_data['fixture']
-                league_info = fixture_data['league']
-                teams_info = fixture_data['teams']
-                goals_info = fixture_data['goals']
-                score_info = fixture_data['score']
+                fixture_info = fixture_data["fixture"]
+                league_info = fixture_data["league"]
+                teams_info = fixture_data["teams"]
+                goals_info = fixture_data.get("goals", {})
+                score_info = fixture_data.get("score", {})
 
-                # Create or update League
                 league, _ = League.objects.update_or_create(
-                    api_id=league_info['id'],
-                    season=league_info['season'],
+                    api_id=league_info["id"],
+                    season=league_info["season"],
                     defaults={
-                        'name': league_info['name'],
-                        'country': league_info['country'],
-                        'logo': league_info.get('logo'),
-                        'flag': league_info.get('flag'),
-                        'round': league_info.get('round'),
+                        "name": league_info["name"],
+                        "country": league_info.get("country", ""),
+                        "logo": league_info.get("logo"),
+                        "flag": league_info.get("flag"),
+                        "round": league_info.get("round"),
                     }
                 )
 
-                # Create or update Home Team
                 home_team, _ = Team.objects.update_or_create(
-                    api_id=teams_info['home']['id'],
+                    api_id=teams_info["home"]["id"],
                     defaults={
-                        'name': teams_info['home']['name'],
-                        'logo': teams_info['home'].get('logo'),
+                        "name": teams_info["home"]["name"],
+                        "logo": teams_info["home"].get("logo"),
                     }
                 )
 
-                # Create or update Away Team
                 away_team, _ = Team.objects.update_or_create(
-                    api_id=teams_info['away']['id'],
+                    api_id=teams_info["away"]["id"],
                     defaults={
-                        'name': teams_info['away']['name'],
-                        'logo': teams_info['away'].get('logo'),
+                        "name": teams_info["away"]["name"],
+                        "logo": teams_info["away"].get("logo"),
                     }
                 )
 
-                # Create or update Venue
                 venue = None
-                if fixture_info.get('venue'):
-                    venue_data = fixture_info['venue']
-                    if venue_data.get('id'):
-                        venue, _ = Venue.objects.update_or_create(
-                            api_id=venue_data['id'],
-                            defaults={
-                                'name': venue_data.get('name'),
-                                'city': venue_data.get('city'),
-                            }
-                        )
+                if fixture_info.get("venue") and fixture_info["venue"].get("id"):
+                    v_data = fixture_info["venue"]
+                    venue, _ = Venue.objects.update_or_create(
+                        api_id=v_data["id"],
+                        defaults={
+                            "name": v_data.get("name"),
+                            "city": v_data.get("city"),
+                        }
+                    )
 
-                # Create or update Fixture
                 fixture, created = Fixture.objects.update_or_create(
-                    api_id=fixture_info['id'],
+                    api_id=fixture_info["id"],
                     defaults={
-                        'referee': fixture_info.get('referee'),
-                        'timezone': fixture_info['timezone'],
-                        'date': datetime.fromisoformat(fixture_info['date'].replace('Z', '+00:00')),
-                        'timestamp': fixture_info['timestamp'],
-                        'venue': venue,
-                        'status_long': fixture_info['status']['long'],
-                        'status_short': fixture_info['status']['short'],
-                        'elapsed': fixture_info['status'].get('elapsed'),
-                        'league': league,
-                        'home_team': home_team,
-                        'away_team': away_team,
-                        'home_goals': goals_info.get('home'),
-                        'away_goals': goals_info.get('away'),
-                        'home_goals_halftime': score_info.get('halftime', {}).get('home'),
-                        'away_goals_halftime': score_info.get('halftime', {}).get('away'),
-                        'home_goals_fulltime': score_info.get('fulltime', {}).get('home'),
-                        'away_goals_fulltime': score_info.get('fulltime', {}).get('away'),
-                        'home_goals_extratime': score_info.get('extratime', {}).get('home'),
-                        'away_goals_extratime': score_info.get('extratime', {}).get('away'),
-                        'home_goals_penalty': score_info.get('penalty', {}).get('home'),
-                        'away_goals_penalty': score_info.get('penalty', {}).get('away'),
+                        "referee": fixture_info.get("referee"),
+                        "timezone": fixture_info.get("timezone", "UTC"),
+                        "date": datetime.fromisoformat(fixture_info["date"].replace("Z", "+00:00")),
+                        "timestamp": fixture_info.get("timestamp", 0),
+                        "venue": venue,
+                        "status_long": fixture_info["status"].get("long", ""),
+                        "status_short": fixture_info["status"].get("short", ""),
+                        "elapsed": fixture_info["status"].get("elapsed"),
+                        "league": league,
+                        "home_team": home_team,
+                        "away_team": away_team,
+                        "home_goals": goals_info.get("home"),
+                        "away_goals": goals_info.get("away"),
+                        "home_goals_halftime": score_info.get("halftime", {}).get("home"),
+                        "away_goals_halftime": score_info.get("halftime", {}).get("away"),
+                        "home_goals_fulltime": score_info.get("fulltime", {}).get("home"),
+                        "away_goals_fulltime": score_info.get("fulltime", {}).get("away"),
+                        "home_goals_extratime": score_info.get("extratime", {}).get("home"),
+                        "away_goals_extratime": score_info.get("extratime", {}).get("away"),
+                        "home_goals_penalty": score_info.get("penalty", {}).get("home"),
+                        "away_goals_penalty": score_info.get("penalty", {}).get("away"),
                     }
                 )
 
@@ -341,399 +234,13 @@ class APIFootballService:
                     created_count += 1
                 else:
                     updated_count += 1
-
             except Exception as e:
-                print(f"Error saving fixture {fixture_info.get('id')}: {e}")
+                print(f"Error saving fixture {fixture_data.get('fixture', {}).get('id')}: {e}")
                 continue
 
         return created_count, updated_count
 
-    def get_api_usage_stats(self):
-        """Get current API usage statistics"""
-        today_count = APIUsageLog.get_daily_count()
-        cached_count = APIUsageLog.objects.filter(
-            date=dt_date.today(),
-            response_cached=True
-        ).count()
 
-        return {
-            'date': dt_date.today(),
-            'total_requests': today_count + cached_count,
-            'api_requests': today_count,
-            'cached_requests': cached_count,
-            'remaining': self.daily_limit - today_count,
-            'limit': self.daily_limit,
-            'percentage_used': (today_count / self.daily_limit) * 100 if self.daily_limit > 0 else 0
-        }
-
-    def fetch_specific_fixture(self, fixture_id):
-        """
-        Fetch a specific fixture by its API ID
-        
-        Args:
-            fixture_id: API fixture ID to fetch
-            
-        Returns:
-            dict: API response data for the specific fixture
-        """
-        if not self._can_make_request():
-            print(f"WARNING: API limit reached, cannot fetch fixture {fixture_id}")
-            return None
-            
-        params = {'id': fixture_id}
-        url = f"{self.BASE_URL}/fixtures"
-        
-        try:
-            response = requests.get(url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-            
-            self._log_request('fixtures_specific', params, cached=False)
-            return data
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching fixture {fixture_id}: {e}")
-            return None
-
-    def detect_stuck_matches(self):
-        """
-        Detect matches that have been in live status for too long
-        
-        Returns:
-            QuerySet: Fixtures that appear to be stuck
-        """
-        from django.utils import timezone
-        from datetime import timedelta
-        from django.db.models import Q
-        
-        now = timezone.now()
-        
-        # Find matches that are in live status AND either:
-        # 1. Started more than 2 hours ago (normal match = 90min + 15min break + 30min buffer)
-        # 2. OR elapsed time > 120 minutes
-        stuck_threshold = now - timedelta(hours=2)
-        
-        stuck_matches = Fixture.objects.filter(
-            status_short__in=['1H', '2H', 'HT', 'ET', 'P']
-        ).filter(
-            Q(date__lt=stuck_threshold) | Q(elapsed__gt=120)
-        ).order_by('date')
-        
-        return stuck_matches
-
-    def recover_stuck_match(self, fixture):
-        """
-        Attempt to recover a stuck match by fetching its current status
-        
-        Args:
-            fixture: Fixture object that appears stuck
-            
-        Returns:
-            bool: True if successfully updated, False otherwise
-        """
-        print(f"Attempting to recover stuck match: {fixture.home_team.name} vs {fixture.away_team.name} (ID: {fixture.api_id})")
-        
-        api_data = self.fetch_specific_fixture(fixture.api_id)
-        if not api_data or not api_data.get('response'):
-            print(f"  Failed to fetch data for fixture {fixture.api_id}")
-            return False
-            
-        try:
-            fixture_data = api_data['response'][0]
-            updated_count = self.save_fixtures(api_data)[1]
-            
-            if updated_count > 0:
-                # Refresh from DB to get updated data
-                fixture.refresh_from_db()
-                print(f"  ✅ Successfully updated: {fixture.status_long} ({fixture.status_short})")
-                return True
-            else:
-                print(f"  ➡️ No update needed - data already current")
-                return True
-                
-        except Exception as e:
-            print(f"  ❌ Error processing update for fixture {fixture.api_id}: {e}")
-            return False
-
-    def run_stuck_match_recovery(self):
-        """
-        Run the stuck match detection and recovery process
-        
-        Returns:
-            dict: Statistics about the recovery process
-        """
-        stuck_matches = self.detect_stuck_matches()
-        
-        stats = {
-            'stuck_matches_found': stuck_matches.count(),
-            'recovered_successfully': 0,
-            'recovery_failed': 0,
-            'api_requests_used': 0
-        }
-        
-        if stats['stuck_matches_found'] == 0:
-            return stats
-            
-        print(f"Found {stats['stuck_matches_found']} potentially stuck matches")
-        
-        # Limit recovery attempts to preserve API quota (max 5 per run with 1s throttling)
-        max_recoveries = min(5, max(0, self.daily_limit - APIUsageLog.get_daily_count()))
-        
-        for fixture in stuck_matches[:max_recoveries]:
-            import time
-            time.sleep(1)  # Rate limit throttle to prevent HTTP 429 errors
-            if self.recover_stuck_match(fixture):
-                stats['recovered_successfully'] += 1
-            else:
-                stats['recovery_failed'] += 1
-                # If match is stuck for > 6 hours and API fails, mark as FT to clear queue
-                if fixture.date and (timezone.now() - fixture.date) > timedelta(hours=6):
-                    fixture.status_short = 'FT'
-                    fixture.status_long = 'Match Finished'
-                    fixture.save()
-            stats['api_requests_used'] += 1
-            
-        return stats
-
-
-class LivescoreCzScraper:
-    """
-    Complementary free score scraper for https://www.livescore.cz/
-    Updates the local Fixture database without consuming API-Football quotas.
-    """
-    BASE_URL = "https://www.livescore.cz/"
-
-    def __init__(self):
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-
-    def scrape_url(self, url: str, target_date=None) -> list:
-        import re
-        from bs4 import BeautifulSoup
-
-        try:
-            resp = requests.get(url, headers=self.headers, timeout=10)
-            if resp.status_code != 200:
-                return []
-            
-            soup = BeautifulSoup(resp.text, 'html.parser')
-            score_div = soup.find('div', id='score-data')
-            if not score_div:
-                return []
-
-            matches = []
-            current_league = "Unknown League"
-
-            for elem in score_div.find_all(['h4', 'a']):
-                if elem.name == 'h4':
-                    current_league = elem.get_text(strip=True)
-                elif elem.name == 'a' and elem.get('href', '').startswith('/match/'):
-                    match_class = elem.get('class', [])
-                    score_text = elem.get_text(strip=True)
-
-                    prev_text = ""
-                    curr = elem.previous_sibling
-                    while curr and curr.name not in ['br', 'h4']:
-                        if isinstance(curr, str):
-                            prev_text = curr + prev_text
-                        elif curr.name == 'span':
-                            prev_text = curr.get_text(strip=True) + " " + prev_text
-                        curr = curr.previous_sibling
-
-                    clean_text = prev_text.strip()
-                    if '-' in clean_text:
-                        clean_text = re.sub(r'^\d{1,2}:\d{2}', '', clean_text).strip()
-                        clean_text = re.sub(r'^\d+\+?\'', '', clean_text).strip()
-
-                        parts = clean_text.split('-')
-                        if len(parts) >= 2:
-                            home = parts[0].strip()
-                            away = '-'.join(parts[1:]).strip()
-
-                            home_name = re.sub(r'\s*\([A-Z][a-zA-Z]{1,3}\)$', '', home).strip()
-                            away_name = re.sub(r'\s*\([A-Z][a-zA-Z]{1,3}\)$', '', away).strip()
-
-                            status_short = 'NS'
-                            if 'fin' in match_class:
-                                status_short = 'FT'
-                            elif 'live' in match_class:
-                                status_short = '2H'
-
-                            home_goals = None
-                            away_goals = None
-                            if '-' in score_text and status_short in ['FT', '2H', '1H']:
-                                score_parts = score_text.split('-')
-                                try:
-                                    home_goals = int(score_parts[0].strip())
-                                    away_goals = int(score_parts[1].strip())
-                                except ValueError:
-                                    pass
-
-                            if home_name and away_name:
-                                matches.append({
-                                    'league': current_league,
-                                    'home_team': home_name,
-                                    'away_team': away_name,
-                                    'home_goals': home_goals,
-                                    'away_goals': away_goals,
-                                    'status_short': status_short,
-                                    'raw_score': score_text,
-                                    'date': target_date,
-                                })
-
-            return matches
-        except Exception as e:
-            print(f"Error scraping livescore.cz ({url}): {e}")
-            return []
-
-    def sync_scraped_scores(self, scraped_matches: list) -> dict:
-        """
-        Match scraped scores with database Fixtures and update them
-        """
-        from datetime import datetime, timedelta
-        from django.utils import timezone
-        from .models import Fixture, League, Team
-        try:
-            from fuzzywuzzy import fuzz
-            calc_ratio = fuzz.ratio
-        except ImportError:
-            from difflib import SequenceMatcher
-            def calc_ratio(s1, s2):
-                return int(SequenceMatcher(None, str(s1), str(s2)).ratio() * 100)
-
-        stats = {'scraped': len(scraped_matches), 'updated': 0, 'created': 0}
-        now = timezone.now()
-
-        # Query database fixtures ONCE for the date range instead of 700+ times inside the loop
-        start_date = now - timedelta(days=2)
-        end_date = now + timedelta(days=2)
-        fixtures = list(Fixture.objects.filter(
-            date__gte=start_date,
-            date__lte=end_date
-        ).select_related('home_team', 'away_team'))
-
-        # Build fast O(1) dictionary map of exact team name pairs
-        fixture_map = {}
-        for fix in fixtures:
-            h_name = fix.home_team.name.lower().strip()
-            a_name = fix.away_team.name.lower().strip()
-            fixture_map[(h_name, a_name)] = fix
-
-        for item in scraped_matches:
-            if item['home_goals'] is None or item['away_goals'] is None:
-                continue
-
-            h_lower = item['home_team'].lower().strip()
-            a_lower = item['away_team'].lower().strip()
-
-            # 1. Try instant O(1) exact team name match
-            matched_fixture = fixture_map.get((h_lower, a_lower))
-
-            # 2. If exact lookup fails, try pre-filtered fuzzy match
-            if not matched_fixture:
-                best_score = 0
-                threshold = 70
-
-                for fix in fixtures:
-                    f_home = fix.home_team.name.lower().strip()
-                    f_away = fix.away_team.name.lower().strip()
-
-                    # Quick pre-filter: skip if first letter differs AND neither is a substring of the other
-                    if h_lower and f_home and h_lower[0] != f_home[0] and h_lower not in f_home and f_home not in h_lower:
-                        continue
-                    if a_lower and f_away and a_lower[0] != f_away[0] and a_lower not in f_away and f_away not in a_lower:
-                        continue
-
-                    home_sim = calc_ratio(h_lower, f_home)
-                    away_sim = calc_ratio(a_lower, f_away)
-                    avg_sim = (home_sim + away_sim) / 2
-
-                    if home_sim >= threshold and away_sim >= threshold and avg_sim > best_score:
-                        best_score = avg_sim
-                        matched_fixture = fix
-
-            if matched_fixture:
-                matched_fixture.home_goals = item['home_goals']
-                matched_fixture.away_goals = item['away_goals']
-                matched_fixture.status_short = item['status_short']
-                if item['status_short'] == 'FT':
-                    matched_fixture.status_long = 'Match Finished'
-                matched_fixture.save()
-                stats['updated'] += 1
-            else:
-                try:
-                    league = League.objects.filter(name=item['league'][:100]).first()
-                    if not league:
-                        fake_league_id = abs(hash(item['league'])) % 1000000
-                        league = League.objects.filter(api_id=fake_league_id).first()
-                        if not league:
-                            league = League.objects.create(
-                                api_id=fake_league_id,
-                                name=item['league'][:100],
-                                season=now.year,
-                                country='World'
-                            )
-
-                    home_team = Team.objects.filter(name=item['home_team'][:100]).first()
-                    if not home_team:
-                        fake_home_id = abs(hash(f"team_{item['home_team']}")) % 1000000000
-                        home_team = Team.objects.filter(api_id=fake_home_id).first()
-                        if not home_team:
-                            home_team = Team.objects.create(
-                                api_id=fake_home_id,
-                                name=item['home_team'][:100]
-                            )
-
-                    away_team = Team.objects.filter(name=item['away_team'][:100]).first()
-                    if not away_team:
-                        fake_away_id = abs(hash(f"team_{item['away_team']}")) % 1000000000
-                        away_team = Team.objects.filter(api_id=fake_away_id).first()
-                        if not away_team:
-                            away_team = Team.objects.create(
-                                api_id=fake_away_id,
-                                name=item['away_team'][:100]
-                            )
-
-                    match_date = item.get('date') or now.date()
-                    if isinstance(match_date, datetime) or (hasattr(match_date, 'strftime') and not isinstance(match_date, datetime)):
-                        from django.utils.timezone import make_aware
-                        match_datetime = make_aware(datetime.combine(match_date, datetime.min.time()))
-                    else:
-                        match_datetime = match_date
-
-                    fake_api_id = abs(hash(f"{item['home_team']}_{item['away_team']}_{match_date.strftime('%Y-%m-%d')}")) % 2000000000
-                    Fixture.objects.update_or_create(
-                        api_id=fake_api_id,
-                        defaults={
-                            'timezone': 'UTC',
-                            'date': match_datetime,
-                            'timestamp': int(match_datetime.timestamp()),
-                            'status_long': 'Match Finished' if item['status_short'] == 'FT' else 'In Progress',
-                            'status_short': item['status_short'],
-                            'league': league,
-                            'home_team': home_team,
-                            'away_team': away_team,
-                            'home_goals': item['home_goals'],
-                            'away_goals': item['away_goals'],
-                        }
-                    )
-                    stats['created'] += 1
-                except Exception as create_err:
-                    print(f"Error creating fixture for {item['home_team']} vs {item['away_team']}: {create_err}")
-
-        return stats
-
-    def scrape_and_sync(self) -> dict:
-        """Fetch today and yesterday scores from livescore.cz and sync to DB"""
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        today = timezone.now().date()
-        yesterday = today - timedelta(days=1)
-        
-        today_matches = self.scrape_url(self.BASE_URL, target_date=today)
-        yesterday_matches = self.scrape_url(f"{self.BASE_URL}?d=-1", target_date=yesterday)
-
-        combined = today_matches + yesterday_matches
-        return self.sync_scraped_scores(combined)
-
+if __name__ == "__main__":
+    matches = get_todays_fixtures(cache_ttl_seconds=300)
+    display_fixtures(matches)

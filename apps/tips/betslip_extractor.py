@@ -16,9 +16,9 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 load_dotenv()
 
-# --- CONFIGURATION FOR SPEED ---
-MODEL_ID = 'gemini-flash-latest'
-FALLBACK_MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+# --- CONFIGURATION FOR ULTRA-LOW LATENCY ---
+MODEL_ID = 'gemini-2.0-flash-lite'
+FALLBACK_MODELS = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
 MAX_DIMENSION = 800   # 800px is the sweet spot for speed/readability
 JPEG_QUALITY = 60     # Lower quality (60) is fine for high-contrast text
 RETRY_DELAY = 0.5     # Start retries quicker
