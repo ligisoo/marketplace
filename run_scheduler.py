@@ -292,7 +292,74 @@ def run_tip_archiving():
     logger.info("")
 
 
+def check_stale_unresulted_tips():
+    """
+    Check for tips that should have been resulted but weren't.
+    Creates admin notifications for tips that need manual attention.
+    """
+    logger.info("=" * 60)
+    logger.info("STALE TIP CHECK STARTED")
+    logger.info(f"Time: {timezone.now()}")
+    logger.info("=" * 60)
 
+    try:
+        from apps.notifications.models import AdminNotification
+        from apps.tips.models import TipMatch
+
+        cutoff = timezone.now() - timedelta(hours=6)
+        
+        # Find tips that expired 6+ hours ago but are still not resulted
+        stale_tips = Tip.objects.filter(
+            is_resulted=False,
+            expires_at__lte=cutoff,
+            status__in=['active', 'archived']
+        )
+
+        new_alerts = 0
+        for tip in stale_tips:
+            # Check if notification already exists for this tip
+            if AdminNotification.objects.filter(related_tip=tip, is_read=False).exists():
+                continue
+            
+            # Get unresulted matches details
+            unresulted = tip.matches.filter(is_resulted=False)
+            uncovered = unresulted.filter(api_match_id='')
+            
+            if not unresulted.exists():
+                continue
+            
+            match_details = ', '.join(
+                f"{m.home_team} vs {m.away_team}" for m in unresulted[:3]
+            )
+            if unresulted.count() > 3:
+                match_details += f" (+{unresulted.count() - 3} more)"
+            
+            AdminNotification.objects.create(
+                title=f"Stale tip: {tip.bet_code}",
+                message=(
+                    f"Tip {tip.bet_code} expired {(timezone.now() - tip.expires_at).total_seconds() / 3600:.0f}h ago "
+                    f"but has {unresulted.count()} unresulted match(es) "
+                    f"({uncovered.count()} without API coverage). "
+                    f"Matches: {match_details}. "
+                    f"Manual result entry required."
+                ),
+                level='warning',
+                related_tip=tip
+            )
+            new_alerts += 1
+
+        if new_alerts:
+            logger.info(f"Created {new_alerts} new admin notification(s) for stale tips")
+        else:
+            logger.info("No new stale tips found")
+
+    except Exception as e:
+        logger.error(f"Error checking stale tips: {str(e)}", exc_info=True)
+
+    logger.info("=" * 60)
+    logger.info("STALE TIP CHECK COMPLETED")
+    logger.info("=" * 60)
+    logger.info("")
 
 
 def schedule_jobs():
@@ -319,6 +386,9 @@ def schedule_jobs():
 
     # Job 6: Archive expired tips every hour
     schedule.every().hour.do(run_tip_archiving)
+
+    # Job 7: Check for stale unresulted tips every 6 hours
+    schedule.every(6).hours.do(check_stale_unresulted_tips)
 
 
 
