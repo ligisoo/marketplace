@@ -249,25 +249,71 @@ class TipMatch(models.Model):
     @property
     def live_data(self):
         """Get live match data if available and not yet resulted"""
-        if self.is_resulted or not self.api_match_id:
+        if self.is_resulted:
             return None
             
-        from apps.fixtures.models import Fixture
+        if self.api_match_id:
+            from apps.fixtures.models import Fixture
+            try:
+                fixture = Fixture.objects.get(api_id=int(self.api_match_id))
+                if not fixture.is_finished:
+                    h_goals = fixture.home_goals if fixture.home_goals is not None else 0
+                    a_goals = fixture.away_goals if fixture.away_goals is not None else 0
+                    return {
+                        'home_goals': h_goals,
+                        'away_goals': a_goals,
+                        'elapsed': fixture.elapsed,
+                        'status': fixture.status_short,
+                        'source': 'api_football'
+                    }
+            except (Fixture.DoesNotExist, ValueError):
+                pass
+
+        # Fallback to livescore.cz for ongoing matches without api_match_id
         try:
-            fixture = Fixture.objects.get(api_id=int(self.api_match_id))
-            if not fixture.is_finished:
-                # API-Football returns null for goals if 0 sometimes, safely fallback to 0 if match started
-                h_goals = fixture.home_goals if fixture.home_goals is not None else 0
-                a_goals = fixture.away_goals if fixture.away_goals is not None else 0
-                return {
-                    'home_goals': h_goals,
-                    'away_goals': a_goals,
-                    'elapsed': fixture.elapsed,
-                    'status': fixture.status_short
-                }
-        except (Fixture.DoesNotExist, ValueError):
+            from apps.tips.services.livescore_cz_scraper import LivescoreCzScraper
+            try:
+                from fuzzywuzzy import fuzz
+                calc_ratio = fuzz.ratio
+            except ImportError:
+                from difflib import SequenceMatcher
+                def calc_ratio(s1: str, s2: str) -> float:
+                    return SequenceMatcher(None, s1, s2).ratio() * 100
+
+            scraper = LivescoreCzScraper()
+            live_matches = scraper.fetch_scores(day_offset=0, status_filter='all')
+            
+            home_tip = self.home_team.lower().strip()
+            away_tip = self.away_team.lower().strip()
+
+            for m in live_matches:
+                home_scraped = m['home_team'].lower().strip()
+                away_scraped = m['away_team'].lower().strip()
+
+                home_ratio = calc_ratio(home_tip, home_scraped)
+                away_ratio = calc_ratio(away_tip, away_scraped)
+
+                if len(home_tip) >= 4 and (home_tip in home_scraped or home_scraped in home_tip):
+                    home_ratio = max(home_ratio, 90.0)
+                if len(away_tip) >= 4 and (away_tip in away_scraped or away_scraped in away_tip):
+                    away_ratio = max(away_ratio, 90.0)
+
+                if home_ratio >= 75 and away_ratio >= 75:
+                    return {
+                        'home_goals': m['home_goals'] if m['home_goals'] is not None else 0,
+                        'away_goals': m['away_goals'] if m['away_goals'] is not None else 0,
+                        'elapsed': m['time'],
+                        'status': 'LIVE' if m['status'] == 'live' else ('FT' if m['status'] == 'finished' else 'SCHED'),
+                        'is_live': m['status'] == 'live',
+                        'is_finished': m['status'] == 'finished',
+                        'score': m['score'],
+                        'source': 'livescore.cz'
+                    }
+        except Exception:
             pass
+
         return None
+
 
 
 class OCRProviderSettings(models.Model):

@@ -637,17 +637,18 @@ def tip_live_scores(request, tip_id):
     
     live_matches = []
     for match in tip.matches.all():
-        if match.api_match_id and not match.is_resulted:
-            from apps.fixtures.models import Fixture
-            fixture = Fixture.objects.filter(api_id=match.api_match_id).first()
-            if fixture:
+        if not match.is_resulted:
+            data = match.live_data
+            if data:
                 live_matches.append({
                     'id': match.id,
-                    'is_live': fixture.is_live,
-                    'is_finished': fixture.is_finished,
-                    'score': fixture.get_result_string() if fixture.home_goals is not None else None,
-                    'elapsed': fixture.elapsed,
-                    'status_short': fixture.status_short
+                    'is_live': data.get('is_live', data.get('status') not in ['FT', 'PST', 'CANC', 'SCHED']),
+                    'is_finished': data.get('is_finished', data.get('status') in ['FT', 'AET', 'PEN']),
+                    'score': data.get('score', f"{data.get('home_goals')}-{data.get('away_goals')}"),
+                    'elapsed': data.get('elapsed'),
+                    'status_short': data.get('status'),
+                    'source': data.get('source', 'api_football')
                 })
                 
     return JsonResponse({'matches': live_matches})
+
