@@ -205,10 +205,18 @@ class ResultVerifier:
                     f"Won: {tip_match.is_won} (Void: {is_void})"
                 )
             else:
-                not_found_matches += 1
-                logger.warning(
-                    f"No fixture found for: {tip_match.home_team} vs {tip_match.away_team}"
-                )
+                # Try fallback via livescore.cz scraper for matches absent from API-Football
+                livescore_verified = self._verify_via_livescore_cz(tip_match)
+                if livescore_verified:
+                    verified_matches += 1
+                    if tip_match.is_won:
+                        won_matches += 1
+                else:
+                    not_found_matches += 1
+                    logger.warning(
+                        f"No fixture found in API-Football or livescore.cz for: {tip_match.home_team} vs {tip_match.away_team}"
+                    )
+
 
         # Determine overall tip result
         if verified_matches == total_matches:
@@ -505,3 +513,76 @@ class ResultVerifier:
         if match:
             return float(match.group(1))
         return None
+
+    def _verify_via_livescore_cz(self, tip_match) -> bool:
+        """
+        Fallback verification for matches absent from API-Football.
+        Scrapes livescore.cz for finished matches and attempts fuzzy team matching.
+        """
+        try:
+            from .livescore_cz_scraper import LivescoreCzScraper
+        except ImportError:
+            logger.error("Could not import LivescoreCzScraper")
+            return False
+
+        try:
+            from fuzzywuzzy import fuzz
+            calc_ratio = fuzz.ratio
+        except ImportError:
+            from difflib import SequenceMatcher
+            def calc_ratio(s1: str, s2: str) -> float:
+                return SequenceMatcher(None, s1, s2).ratio() * 100
+
+        scraper = LivescoreCzScraper()
+        # Fetch finished games
+        scraped_matches = scraper.fetch_scores(day_offset=0, status_filter='finished')
+        
+        home_tip = tip_match.home_team.lower().strip()
+        away_tip = tip_match.away_team.lower().strip()
+
+        for m in scraped_matches:
+            home_scraped = m['home_team'].lower().strip()
+            away_scraped = m['away_team'].lower().strip()
+
+            # Check fuzzy team matching
+            home_ratio = calc_ratio(home_tip, home_scraped)
+            away_ratio = calc_ratio(away_tip, away_scraped)
+
+            # Substring match support
+            if len(home_tip) >= 4 and (home_tip in home_scraped or home_scraped in home_tip):
+                home_ratio = max(home_ratio, 90.0)
+            if len(away_tip) >= 4 and (away_tip in away_scraped or away_scraped in away_tip):
+                away_ratio = max(away_ratio, 90.0)
+
+            if home_ratio >= 75 and away_ratio >= 75 and m['status'] == 'finished':
+                if m['home_goals'] is None or m['away_goals'] is None:
+                    continue
+
+                match_result = self._check_market_result(
+                    tip_match.market,
+                    tip_match.selection,
+                    m['home_goals'],
+                    m['away_goals'],
+                    home_team=tip_match.home_team,
+                    away_team=tip_match.away_team
+                )
+                
+                tip_match.is_resulted = True
+                if match_result == 'void':
+                    from decimal import Decimal
+                    tip_match.is_won = True
+                    tip_match.actual_result = f"Void / Push ({m['score']})"
+                    tip_match.odds = Decimal('1.00')
+                else:
+                    tip_match.is_won = bool(match_result)
+                    tip_match.actual_result = f"{m['home_goals']}-{m['away_goals']} (livescore.cz)"
+                
+                tip_match.save()
+                logger.info(
+                    f"Match verified via livescore.cz: {tip_match.home_team} vs {tip_match.away_team} "
+                    f"Result: {m['home_goals']}-{m['away_goals']} Won: {tip_match.is_won}"
+                )
+                return True
+
+        return False
+

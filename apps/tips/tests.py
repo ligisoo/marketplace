@@ -242,3 +242,55 @@ class ResultVerifierTests(TestCase):
         self.assertTrue(match2.is_won)  # void treated as won so accumulator continues
         self.assertEqual(match2.odds, Decimal("1.00"))
         self.assertIn("Void / Push", match2.actual_result)
+
+    @patch('apps.tips.services.livescore_cz_scraper.LivescoreCzScraper.fetch_scores')
+    def test_verify_tip_via_livescore_cz_fallback(self, mock_fetch_scores):
+        # Mock livescore.cz scraped data for South Coast Flame FC vs Bankstown City FC
+        mock_fetch_scores.return_value = [
+            {
+                "league": "AUSTRALIA: NPL NSW",
+                "time": "15:00",
+                "home_team": "South Coast Flame FC",
+                "away_team": "Bankstown City FC",
+                "score": "3-1",
+                "home_goals": 3,
+                "away_goals": 1,
+                "status": "finished",
+                "status_raw": "fin",
+                "match_path": "/match/test1234/",
+            }
+        ]
+
+        tip = Tip.objects.create(
+            tipster=self.tipster,
+            bet_code="NPLSOUTH",
+            odds=Decimal("1.80"),
+            status="active",
+            expires_at=timezone.now() + timedelta(hours=1)
+        )
+
+        match = TipMatch.objects.create(
+            tip=tip,
+            home_team="South Coast Flame",
+            away_team="Bankstown City",
+            market="1X2",
+            selection="1",
+            odds=Decimal("1.80"),
+            match_date=timezone.now() - timedelta(hours=2),
+            api_match_id=""  # Missing API match ID
+        )
+
+        verifier = ResultVerifier()
+        stats = verifier.verify_tips()
+
+        self.assertEqual(stats['tips_verified'], 1)
+        self.assertEqual(stats['tips_won'], 1)
+
+        tip.refresh_from_db()
+        match.refresh_from_db()
+
+        self.assertTrue(tip.is_resulted)
+        self.assertTrue(tip.is_won)
+        self.assertTrue(match.is_resulted)
+        self.assertTrue(match.is_won)
+        self.assertEqual(match.actual_result, "3-1 (livescore.cz)")
