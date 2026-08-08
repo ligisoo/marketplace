@@ -272,7 +272,8 @@ def run_tip_archiving():
     try:
         expired_tips = Tip.objects.filter(
             status='active',
-            expires_at__lte=timezone.now()
+            expires_at__lte=timezone.now(),
+            is_resulted=True  # Only archive tips that have already been verified
         )
         
         archived_count = 0
