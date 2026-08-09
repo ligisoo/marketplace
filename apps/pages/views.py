@@ -30,7 +30,7 @@ def home_view(request):
     limit = getattr(settings, 'PRO_RESTRICTED_TOP_ANALYSTS_COUNT', 10)
     
     # Recent active insights
-    recent_insights = Tip.objects.filter(status='active').order_by('-created_at')[:4]
+    recent_insights = Tip.objects.select_related('tipster').prefetch_related('matches').filter(status='active').order_by('-created_at')[:4]
     
     # Dynamic Platform Stats (Cached):
     stats_cache_key = 'homepage_platform_stats_v2'

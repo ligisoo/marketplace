@@ -534,8 +534,13 @@ class ResultVerifier:
                 return SequenceMatcher(None, s1, s2).ratio() * 100
 
         scraper = LivescoreCzScraper()
-        # Fetch finished games
-        scraped_matches = scraper.fetch_scores(day_offset=0, status_filter='finished')
+        # Fetch finished games for the tip_match's date
+        from django.utils import timezone
+        today = timezone.now().date()
+        match_date = tip_match.match_date.date()
+        offset = (match_date - today).days
+        
+        scraped_matches = scraper.fetch_scores(day_offset=offset, status_filter='finished')
         
         home_tip = tip_match.home_team.lower().strip()
         away_tip = tip_match.away_team.lower().strip()

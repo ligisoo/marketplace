@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def marketplace(request):
     """Browse active tips in the marketplace"""
     form = TipSearchForm(request.GET or None)
-    tips = Tip.objects.filter(status='active', expires_at__gt=timezone.now())
+    tips = Tip.objects.select_related('tipster').prefetch_related('matches').filter(status='active', expires_at__gt=timezone.now())
     
     # Apply search filters
     if form.is_valid():
@@ -107,7 +107,7 @@ def my_tips(request):
     tip_filter = request.GET.get('filter', 'all')  # all, active, archived
     
     # Base queryset for user's tips
-    base_tips = Tip.objects.filter(tipster=request.user)
+    base_tips = Tip.objects.select_related('tipster').prefetch_related('matches').filter(tipster=request.user)
     
     # Apply filter
     if tip_filter == 'active':
@@ -424,13 +424,13 @@ def tipster_profile(request, tipster_id):
                 return redirect('payments:pricing')
     
     # Get tipster's active tips
-    active_tips = Tip.objects.filter(
+    active_tips = Tip.objects.select_related('tipster').prefetch_related('matches').filter(
         tipster=tipster,
         status='active'
     ).order_by('-created_at')
 
     # Get tipster's historical tips (archived, resulted, etc.)
-    historical_tips = Tip.objects.filter(
+    historical_tips = Tip.objects.select_related('tipster').prefetch_related('matches').filter(
         tipster=tipster
     ).exclude(status='active').order_by('-created_at')
 

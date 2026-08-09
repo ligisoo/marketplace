@@ -3,6 +3,7 @@ Service to enrich betslip data with accurate match information from API-Football
 """
 import logging
 from datetime import datetime, timedelta
+from typing import Optional, List, Dict
 try:
     from fuzzywuzzy import fuzz
 except ImportError:
